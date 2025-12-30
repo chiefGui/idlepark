@@ -6,7 +6,7 @@ import { useGameStore } from '../../store/game-store'
 import { GameTypes } from '../../engine/game-types'
 
 export function Header() {
-  const { open } = useDrawer()
+  const store = useDrawer()
   const gameOver = useGameStore((s) => s.gameOver)
   const money = useGameStore((s) => s.stats.money)
   const consecutiveNegativeDays = useGameStore((s) => s.consecutiveNegativeDays)
@@ -17,7 +17,7 @@ export function Header() {
     <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
       <motion.button
         whileTap={{ scale: 0.95 }}
-        onClick={() => open()}
+        onClick={() => store.show()}
         className="p-2 -ml-2 hover:bg-[var(--color-surface-hover)] rounded-xl transition-colors"
       >
         <Menu size={24} />
