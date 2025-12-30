@@ -57,6 +57,11 @@ export type MilestoneDef = {
   condition: Requirement
 }
 
+export type TimelineEntry = {
+  milestoneId: string
+  day: number
+}
+
 export type SlotState = {
   index: number
   buildingId: string | null
@@ -67,7 +72,7 @@ export type GameState = {
   stats: Record<StatId, number>
   slots: SlotState[]
   ownedPerks: string[]
-  achievedMilestones: string[]
+  timeline: TimelineEntry[]
   currentDay: number
   lastTickTime: number
   consecutiveNegativeDays: number
@@ -122,7 +127,7 @@ export class GameTypes {
       stats: this.createInitialStats(),
       slots: this.createInitialSlots(),
       ownedPerks: [],
-      achievedMilestones: [],
+      timeline: [],
       currentDay: 1,
       lastTickTime: Date.now(),
       consecutiveNegativeDays: 0,

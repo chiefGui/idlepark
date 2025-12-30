@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { GameState, Effect } from '../engine/game-types'
+import type { GameState, Effect, TimelineEntry } from '../engine/game-types'
 import { GameTypes } from '../engine/game-types'
 import { GameEvents } from '../engine/events'
 import { Effects, type AggregatedRates } from '../engine/effects'
@@ -9,6 +9,7 @@ import { Slot } from '../systems/slot'
 import { Guest } from '../systems/guest'
 import { Perk } from '../systems/perk'
 import { Milestone } from '../systems/milestone'
+import { Timeline } from '../systems/timeline'
 
 type GameActions = {
   tick: (deltaDay: number) => void
@@ -95,9 +96,9 @@ export const useGameStore = create<GameStoreState>()(
           }
 
           const newMilestones = Milestone.getNewlyAchieved(updatedState)
-          const achievedMilestones = [...state.achievedMilestones]
+          let timeline = state.timeline
           for (const milestone of newMilestones) {
-            achievedMilestones.push(milestone.id)
+            timeline = Timeline.addEntry(timeline, milestone.id, newDay)
             GameEvents.emit('milestone:achieved', { milestoneId: milestone.id })
           }
 
@@ -107,8 +108,8 @@ export const useGameStore = create<GameStoreState>()(
             lastTickTime: Date.now(),
             consecutiveNegativeDays,
             gameOver,
-            achievedMilestones,
-            rates: computeRates({ ...updatedState, achievedMilestones }),
+            timeline,
+            rates: computeRates({ ...updatedState, timeline }),
           })
 
           GameEvents.emit('tick', { deltaDay })
@@ -255,17 +256,31 @@ export const useGameStore = create<GameStoreState>()(
     }),
     {
       name: 'idlepark-save',
+      version: 1,
       partialize: (state) => ({
         stats: state.stats,
         slots: state.slots,
         ownedPerks: state.ownedPerks,
-        achievedMilestones: state.achievedMilestones,
+        timeline: state.timeline,
         currentDay: state.currentDay,
         lastTickTime: state.lastTickTime,
         consecutiveNegativeDays: state.consecutiveNegativeDays,
         gameOver: state.gameOver,
         ticketPrice: state.ticketPrice,
       }),
+      migrate: (persisted, version) => {
+        const state = persisted as Record<string, unknown>
+        if (version === 0) {
+          const oldMilestones = (state.achievedMilestones ?? []) as string[]
+          const timeline: TimelineEntry[] = oldMilestones.map((id) => ({
+            milestoneId: id,
+            day: 1,
+          }))
+          delete state.achievedMilestones
+          state.timeline = timeline
+        }
+        return state as GameState
+      },
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.rates = computeRates(state)
