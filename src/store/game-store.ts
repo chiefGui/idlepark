@@ -16,6 +16,7 @@ type GameActions = {
   buildAtSlot: (buildingId: string, slotIndex: number) => boolean
   demolishSlot: (slotIndex: number) => boolean
   purchasePerk: (perkId: string) => boolean
+  unlockSlot: (slotIndex: number) => boolean
   setTicketPrice: (price: number) => void
   reset: () => void
   calculateOfflineProgress: (lastTime: number) => void
@@ -97,19 +98,30 @@ export const useGameStore = create<GameStoreState>()(
 
           const newMilestones = Milestone.getNewlyAchieved(updatedState)
           let timeline = state.timeline
+          let rewardMoney = 0
           for (const milestone of newMilestones) {
-            timeline = Timeline.addEntry(timeline, milestone.id, newDay)
+            const achievedDay = Milestone.estimateAchievedDay(
+              milestone,
+              state.currentDay,
+              state.stats,
+              state.rates,
+              newDay
+            )
+            timeline = Timeline.addEntry(timeline, milestone.id, achievedDay)
+            rewardMoney += milestone.reward
             GameEvents.emit('milestone:achieved', { milestoneId: milestone.id })
           }
 
+          const finalStats = { ...newStats, money: newStats.money + rewardMoney }
+
           set({
-            stats: newStats,
+            stats: finalStats,
             currentDay: newDay,
             lastTickTime: Date.now(),
             consecutiveNegativeDays,
             gameOver,
             timeline,
-            rates: computeRates({ ...updatedState, timeline }),
+            rates: computeRates({ ...updatedState, timeline, stats: finalStats }),
           })
 
           GameEvents.emit('tick', { deltaDay })
@@ -187,22 +199,39 @@ export const useGameStore = create<GameStoreState>()(
           }
 
           const newOwnedPerks = [...state.ownedPerks, perkId]
-          let newSlots = state.slots
-
-          if (Perk.isSlotPerk(perk)) {
-            newSlots = Slot.unlockNext(state.slots)
-          }
-
-          const newState = { ...state, stats: newStats, ownedPerks: newOwnedPerks, slots: newSlots }
+          const newState = { ...state, stats: newStats, ownedPerks: newOwnedPerks }
 
           set({
             stats: newStats,
             ownedPerks: newOwnedPerks,
-            slots: newSlots,
             rates: computeRates(newState),
           })
 
           GameEvents.emit('perk:purchased', { perkId })
+          return true
+        },
+
+        unlockSlot: (slotIndex: number) => {
+          const state = get()
+          const slot = state.slots[slotIndex]
+
+          if (!slot || !slot.locked) return false
+          if (!Slot.canUnlock(slotIndex, state)) return false
+
+          const cost = GameTypes.SLOT_UNLOCK_COSTS[slotIndex] ?? 0
+          if (state.stats.money < cost) return false
+
+          const newStats = { ...state.stats, money: state.stats.money - cost }
+          const newSlots = Slot.unlock(state.slots, slotIndex)
+          const newState = { ...state, stats: newStats, slots: newSlots }
+
+          set({
+            stats: newStats,
+            slots: newSlots,
+            rates: computeRates(newState),
+          })
+
+          GameEvents.emit('slot:unlocked', { slotIndex })
           return true
         },
 
