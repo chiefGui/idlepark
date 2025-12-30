@@ -149,10 +149,19 @@ export const useGameStore = create<GameStoreState>()(
           if (!slot || !slot.buildingId) return false
 
           const buildingId = slot.buildingId
+          const building = Building.getById(buildingId)
+          const refundAmount = building
+            ? Math.floor((building.costs[0]?.amount ?? 0) * 0.5)
+            : 0
+
+          const newStats = { ...state.stats }
+          newStats.money += refundAmount
+
           const newSlots = Slot.demolish(state.slots, slotIndex)
-          const newState = { ...state, slots: newSlots }
+          const newState = { ...state, stats: newStats, slots: newSlots }
 
           set({
+            stats: newStats,
             slots: newSlots,
             rates: computeRates(newState),
           })
