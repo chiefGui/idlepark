@@ -93,9 +93,6 @@ export function BuildingSelector({ slotIndex, onClose }: BuildingSelectorProps) 
               >
                 <span className="text-base">{cat.emoji}</span>
                 <div className="mt-0.5">{cat.label}</div>
-                {activeCategory === cat.id && (
-                  <div className="text-[9px] text-[var(--color-text-muted)] mt-0.5">{cat.hint}</div>
-                )}
               </button>
             ))}
           </div>
