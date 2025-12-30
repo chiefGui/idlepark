@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Lock, Plus, Trash2 } from 'lucide-react'
+import { Lock, Plus } from 'lucide-react'
 import type { SlotState } from '../../engine/game-types'
 import { Building } from '../../systems/building'
 import { Perk } from '../../systems/perk'
@@ -8,10 +8,10 @@ import { useGameStore } from '../../store/game-store'
 type SlotCardProps = {
   slot: SlotState
   onBuild: () => void
-  onDemolish: () => void
+  onSelect: () => void
 }
 
-export function SlotCard({ slot, onBuild, onDemolish }: SlotCardProps) {
+export function SlotCard({ slot, onBuild, onSelect }: SlotCardProps) {
   const state = useGameStore()
   const building = slot.buildingId ? Building.getById(slot.buildingId) : null
 
@@ -45,8 +45,7 @@ export function SlotCard({ slot, onBuild, onDemolish }: SlotCardProps) {
       <motion.button
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        whileTap={{ scale: 0.95 }}
         onClick={onBuild}
         className="
           aspect-square rounded-xl border-2 border-dashed border-[var(--color-border)]
@@ -62,29 +61,20 @@ export function SlotCard({ slot, onBuild, onDemolish }: SlotCardProps) {
   }
 
   return (
-    <motion.div
+    <motion.button
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={onSelect}
       className="
         aspect-square rounded-xl border border-[var(--color-border)]
         flex flex-col items-center justify-center gap-1
-        bg-[var(--color-surface)] relative group
+        bg-[var(--color-surface)] active:bg-[var(--color-surface-hover)]
+        transition-colors cursor-pointer
       "
     >
       <span className="text-3xl">{building.emoji}</span>
       <span className="text-xs font-medium text-center px-2 leading-tight">{building.name}</span>
-
-      <motion.button
-        whileTap={{ scale: 0.9 }}
-        onClick={onDemolish}
-        className="
-          absolute top-1.5 right-1.5 p-1.5 rounded-lg
-          bg-[var(--color-negative)]/20 text-[var(--color-negative)]
-          active:bg-[var(--color-negative)]/30
-        "
-      >
-        <Trash2 size={12} />
-      </motion.button>
-    </motion.div>
+    </motion.button>
   )
 }
