@@ -5,6 +5,7 @@ type GameEventMap = {
   'day:changed': { day: number }
   'building:built': { buildingId: string; slotIndex: number }
   'building:demolished': { buildingId: string; slotIndex: number }
+  'slot:unlocked': { slotIndex: number }
   'perk:purchased': { perkId: string }
   'milestone:achieved': { milestoneId: string }
   'bankruptcy': { day: number }

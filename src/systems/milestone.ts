@@ -1,6 +1,8 @@
 import type { MilestoneDef, GameState } from '../engine/game-types'
 import { Requirements } from '../engine/requirements'
 import { Timeline } from './timeline'
+import type { AggregatedRates } from '../engine/effects'
+import { Effects } from '../engine/effects'
 
 export class Milestone {
   static readonly FIRST_BUILDING: MilestoneDef = {
@@ -9,6 +11,7 @@ export class Milestone {
     emoji: '🎉',
     description: 'Build your first attraction',
     condition: { type: 'building', id: 'carousel' },
+    reward: 50,
   }
 
   static readonly GUESTS_10: MilestoneDef = {
@@ -17,6 +20,7 @@ export class Milestone {
     emoji: '👥',
     description: 'Have 10 guests in your park',
     condition: { type: 'stat', statId: 'guests', min: 10 },
+    reward: 75,
   }
 
   static readonly GUESTS_50: MilestoneDef = {
@@ -25,6 +29,7 @@ export class Milestone {
     emoji: '🎊',
     description: 'Have 50 guests in your park',
     condition: { type: 'stat', statId: 'guests', min: 50 },
+    reward: 150,
   }
 
   static readonly GUESTS_100: MilestoneDef = {
@@ -33,6 +38,7 @@ export class Milestone {
     emoji: '🏆',
     description: 'Have 100 guests in your park',
     condition: { type: 'stat', statId: 'guests', min: 100 },
+    reward: 300,
   }
 
   static readonly DAY_10: MilestoneDef = {
@@ -41,6 +47,7 @@ export class Milestone {
     emoji: '📅',
     description: 'Survive 10 days',
     condition: { type: 'day', min: 10 },
+    reward: 100,
   }
 
   static readonly DAY_30: MilestoneDef = {
@@ -49,6 +56,7 @@ export class Milestone {
     emoji: '🎖️',
     description: 'Survive 30 days',
     condition: { type: 'day', min: 30 },
+    reward: 250,
   }
 
   static readonly MONEY_1000: MilestoneDef = {
@@ -57,6 +65,7 @@ export class Milestone {
     emoji: '💰',
     description: 'Accumulate $1000',
     condition: { type: 'stat', statId: 'money', min: 1000 },
+    reward: 200,
   }
 
   static readonly ALL: MilestoneDef[] = [
@@ -100,6 +109,34 @@ export class Milestone {
       case 'milestone':
       case 'perk':
         return Requirements.check(condition, state) ? 1 : 0
+    }
+  }
+
+  static estimateAchievedDay(
+    milestone: MilestoneDef,
+    startDay: number,
+    startStats: Record<string, number>,
+    rates: AggregatedRates,
+    endDay: number
+  ): number {
+    const { condition } = milestone
+
+    switch (condition.type) {
+      case 'day':
+        return Math.max(startDay, condition.min)
+      case 'stat': {
+        if (condition.min === undefined) return startDay
+        const currentValue = startStats[condition.statId] ?? 0
+        if (currentValue >= condition.min) return startDay
+        const rate = Effects.getFinalRate(condition.statId, rates)
+        if (rate <= 0) return endDay
+        const daysNeeded = (condition.min - currentValue) / rate
+        return Math.min(endDay, Math.floor(startDay + daysNeeded))
+      }
+      case 'building':
+      case 'milestone':
+      case 'perk':
+        return endDay
     }
   }
 }

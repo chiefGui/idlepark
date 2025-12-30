@@ -55,6 +55,7 @@ export type MilestoneDef = {
   emoji: string
   description: string
   condition: Requirement
+  reward: number
 }
 
 export type TimelineEntry = {
@@ -100,6 +101,7 @@ export class GameTypes {
   static readonly DEFAULT_TICKET_PRICE = 10
   static readonly MIN_TICKET_PRICE = 5
   static readonly MAX_TICKET_PRICE = 25
+  static readonly SLOT_UNLOCK_COSTS = [0, 0, 0, 100, 150, 200, 300, 500]
 
   static createInitialStats(): Record<StatId, number> {
     return {

@@ -1,4 +1,5 @@
 import type { SlotState, GameState } from '../engine/game-types'
+import { Perk } from './perk'
 
 export class Slot {
   static getEmpty(state: GameState): SlotState[] {
@@ -30,12 +31,38 @@ export class Slot {
     return this.hasEmptySlot(state)
   }
 
-  static unlockNext(slots: SlotState[]): SlotState[] {
-    const firstLocked = slots.find(s => s.locked)
-    if (!firstLocked) return slots
+  static getSlotPerksOwned(state: GameState): number {
+    return Perk.ALL.filter(
+      (p) => Perk.isSlotPerk(p) && state.ownedPerks.includes(p.id)
+    ).length
+  }
 
-    return slots.map(s =>
-      s.index === firstLocked.index ? { ...s, locked: false } : s
+  static getUnlockedBeyondInitial(state: GameState): number {
+    const initialUnlocked = 3
+    return state.slots.filter((s) => !s.locked).length - initialUnlocked
+  }
+
+  static canUnlock(slotIndex: number, state: GameState): boolean {
+    const slot = state.slots[slotIndex]
+    if (!slot || !slot.locked) return false
+
+    const perksOwned = this.getSlotPerksOwned(state)
+    const alreadyUnlocked = this.getUnlockedBeyondInitial(state)
+
+    return perksOwned > alreadyUnlocked
+  }
+
+  static getNextUnlockableSlot(state: GameState): SlotState | null {
+    const canUnlockAny =
+      this.getSlotPerksOwned(state) > this.getUnlockedBeyondInitial(state)
+    if (!canUnlockAny) return null
+
+    return state.slots.find((s) => s.locked) ?? null
+  }
+
+  static unlock(slots: SlotState[], slotIndex: number): SlotState[] {
+    return slots.map((s) =>
+      s.index === slotIndex ? { ...s, locked: false } : s
     )
   }
 
