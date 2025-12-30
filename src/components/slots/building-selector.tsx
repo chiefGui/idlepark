@@ -5,7 +5,18 @@ import { Building } from '../../systems/building'
 import { useGameStore } from '../../store/game-store'
 import { Requirements } from '../../engine/requirements'
 import { Format } from '../../utils/format'
-import type { BuildingCategory, BuildingDef } from '../../engine/game-types'
+import type { BuildingCategory, BuildingDef, StatId } from '../../engine/game-types'
+
+const STAT_LABELS: Record<StatId, string> = {
+  money: '$',
+  guests: 'guests',
+  entertainment: 'fun',
+  food: 'food',
+  comfort: 'comfort',
+  cleanliness: 'clean',
+  appeal: 'appeal',
+  satisfaction: 'happy',
+}
 
 type BuildingSelectorProps = {
   slotIndex: number
@@ -82,6 +93,9 @@ export function BuildingSelector({ slotIndex, onClose }: BuildingSelectorProps) 
               >
                 <span className="text-base">{cat.emoji}</span>
                 <div className="mt-0.5">{cat.label}</div>
+                {activeCategory === cat.id && (
+                  <div className="text-[9px] text-[var(--color-text-muted)] mt-0.5">{cat.hint}</div>
+                )}
               </button>
             ))}
           </div>
@@ -158,9 +172,9 @@ function BuildingCard({ building, canAfford, onBuild }: BuildingCardProps) {
         </div>
       </div>
 
-      {/* Effects chips - compact */}
+      {/* Effects chips - with labels */}
       <div className="flex flex-wrap gap-1 mb-2">
-        {building.effects.slice(0, 2).map((effect, i) => (
+        {building.effects.filter(e => e.statId !== 'money').slice(0, 2).map((effect, i) => (
           <span
             key={i}
             className={`
@@ -172,12 +186,12 @@ function BuildingCard({ building, canAfford, onBuild }: BuildingCardProps) {
               ${!canAfford ? 'opacity-60' : ''}
             `}
           >
-            {effect.perDay >= 0 ? '+' : ''}{effect.perDay}
+            {effect.perDay >= 0 ? '+' : ''}{effect.perDay} {STAT_LABELS[effect.statId]}
           </span>
         ))}
-        {building.effects.length > 2 && (
+        {building.effects.filter(e => e.statId !== 'money').length > 2 && (
           <span className="text-[10px] px-1.5 py-0.5 text-[var(--color-text-muted)]">
-            +{building.effects.length - 2}
+            +{building.effects.filter(e => e.statId !== 'money').length - 2}
           </span>
         )}
       </div>
