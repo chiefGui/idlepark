@@ -1,13 +1,14 @@
 import { useState, createContext, useContext, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronLeft, Trophy, Zap, BarChart3, RotateCcw, Settings } from 'lucide-react'
+import { X, ChevronLeft, Trophy, Zap, BarChart3, RotateCcw, Settings, BookOpen } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { MilestonesContent } from '../milestones/milestones-content'
 import { PerksContent } from '../perks/perks-content'
 import { AnalyticsContent } from '../analytics/analytics-content'
 import { ParkSettingsContent } from '../park/park-settings-content'
+import { TimelineContent } from '../timeline/timeline-content'
 
-type DrawerScreen = 'menu' | 'milestones' | 'perks' | 'analytics' | 'park'
+type DrawerScreen = 'menu' | 'milestones' | 'perks' | 'analytics' | 'park' | 'timeline'
 
 type DrawerContextType = {
   isOpen: boolean
@@ -40,6 +41,7 @@ export function DrawerProvider({ children }: DrawerProviderProps) {
 
 const MENU_ITEMS = [
   { id: 'park' as const, label: 'Park Settings', icon: Settings, description: 'Manage ticket prices' },
+  { id: 'timeline' as const, label: 'Timeline', icon: BookOpen, description: 'Your park\'s story' },
   { id: 'milestones' as const, label: 'Milestones', icon: Trophy, description: 'Track your achievements' },
   { id: 'perks' as const, label: 'Perks', icon: Zap, description: 'Upgrade your park' },
   { id: 'analytics' as const, label: 'Analytics', icon: BarChart3, description: 'View park statistics' },
@@ -144,6 +146,7 @@ function DrawerPanel() {
                     className="p-4"
                   >
                     {screen === 'park' && <ParkSettingsContent />}
+                    {screen === 'timeline' && <TimelineContent />}
                     {screen === 'milestones' && <MilestonesContent />}
                     {screen === 'perks' && <PerksContent />}
                     {screen === 'analytics' && <AnalyticsContent />}

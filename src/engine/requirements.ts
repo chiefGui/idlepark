@@ -12,7 +12,7 @@ export class Requirements {
       case 'day':
         return state.currentDay >= req.min
       case 'milestone':
-        return state.achievedMilestones.includes(req.id)
+        return state.timeline.some((e) => e.milestoneId === req.id)
       case 'perk':
         return state.ownedPerks.includes(req.id)
       case 'building': {

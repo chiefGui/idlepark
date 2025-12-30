@@ -9,6 +9,7 @@ import { Slot } from '../systems/slot'
 import { Guest } from '../systems/guest'
 import { Perk } from '../systems/perk'
 import { Milestone } from '../systems/milestone'
+import { Timeline } from '../systems/timeline'
 
 type GameActions = {
   tick: (deltaDay: number) => void
@@ -95,9 +96,9 @@ export const useGameStore = create<GameStoreState>()(
           }
 
           const newMilestones = Milestone.getNewlyAchieved(updatedState)
-          const achievedMilestones = [...state.achievedMilestones]
+          let timeline = state.timeline
           for (const milestone of newMilestones) {
-            achievedMilestones.push(milestone.id)
+            timeline = Timeline.addEntry(timeline, milestone.id, newDay)
             GameEvents.emit('milestone:achieved', { milestoneId: milestone.id })
           }
 
@@ -107,8 +108,8 @@ export const useGameStore = create<GameStoreState>()(
             lastTickTime: Date.now(),
             consecutiveNegativeDays,
             gameOver,
-            achievedMilestones,
-            rates: computeRates({ ...updatedState, achievedMilestones }),
+            timeline,
+            rates: computeRates({ ...updatedState, timeline }),
           })
 
           GameEvents.emit('tick', { deltaDay })
@@ -259,7 +260,7 @@ export const useGameStore = create<GameStoreState>()(
         stats: state.stats,
         slots: state.slots,
         ownedPerks: state.ownedPerks,
-        achievedMilestones: state.achievedMilestones,
+        timeline: state.timeline,
         currentDay: state.currentDay,
         lastTickTime: state.lastTickTime,
         consecutiveNegativeDays: state.consecutiveNegativeDays,

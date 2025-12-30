@@ -1,5 +1,6 @@
 import type { MilestoneDef, GameState } from '../engine/game-types'
 import { Requirements } from '../engine/requirements'
+import { Timeline } from './timeline'
 
 export class Milestone {
   static readonly FIRST_BUILDING: MilestoneDef = {
@@ -73,7 +74,7 @@ export class Milestone {
   }
 
   static isAchieved(milestone: MilestoneDef, state: GameState): boolean {
-    return state.achievedMilestones.includes(milestone.id)
+    return Timeline.hasAchievedMilestone(milestone.id, state)
   }
 
   static checkCondition(milestone: MilestoneDef, state: GameState): boolean {
