@@ -242,11 +242,11 @@ export class Building {
     Building.BENCH,
   ]
 
-  static readonly CATEGORIES: { id: BuildingCategory; label: string; emoji: string }[] = [
-    { id: 'rides', label: 'Rides', emoji: '🎢' },
-    { id: 'food', label: 'Food', emoji: '🍔' },
-    { id: 'facilities', label: 'Facilities', emoji: '🚻' },
-    { id: 'decor', label: 'Decor', emoji: '🌷' },
+  static readonly CATEGORIES: { id: BuildingCategory; label: string; emoji: string; hint: string }[] = [
+    { id: 'rides', label: 'Rides', emoji: '🎢', hint: 'Entertainment' },
+    { id: 'food', label: 'Food', emoji: '🍔', hint: 'Food & comfort' },
+    { id: 'facilities', label: 'Facilities', emoji: '🚻', hint: 'Comfort & satisfaction' },
+    { id: 'decor', label: 'Decor', emoji: '🌷', hint: 'Appeal & cleanliness' },
   ]
 
   static getById(id: string): BuildingDef | undefined {
@@ -254,7 +254,9 @@ export class Building {
   }
 
   static getByCategory(category: BuildingCategory): BuildingDef[] {
-    return this.ALL.filter(b => b.category === category)
+    return this.ALL
+      .filter(b => b.category === category)
+      .sort((a, b) => (a.costs[0]?.amount ?? 0) - (b.costs[0]?.amount ?? 0))
   }
 
   static canAfford(building: BuildingDef, state: GameState): boolean {
