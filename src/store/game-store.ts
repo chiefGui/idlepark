@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { GameState, Effect, TimelineEntry } from '../engine/game-types'
+import type { GameState, Effect } from '../engine/game-types'
 import { GameTypes } from '../engine/game-types'
 import { GameEvents } from '../engine/events'
 import { Effects, type AggregatedRates } from '../engine/effects'
@@ -256,7 +256,6 @@ export const useGameStore = create<GameStoreState>()(
     }),
     {
       name: 'idlepark-save',
-      version: 1,
       partialize: (state) => ({
         stats: state.stats,
         slots: state.slots,
@@ -268,19 +267,6 @@ export const useGameStore = create<GameStoreState>()(
         gameOver: state.gameOver,
         ticketPrice: state.ticketPrice,
       }),
-      migrate: (persisted, version) => {
-        const state = persisted as Record<string, unknown>
-        if (version === 0) {
-          const oldMilestones = (state.achievedMilestones ?? []) as string[]
-          const timeline: TimelineEntry[] = oldMilestones.map((id) => ({
-            milestoneId: id,
-            day: 1,
-          }))
-          delete state.achievedMilestones
-          state.timeline = timeline
-        }
-        return state as GameState
-      },
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.rates = computeRates(state)
