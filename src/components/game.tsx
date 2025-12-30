@@ -1,32 +1,37 @@
 import { useGameLoop } from '../hooks/use-game-loop'
+import { DrawerProvider, Drawer } from './ui/drawer'
+import { DrawerNav } from './ui/drawer-nav'
+import { DrawerContent } from './ui/drawer-content'
 import { Header } from './header/header'
-import { StatsPanel } from './stats/stats-panel'
+import { StatsBar } from './stats/stats-bar'
 import { SlotsPanel } from './slots/slots-panel'
-import { PerksPanel } from './perks/perks-panel'
-import { MilestonesPanel } from './milestones/milestones-panel'
 
 export function Game() {
   useGameLoop()
 
   return (
-    <div className="h-full flex flex-col">
-      <Header />
+    <DrawerProvider>
+      <div className="h-full flex flex-col bg-[var(--color-bg)]">
+        <Header />
+        <StatsBar />
 
-      <main className="flex-1 overflow-auto p-4">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 space-y-4">
+        <main className="flex-1 overflow-auto p-4">
+          <div className="max-w-lg mx-auto">
             <SlotsPanel />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <PerksPanel />
-              <MilestonesPanel />
+          </div>
+        </main>
+
+        <Drawer>
+          <div className="flex h-full">
+            <div className="w-48 border-r border-[var(--color-border)] bg-[var(--color-surface)]">
+              <DrawerNav />
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <DrawerContent />
             </div>
           </div>
-
-          <div className="space-y-4">
-            <StatsPanel />
-          </div>
-        </div>
-      </main>
-    </div>
+        </Drawer>
+      </div>
+    </DrawerProvider>
   )
 }

@@ -2,6 +2,8 @@ import { motion } from 'framer-motion'
 import { Lock, Plus, Trash2 } from 'lucide-react'
 import type { SlotState } from '../../engine/game-types'
 import { Building } from '../../systems/building'
+import { Perk } from '../../systems/perk'
+import { useGameStore } from '../../store/game-store'
 
 type SlotCardProps = {
   slot: SlotState
@@ -10,21 +12,30 @@ type SlotCardProps = {
 }
 
 export function SlotCard({ slot, onBuild, onDemolish }: SlotCardProps) {
+  const state = useGameStore()
   const building = slot.buildingId ? Building.getById(slot.buildingId) : null
 
   if (slot.locked) {
+    const ownedExpansions = state.ownedPerks.filter((p) => p.startsWith('extra_slot')).length
+    const nextExpansion = Perk.getById(`extra_slot_${ownedExpansions + 1}`)
+    const unlockHint = nextExpansion
+      ? `Buy "${nextExpansion.name}" perk`
+      : 'No more expansions'
+
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="
           aspect-square rounded-xl border-2 border-dashed border-[var(--color-border)]
-          flex flex-col items-center justify-center gap-2
-          bg-[var(--color-surface)]/50 opacity-50
+          flex flex-col items-center justify-center gap-1 p-2
+          bg-[var(--color-surface)]/50 opacity-60
         "
       >
-        <Lock size={24} className="text-[var(--color-text-muted)]" />
-        <span className="text-xs text-[var(--color-text-muted)]">Locked</span>
+        <Lock size={20} className="text-[var(--color-text-muted)]" />
+        <span className="text-[10px] text-[var(--color-text-muted)] text-center leading-tight">
+          {unlockHint}
+        </span>
       </motion.div>
     )
   }
@@ -34,17 +45,17 @@ export function SlotCard({ slot, onBuild, onDemolish }: SlotCardProps) {
       <motion.button
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        whileHover={{ scale: 1.02, borderColor: 'var(--color-accent)' }}
+        whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onClick={onBuild}
         className="
           aspect-square rounded-xl border-2 border-dashed border-[var(--color-border)]
           flex flex-col items-center justify-center gap-2
-          bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)]
+          bg-[var(--color-surface)] active:bg-[var(--color-surface-hover)]
           transition-colors cursor-pointer
         "
       >
-        <Plus size={24} className="text-[var(--color-text-muted)]" />
+        <Plus size={24} className="text-[var(--color-accent)]" />
         <span className="text-xs text-[var(--color-text-muted)]">Build</span>
       </motion.button>
     )
@@ -61,19 +72,18 @@ export function SlotCard({ slot, onBuild, onDemolish }: SlotCardProps) {
       "
     >
       <span className="text-3xl">{building.emoji}</span>
-      <span className="text-xs font-medium text-center px-2">{building.name}</span>
+      <span className="text-xs font-medium text-center px-2 leading-tight">{building.name}</span>
 
       <motion.button
-        initial={{ opacity: 0 }}
-        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
         onClick={onDemolish}
         className="
-          absolute top-2 right-2 p-1.5 rounded-lg
+          absolute top-1.5 right-1.5 p-1.5 rounded-lg
           bg-[var(--color-negative)]/20 text-[var(--color-negative)]
-          opacity-0 group-hover:opacity-100 transition-opacity
+          active:bg-[var(--color-negative)]/30
         "
       >
-        <Trash2 size={14} />
+        <Trash2 size={12} />
       </motion.button>
     </motion.div>
   )
