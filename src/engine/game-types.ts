@@ -8,6 +8,8 @@ export type StatId =
   | 'appeal'
   | 'satisfaction'
 
+export type BuildingCategory = 'rides' | 'food' | 'facilities' | 'decor'
+
 export type Effect = {
   statId: StatId
   perDay: number
@@ -31,6 +33,7 @@ export type BuildingDef = {
   name: string
   emoji: string
   description: string
+  category: BuildingCategory
   costs: Cost[]
   effects: Effect[]
   requirements: Requirement[]
@@ -69,6 +72,7 @@ export type GameState = {
   lastTickTime: number
   consecutiveNegativeDays: number
   gameOver: boolean
+  ticketPrice: number
 }
 
 export class GameTypes {
@@ -88,6 +92,9 @@ export class GameTypes {
   static readonly DAY_LENGTH_MS = 30000
   static readonly BANKRUPTCY_THRESHOLD_DAYS = 7
   static readonly STARTING_MONEY = 500
+  static readonly DEFAULT_TICKET_PRICE = 10
+  static readonly MIN_TICKET_PRICE = 5
+  static readonly MAX_TICKET_PRICE = 25
 
   static createInitialStats(): Record<StatId, number> {
     return {
@@ -120,6 +127,7 @@ export class GameTypes {
       lastTickTime: Date.now(),
       consecutiveNegativeDays: 0,
       gameOver: false as boolean,
+      ticketPrice: this.DEFAULT_TICKET_PRICE,
     }
   }
 }

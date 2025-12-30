@@ -1,9 +1,11 @@
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Lock } from 'lucide-react'
+import { X, Lock, Check } from 'lucide-react'
 import { Building } from '../../systems/building'
 import { useGameStore } from '../../store/game-store'
 import { Requirements } from '../../engine/requirements'
-import { Button } from '../ui/button'
+import { Format } from '../../utils/format'
+import type { BuildingCategory, BuildingDef } from '../../engine/game-types'
 
 type BuildingSelectorProps = {
   slotIndex: number
@@ -13,9 +15,19 @@ type BuildingSelectorProps = {
 export function BuildingSelector({ slotIndex, onClose }: BuildingSelectorProps) {
   const state = useGameStore()
   const buildAtSlot = useGameStore((s) => s.actions.buildAtSlot)
+  const [activeCategory, setActiveCategory] = useState<BuildingCategory>('rides')
 
-  const availableBuildings = Building.getAvailable(state)
-  const lockedBuildings = Building.ALL.filter((b) => !Building.isUnlocked(b, state))
+  const categoryBuildings = useMemo(() => {
+    return Building.getByCategory(activeCategory).map((building) => ({
+      building,
+      isUnlocked: Building.isUnlocked(building, state),
+      canAfford: Building.canAfford(building, state),
+      unmetReqs: Requirements.getUnmetRequirements(building.requirements, state),
+    }))
+  }, [activeCategory, state])
+
+  const unlockedBuildings = categoryBuildings.filter((b) => b.isUnlocked)
+  const lockedBuildings = categoryBuildings.filter((b) => !b.isUnlocked)
 
   const handleBuild = (buildingId: string) => {
     const success = buildAtSlot(buildingId, slotIndex)
@@ -43,8 +55,9 @@ export function BuildingSelector({ slotIndex, onClose }: BuildingSelectorProps) 
             flex flex-col
           "
         >
+          {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-[var(--color-border)]">
-            <h2 className="text-lg font-semibold">Select Building</h2>
+            <h2 className="text-lg font-semibold">Build</h2>
             <button
               onClick={onClose}
               className="p-2 active:bg-[var(--color-surface)] rounded-lg"
@@ -53,97 +66,163 @@ export function BuildingSelector({ slotIndex, onClose }: BuildingSelectorProps) 
             </button>
           </div>
 
-          <div className="flex-1 overflow-auto p-4 space-y-4">
-            {availableBuildings.length > 0 && (
-              <div className="space-y-2">
-                {availableBuildings.map((building) => {
-                  const canAfford = Building.canAfford(building, state)
-                  const cost = building.costs[0]
+          {/* Category Tabs */}
+          <div className="flex gap-1 p-2 bg-[var(--color-surface)] border-b border-[var(--color-border)]">
+            {Building.CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`
+                  flex-1 py-2 px-1 rounded-lg text-xs font-medium transition-all
+                  ${activeCategory === cat.id
+                    ? 'bg-[var(--color-bg)] shadow-sm'
+                    : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg)]/50'
+                  }
+                `}
+              >
+                <span className="text-base">{cat.emoji}</span>
+                <div className="mt-0.5">{cat.label}</div>
+              </button>
+            ))}
+          </div>
 
-                  return (
-                    <motion.div
-                      key={building.id}
-                      whileTap={{ scale: 0.98 }}
-                      className={`
-                        p-4 rounded-xl border border-[var(--color-border)]
-                        ${canAfford ? 'bg-[var(--color-surface)]' : 'bg-[var(--color-surface)]/50 opacity-60'}
-                      `}
-                    >
-                      <div className="flex items-start gap-3">
-                        <span className="text-3xl">{building.emoji}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium">{building.name}</div>
-                          <div className="text-xs text-[var(--color-text-muted)] mb-2">
-                            {building.description}
-                          </div>
-                          <div className="flex flex-wrap gap-2 text-xs mb-3">
-                            {building.effects.map((effect, i) => (
-                              <span
-                                key={i}
-                                className={`px-2 py-0.5 rounded-full ${
-                                  effect.perDay >= 0
-                                    ? 'bg-[var(--color-positive)]/20 text-[var(--color-positive)]'
-                                    : 'bg-[var(--color-negative)]/20 text-[var(--color-negative)]'
-                                }`}
-                              >
-                                {effect.perDay >= 0 ? '+' : ''}{effect.perDay} {effect.statId}
-                              </span>
-                            ))}
-                          </div>
-                          <Button
-                            variant={canAfford ? 'primary' : 'secondary'}
-                            disabled={!canAfford}
-                            onClick={() => handleBuild(building.id)}
-                            className="w-full"
-                          >
-                            {canAfford ? `Build for $${cost?.amount ?? 0}` : `Need $${cost?.amount ?? 0}`}
-                          </Button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )
-                })}
+          {/* Building Grid */}
+          <div className="flex-1 overflow-auto p-3">
+            {unlockedBuildings.length > 0 && (
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                {unlockedBuildings.map(({ building, canAfford }) => (
+                  <BuildingCard
+                    key={building.id}
+                    building={building}
+                    canAfford={canAfford}
+                    onBuild={() => handleBuild(building.id)}
+                  />
+                ))}
               </div>
             )}
 
             {lockedBuildings.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
-                  Locked
-                </h3>
-                <div className="space-y-2">
-                  {lockedBuildings.map((building) => {
-                    const unmetReqs = Requirements.getUnmetRequirements(building.requirements, state)
-
-                    return (
-                      <div
-                        key={building.id}
-                        className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/30 opacity-50"
-                      >
-                        <div className="flex items-start gap-3">
-                          <span className="text-3xl grayscale">{building.emoji}</span>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{building.name}</span>
-                              <Lock size={14} className="text-[var(--color-text-muted)]" />
-                            </div>
-                            <div className="text-xs text-[var(--color-text-muted)] mb-2">
-                              {building.description}
-                            </div>
-                            <div className="text-xs text-[var(--color-warning)]">
-                              Unlock: {unmetReqs.map((r) => Requirements.formatRequirement(r)).join(', ')}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
+              <>
+                {unlockedBuildings.length > 0 && (
+                  <div className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-2 px-1">
+                    Locked
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  {lockedBuildings.map(({ building, unmetReqs }) => (
+                    <LockedBuildingCard
+                      key={building.id}
+                      building={building}
+                      unlockReason={unmetReqs[0] ? Requirements.formatRequirement(unmetReqs[0]) : ''}
+                    />
+                  ))}
                 </div>
-              </div>
+              </>
             )}
           </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
+  )
+}
+
+type BuildingCardProps = {
+  building: BuildingDef
+  canAfford: boolean
+  onBuild: () => void
+}
+
+function BuildingCard({ building, canAfford, onBuild }: BuildingCardProps) {
+  const cost = building.costs[0]?.amount ?? 0
+
+  return (
+    <motion.button
+      whileTap={{ scale: 0.97 }}
+      onClick={onBuild}
+      disabled={!canAfford}
+      className={`
+        relative p-3 rounded-xl border text-left transition-all
+        ${canAfford
+          ? 'bg-[var(--color-surface)] border-[var(--color-border)] active:bg-[var(--color-surface-hover)]'
+          : 'bg-[var(--color-surface)]/50 border-[var(--color-border)]/50'
+        }
+      `}
+    >
+      {/* Emoji + Name row */}
+      <div className="flex items-center gap-2 mb-1">
+        <span className={`text-2xl ${!canAfford ? 'opacity-50' : ''}`}>{building.emoji}</span>
+        <div className="flex-1 min-w-0">
+          <div className={`font-medium text-sm truncate ${!canAfford ? 'text-[var(--color-text-muted)]' : ''}`}>
+            {building.name}
+          </div>
+        </div>
+      </div>
+
+      {/* Effects chips - compact */}
+      <div className="flex flex-wrap gap-1 mb-2">
+        {building.effects.slice(0, 2).map((effect, i) => (
+          <span
+            key={i}
+            className={`
+              text-[10px] px-1.5 py-0.5 rounded-full font-medium
+              ${effect.perDay >= 0
+                ? 'bg-[var(--color-positive)]/15 text-[var(--color-positive)]'
+                : 'bg-[var(--color-negative)]/15 text-[var(--color-negative)]'
+              }
+              ${!canAfford ? 'opacity-60' : ''}
+            `}
+          >
+            {effect.perDay >= 0 ? '+' : ''}{effect.perDay}
+          </span>
+        ))}
+        {building.effects.length > 2 && (
+          <span className="text-[10px] px-1.5 py-0.5 text-[var(--color-text-muted)]">
+            +{building.effects.length - 2}
+          </span>
+        )}
+      </div>
+
+      {/* Price tag */}
+      <div className={`
+        flex items-center justify-between text-xs
+        ${canAfford ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-muted)]'}
+      `}>
+        <span className="font-semibold">{Format.money(cost)}</span>
+        {canAfford && <Check size={14} />}
+      </div>
+    </motion.button>
+  )
+}
+
+type LockedBuildingCardProps = {
+  building: BuildingDef
+  unlockReason: string
+}
+
+function LockedBuildingCard({ building, unlockReason }: LockedBuildingCardProps) {
+  return (
+    <div className="relative p-3 rounded-xl border border-[var(--color-border)]/30 bg-[var(--color-surface)]/20">
+      {/* Locked badge */}
+      <div className="absolute top-2 right-2">
+        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--color-text-muted)]/20 text-[10px] text-[var(--color-text-muted)]">
+          <Lock size={10} />
+        </div>
+      </div>
+
+      {/* Emoji + Name */}
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-2xl grayscale opacity-40">{building.emoji}</span>
+        <div className="flex-1 min-w-0">
+          <div className="font-medium text-sm truncate text-[var(--color-text-muted)]/60">
+            {building.name}
+          </div>
+        </div>
+      </div>
+
+      {/* Unlock requirement */}
+      <div className="text-[10px] text-[var(--color-warning)] mt-2 truncate">
+        {unlockReason}
+      </div>
+    </div>
   )
 }

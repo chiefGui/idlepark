@@ -15,6 +15,7 @@ type GameActions = {
   buildAtSlot: (buildingId: string, slotIndex: number) => boolean
   demolishSlot: (slotIndex: number) => boolean
   purchasePerk: (perkId: string) => boolean
+  setTicketPrice: (price: number) => void
   reset: () => void
   calculateOfflineProgress: (lastTime: number) => void
 }
@@ -204,6 +205,20 @@ export const useGameStore = create<GameStoreState>()(
           return true
         },
 
+        setTicketPrice: (price: number) => {
+          const state = get()
+          const clampedPrice = Math.max(
+            GameTypes.MIN_TICKET_PRICE,
+            Math.min(GameTypes.MAX_TICKET_PRICE, price)
+          )
+          const newState = { ...state, ticketPrice: clampedPrice }
+
+          set({
+            ticketPrice: clampedPrice,
+            rates: computeRates(newState),
+          })
+        },
+
         reset: () => {
           const initial = GameTypes.createInitialState()
           set({
@@ -249,6 +264,7 @@ export const useGameStore = create<GameStoreState>()(
         lastTickTime: state.lastTickTime,
         consecutiveNegativeDays: state.consecutiveNegativeDays,
         gameOver: state.gameOver,
+        ticketPrice: state.ticketPrice,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

@@ -13,6 +13,7 @@ import {
 import type { StatId } from '../../engine/game-types'
 import { useGameStore } from '../../store/game-store'
 import { Effects } from '../../engine/effects'
+import { Format } from '../../utils/format'
 import { InfoModal } from '../ui/info-modal'
 
 type StatConfig = {
@@ -20,6 +21,7 @@ type StatConfig = {
   label: string
   color: string
   format: (value: number) => string
+  formatRate: (value: number) => string
   description: string
   tip: string
 }
@@ -29,7 +31,8 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
     icon: DollarSign,
     label: 'Money',
     color: '#22c55e',
-    format: (v) => `$${Math.floor(v).toLocaleString()}`,
+    format: Format.money,
+    formatRate: Format.rate,
     description: 'Your park\'s funds. Earned from guests, spent on buildings and upkeep.',
     tip: 'Keep it positive! 7 days in the red means bankruptcy.',
   },
@@ -37,7 +40,8 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
     icon: Users,
     label: 'Guests',
     color: '#6366f1',
-    format: (v) => Math.floor(v).toLocaleString(),
+    format: Format.guests,
+    formatRate: Format.rate,
     description: 'Visitors in your park. More guests = more income, but also more demand.',
     tip: 'Guests arrive based on your park\'s appeal.',
   },
@@ -45,7 +49,8 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
     icon: Sparkles,
     label: 'Fun',
     color: '#f472b6',
-    format: (v) => v.toFixed(1),
+    format: (v) => Format.millify(v, 1),
+    formatRate: Format.rate,
     description: 'How much fun your park provides. Guests consume entertainment.',
     tip: 'Build rides like Carousel or Roller Coaster to increase.',
   },
@@ -53,7 +58,8 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
     icon: UtensilsCrossed,
     label: 'Food',
     color: '#fb923c',
-    format: (v) => v.toFixed(1),
+    format: (v) => Format.millify(v, 1),
+    formatRate: Format.rate,
     description: 'Food availability. Hungry guests are unhappy guests!',
     tip: 'Build Food Stands or Ice Cream Shops.',
   },
@@ -61,7 +67,8 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
     icon: Sofa,
     label: 'Comfort',
     color: '#a78bfa',
-    format: (v) => v.toFixed(1),
+    format: (v) => Format.millify(v, 1),
+    formatRate: Format.rate,
     description: 'Guest comfort level. Includes restrooms and seating.',
     tip: 'Restrooms are essential for guest comfort.',
   },
@@ -69,7 +76,8 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
     icon: Sparkle,
     label: 'Clean',
     color: '#22d3ee',
-    format: (v) => `${Math.floor(v)}%`,
+    format: Format.percent,
+    formatRate: Format.rate,
     description: 'How clean your park is. Degrades as more guests visit.',
     tip: 'Place Trash Cans or buy the Cleaning Crew perk.',
   },
@@ -77,7 +85,8 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
     icon: Star,
     label: 'Appeal',
     color: '#fbbf24',
-    format: (v) => `${Math.floor(v)}%`,
+    format: Format.percent,
+    formatRate: Format.rate,
     description: 'How attractive your park is. Higher appeal = more guests.',
     tip: 'Improve satisfaction and add entertainment to boost appeal.',
   },
@@ -85,7 +94,8 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
     icon: Heart,
     label: 'Happy',
     color: '#f87171',
-    format: (v) => `${Math.floor(v)}%`,
+    format: Format.percent,
+    formatRate: Format.rate,
     description: 'How happy your guests are. Based on meeting their needs.',
     tip: 'Balance entertainment, food, comfort, and cleanliness.',
   },
@@ -158,7 +168,7 @@ export function StatsBar() {
                         className="text-[10px] leading-none"
                         style={{ color: rate > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
                       >
-                        {rate > 0 ? '+' : ''}{rate.toFixed(1)}
+                        {config.formatRate(rate)}
                       </span>
                     )}
                   </div>
@@ -190,7 +200,7 @@ export function StatsBar() {
                     className="text-sm"
                     style={{ color: selectedRate > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
                   >
-                    {selectedRate > 0 ? '+' : ''}{selectedRate.toFixed(1)}/day
+                    {selectedConfig.formatRate(selectedRate)}/day
                   </div>
                 )}
               </div>
