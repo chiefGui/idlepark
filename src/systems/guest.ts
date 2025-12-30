@@ -1,4 +1,5 @@
 import type { StatId, GameState, Effect } from '../engine/game-types'
+import { GameTypes } from '../engine/game-types'
 
 export type GuestDemand = {
   statId: StatId
@@ -7,7 +8,7 @@ export type GuestDemand = {
 
 export class Guest {
   static readonly BASE_ARRIVAL_RATE = 5
-  static readonly MONEY_PER_GUEST = 2
+  static readonly BASE_MONEY_PER_GUEST = 2
   static readonly APPEAL_BASELINE = 50
 
   static readonly DEMANDS: GuestDemand[] = [
@@ -16,13 +17,25 @@ export class Guest {
     { statId: 'comfort', perGuest: 0.2 },
   ]
 
-  static calculateArrivalRate(state: GameState): number {
-    const appealFactor = state.stats.appeal / this.APPEAL_BASELINE
-    return this.BASE_ARRIVAL_RATE * appealFactor
+  static getTicketPriceMultiplier(ticketPrice: number): number {
+    const basePrice = GameTypes.DEFAULT_TICKET_PRICE
+    return ticketPrice / basePrice
   }
 
-  static calculateIncome(guestCount: number): number {
-    return guestCount * this.MONEY_PER_GUEST
+  static getArrivalPenalty(ticketPrice: number): number {
+    const priceMultiplier = this.getTicketPriceMultiplier(ticketPrice)
+    return Math.max(0.3, 2 - priceMultiplier)
+  }
+
+  static calculateArrivalRate(state: GameState): number {
+    const appealFactor = state.stats.appeal / this.APPEAL_BASELINE
+    const arrivalPenalty = this.getArrivalPenalty(state.ticketPrice)
+    return this.BASE_ARRIVAL_RATE * appealFactor * arrivalPenalty
+  }
+
+  static calculateIncome(guestCount: number, ticketPrice: number): number {
+    const priceMultiplier = this.getTicketPriceMultiplier(ticketPrice)
+    return guestCount * this.BASE_MONEY_PER_GUEST * priceMultiplier
   }
 
   static calculateSatisfaction(state: GameState): number {
@@ -41,6 +54,11 @@ export class Guest {
     const cleanlinessBonus = (state.stats.cleanliness - 50) / 50
     satisfaction += cleanlinessBonus * 10
 
+    const priceMultiplier = this.getTicketPriceMultiplier(state.ticketPrice)
+    if (priceMultiplier > 1.5) {
+      satisfaction -= (priceMultiplier - 1.5) * 20
+    }
+
     return Math.max(0, Math.min(100, satisfaction))
   }
 
@@ -56,7 +74,7 @@ export class Guest {
 
   static getEffects(state: GameState): Effect[] {
     const arrivalRate = this.calculateArrivalRate(state)
-    const income = this.calculateIncome(state.stats.guests)
+    const income = this.calculateIncome(state.stats.guests, state.ticketPrice)
 
     const effects: Effect[] = [
       { statId: 'guests', perDay: arrivalRate },
