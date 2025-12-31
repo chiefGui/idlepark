@@ -21,7 +21,6 @@ type StatConfig = {
   label: string
   color: string
   format: (value: number) => string
-  formatRate: (value: number) => string
 }
 
 const STAT_CONFIG: Record<StatId, StatConfig> = {
@@ -30,69 +29,55 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
     label: 'Money',
     color: '#22c55e',
     format: Format.money,
-    formatRate: Format.rate,
   },
   guests: {
     icon: Users,
     label: 'Guests',
     color: '#6366f1',
     format: Format.guests,
-    formatRate: Format.rate,
   },
   entertainment: {
     icon: Sparkles,
     label: 'Fun',
     color: '#f472b6',
     format: (v) => Format.millify(v, 1),
-    formatRate: Format.rate,
   },
   food: {
     icon: UtensilsCrossed,
     label: 'Food',
     color: '#fb923c',
     format: (v) => Format.millify(v, 1),
-    formatRate: Format.rate,
   },
   comfort: {
     icon: Sofa,
     label: 'Comfort',
     color: '#a78bfa',
     format: (v) => Format.millify(v, 1),
-    formatRate: Format.rate,
   },
   cleanliness: {
     icon: Sparkle,
     label: 'Clean',
     color: '#22d3ee',
     format: Format.percent,
-    formatRate: Format.rate,
   },
   appeal: {
     icon: Star,
     label: 'Appeal',
     color: '#fbbf24',
     format: Format.percent,
-    formatRate: Format.rate,
   },
   satisfaction: {
     icon: Heart,
     label: 'Happy',
     color: '#f87171',
     format: Format.percent,
-    formatRate: Format.rate,
   },
 }
 
-const DISPLAY_ORDER: StatId[] = [
-  'money',
-  'guests',
-  'satisfaction',
-  'appeal',
-  'entertainment',
-  'food',
-  'comfort',
-  'cleanliness',
-]
+// Row 1: Key metrics (outcomes)
+// Row 2: Resources (inputs)
+const ROW_1: StatId[] = ['money', 'guests', 'satisfaction', 'appeal']
+const ROW_2: StatId[] = ['entertainment', 'food', 'comfort', 'cleanliness']
 
 export function StatsBar() {
   const stats = useGameStore((s) => s.stats)
@@ -101,51 +86,57 @@ export function StatsBar() {
 
   const selectedConfig = selectedStat ? STAT_CONFIG[selectedStat] : null
 
+  const renderStat = (statId: StatId, showRate: boolean) => {
+    const config = STAT_CONFIG[statId]
+    const Icon = config.icon
+    const value = stats[statId]
+    const rate = rates[statId]
+
+    return (
+      <motion.button
+        key={statId}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setSelectedStat(statId)}
+        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] active:bg-[var(--color-surface-hover)] transition-colors min-w-0"
+      >
+        <div
+          className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: `${config.color}20` }}
+        >
+          <Icon size={12} style={{ color: config.color }} />
+        </div>
+        <div className="flex flex-col min-w-0 text-left">
+          <span className="text-[9px] text-[var(--color-text-muted)] leading-none truncate">
+            {config.label}
+          </span>
+          <div className="flex items-baseline gap-0.5">
+            <span className="text-xs font-semibold leading-tight truncate">
+              {config.format(value)}
+            </span>
+            {showRate && rate !== 0 && (
+              <span
+                className="text-[9px] leading-none flex-shrink-0"
+                style={{ color: rate > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
+              >
+                {rate > 0 ? '+' : ''}{rate.toFixed(1)}
+              </span>
+            )}
+          </div>
+        </div>
+      </motion.button>
+    )
+  }
+
   return (
     <>
-      <div className="overflow-x-auto scrollbar-hide">
-        <div className="flex gap-2 px-4 py-3 min-w-max">
-          {DISPLAY_ORDER.map((statId) => {
-            const config = STAT_CONFIG[statId]
-            const Icon = config.icon
-            const value = stats[statId]
-            const rate = rates[statId]
-            const showRate = ['money', 'guests'].includes(statId) && rate !== 0
-
-            return (
-              <motion.button
-                key={statId}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setSelectedStat(statId)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] min-w-fit active:bg-[var(--color-surface-hover)] transition-colors"
-              >
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: `${config.color}20` }}
-                >
-                  <Icon size={14} style={{ color: config.color }} />
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-[10px] text-[var(--color-text-muted)] leading-none">
-                    {config.label}
-                  </span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-sm font-semibold leading-tight">
-                      {config.format(value)}
-                    </span>
-                    {showRate && (
-                      <span
-                        className="text-[10px] leading-none"
-                        style={{ color: rate > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
-                      >
-                        {config.formatRate(rate)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </motion.button>
-            )
-          })}
+      <div className="px-3 py-2 space-y-1.5">
+        {/* Row 1: Key metrics */}
+        <div className="grid grid-cols-4 gap-1.5">
+          {ROW_1.map((statId) => renderStat(statId, statId === 'money' || statId === 'guests'))}
+        </div>
+        {/* Row 2: Resources */}
+        <div className="grid grid-cols-4 gap-1.5">
+          {ROW_2.map((statId) => renderStat(statId, false))}
         </div>
       </div>
 
