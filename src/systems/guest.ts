@@ -70,8 +70,9 @@ export class Guest {
   }
 
   static calculateAppeal(state: GameState): number {
-    // Appeal is primarily driven by what the park offers (entertainment)
-    // An empty park has very low appeal - why would anyone come?
+    // No entertainment = no appeal. Why visit an empty park?
+    if (state.stats.entertainment <= 0) return 0
+
     const entertainmentBase = Math.min(50, state.stats.entertainment / 2)
     const satisfactionBonus = (state.stats.satisfaction / 100) * 30
     const cleanlinessBonus = Math.max(-10, (state.stats.cleanliness - 50) / 5)
