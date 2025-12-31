@@ -383,9 +383,6 @@ export const useGameStore = create<GameStoreState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          // Handle missing fields for backwards compatibility
-          if (!state.dailyRecords) state.dailyRecords = []
-          if (!state.financials) state.financials = GameTypes.createInitialFinancials()
           state.rates = computeRates(state)
           state.actions.calculateOfflineProgress(state.lastTickTime)
           GameEvents.emit('game:loaded', undefined)
