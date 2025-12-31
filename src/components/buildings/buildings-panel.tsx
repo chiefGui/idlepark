@@ -209,12 +209,6 @@ function CategorySection({
                 )}
               </div>
 
-              {/* Empty state when no buildings and no slots */}
-              {buildingsInCategory.length === 0 && !hasEmptySlot && (
-                <div className="text-center py-4 text-sm text-[var(--color-text-muted)]">
-                  No buildings yet
-                </div>
-              )}
             </div>
           </motion.div>
         )}
