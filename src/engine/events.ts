@@ -14,6 +14,8 @@ type GameEventMap = {
   'feed:new': { entry: FeedEntry }
   'game:reset': undefined
   'game:loaded': undefined
+  'happening:started': { happeningId: string }
+  'happening:ended': { happeningId: string }
 }
 
 const emitter = mitt<GameEventMap>()
