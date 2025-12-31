@@ -9,7 +9,7 @@ export type NotificationType =
   | 'low_cleanliness'
   | 'unhappy_guests'
 
-export type NotificationAction = 'perks' | 'guests' | 'cleanliness'
+export type NotificationAction = 'perks'
 
 export type Notification = {
   id: NotificationType
@@ -49,8 +49,6 @@ export class Notifications {
       notifications.push({
         id: 'capacity_full',
         message: 'Park at capacity! Build lodging to welcome more guests.',
-        action: 'guests',
-        actionLabel: 'View Details',
       })
     }
 
@@ -59,8 +57,6 @@ export class Notifications {
       notifications.push({
         id: 'low_cleanliness',
         message: 'Park is getting dirty! Guests are unhappy.',
-        action: 'cleanliness',
-        actionLabel: 'View Details',
       })
     }
 
@@ -74,8 +70,6 @@ export class Notifications {
       notifications.push({
         id: 'unhappy_guests',
         message: `${unhappyCount} guests are unhappy and may leave.`,
-        action: 'guests',
-        actionLabel: 'View Details',
       })
     }
 

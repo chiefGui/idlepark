@@ -197,15 +197,18 @@ export class Guest {
     const supplyDemandScore = this.calculateSupplyDemandScore(state)
     const supplyDemandBonus = (supplyDemandScore / 100) * 25
 
-    // Cleanliness bonus/penalty (max ±15 points)
+    // Cleanliness bonus/penalty - asymmetric: dirty hurts more than clean helps
+    // 100% = +10, 50% = 0, 25% = -25, 0% = -45
     const cleanliness = state.stats.cleanliness
     let cleanlinessBonus = 0
-    if (cleanliness < 50) {
-      // Dirty parks get penalized
-      cleanlinessBonus = -((50 - cleanliness) / 50) * 15
+    if (cleanliness >= 50) {
+      // Clean parks get small bonus (max +10)
+      cleanlinessBonus = ((cleanliness - 50) / 50) * 10
     } else {
-      // Clean parks get bonus
-      cleanlinessBonus = ((cleanliness - 50) / 50) * 15
+      // Dirty parks get escalating penalty (max -45)
+      // Uses quadratic scaling for arcade feel - gets worse fast below 25%
+      const dirtiness = (50 - cleanliness) / 50 // 0 at 50%, 1 at 0%
+      cleanlinessBonus = -(dirtiness * dirtiness * 25 + dirtiness * 20)
     }
 
     // Price fairness bonus/penalty (max ±10 points)
@@ -235,6 +238,12 @@ export class Guest {
     const activeConsequences = this.getActiveConsequences(state)
     for (const consequence of activeConsequences) {
       appeal = Math.min(appeal, consequence.appealCap)
+    }
+
+    // Critical cleanliness cap - filthy parks guarantee unhappy guests
+    // Below 20% cleanliness caps appeal at 25 (below UNHAPPY_THRESHOLD of 30)
+    if (cleanliness < 20) {
+      appeal = Math.min(appeal, 25)
     }
 
     return Math.max(0, Math.min(100, appeal))

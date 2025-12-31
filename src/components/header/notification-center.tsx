@@ -7,8 +7,6 @@ import { useDrawerNavigation, type DrawerScreen } from '../ui/drawer'
 
 const ACTION_TO_SCREEN: Record<NotificationAction, DrawerScreen> = {
   perks: 'perks',
-  guests: 'guests',
-  cleanliness: 'cleanliness',
 }
 
 export function NotificationCenter() {
