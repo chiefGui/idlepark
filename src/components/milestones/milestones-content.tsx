@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Check } from 'lucide-react'
+import { Check, Coins } from 'lucide-react'
 import { Milestone } from '../../systems/milestone'
 import { useGameStore } from '../../store/game-store'
 import { Requirements } from '../../engine/requirements'
@@ -35,8 +35,14 @@ export function MilestonesContent() {
                       <div className="text-sm text-[var(--color-text-muted)] mb-2">
                         {milestone.description}
                       </div>
-                      <div className="text-xs text-[var(--color-accent)]">
-                        {Requirements.formatRequirement(milestone.condition)}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-xs text-[var(--color-accent)]">
+                          {Requirements.formatRequirement(milestone.condition)}
+                        </div>
+                        <div className="flex items-center gap-1 text-xs font-medium text-[var(--color-positive)]">
+                          <Coins size={12} />
+                          <span>+${milestone.reward}</span>
+                        </div>
                       </div>
                     </div>
                     <span className="text-sm font-medium text-[var(--color-text-muted)]">
@@ -75,8 +81,14 @@ export function MilestonesContent() {
                   <span className="text-2xl">{milestone.emoji}</span>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium">{milestone.name}</div>
-                    <div className="text-sm text-[var(--color-text-muted)]">
-                      {milestone.description}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-sm text-[var(--color-text-muted)]">
+                        {milestone.description}
+                      </div>
+                      <div className="flex items-center gap-1 text-xs font-medium text-[var(--color-positive)]">
+                        <Coins size={12} />
+                        <span>+${milestone.reward}</span>
+                      </div>
                     </div>
                   </div>
                   <Check size={20} className="text-[var(--color-positive)]" />
