@@ -109,8 +109,9 @@ function getWarning(statId: StatId, state: GameState): string | null {
   if (statId === 'money' && state.stats.money < 0) {
     return "You're in debt! 7 days to recover or it's game over."
   }
-  if (statId === 'guests' && breakdown.unhappy > 0) {
-    return `${Math.floor(breakdown.unhappy)} unhappy guest${breakdown.unhappy >= 2 ? 's' : ''} may leave at day's end.`
+  if (statId === 'guests' && Math.floor(breakdown.unhappy) >= 1) {
+    const count = Math.floor(breakdown.unhappy)
+    return `${count} unhappy guest${count >= 2 ? 's' : ''} may leave at day's end.`
   }
   if (statId === 'satisfaction' && state.stats.satisfaction < 40) {
     return "Guests are becoming unhappy. Improve their experience!"
