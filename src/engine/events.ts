@@ -3,7 +3,7 @@ import type { FeedEntry } from './game-types'
 
 export type MoneyPopupReason = 'building' | 'perk' | 'milestone' | 'demolish'
 
-type GameEventMap = {
+export type GameEventMap = {
   'tick': { deltaDay: number }
   'day:changed': { day: number }
   'building:built': { buildingId: string; slotIndex: number }
