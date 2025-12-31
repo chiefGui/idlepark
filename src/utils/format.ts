@@ -1,3 +1,19 @@
+import type { StatId } from '../engine/game-types'
+
+/**
+ * Short labels for stats - used in compact displays like effect chips.
+ */
+const STAT_LABELS: Record<StatId | 'capacity', string> = {
+  money: '$',
+  guests: 'guests',
+  entertainment: 'fun',
+  food: 'food',
+  comfort: 'comfort',
+  cleanliness: 'clean',
+  appeal: 'appeal',
+  capacity: 'capacity',
+}
+
 /**
  * Centralized formatting utilities for consistent display across the app.
  * All methods return clean, integer-based values (no decimals).
@@ -85,5 +101,21 @@ export class Format {
   // Legacy alias for backwards compatibility during migration
   static millify(value: number, _decimals = 0): string {
     return Format.number(value)
+  }
+
+  /**
+   * Get short label for a stat ID.
+   */
+  static statLabel(statId: StatId | 'capacity'): string {
+    return STAT_LABELS[statId] ?? statId
+  }
+
+  /**
+   * Format an effect value with sign and label.
+   * e.g., "+5 fun", "-2 $", "+20 capacity"
+   */
+  static effect(value: number, statId: StatId | 'capacity'): string {
+    const sign = value >= 0 ? '+' : ''
+    return `${sign}${value} ${Format.statLabel(statId)}`
   }
 }
