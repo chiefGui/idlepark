@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, Plus, Lock } from 'lucide-react'
-import type { BuildingCategory, SlotState, StatId } from '../../engine/game-types'
+import type { BuildingCategory, SlotState } from '../../engine/game-types'
 import { useGameStore } from '../../store/game-store'
 import { Building } from '../../systems/building'
 import { Slot } from '../../systems/slot'
@@ -9,46 +9,6 @@ import { Perk } from '../../systems/perk'
 import { GameTypes } from '../../engine/game-types'
 import { BuildingSelector } from '../slots/building-selector'
 import { BuildingDetails } from '../slots/building-details'
-
-type CategoryStats = {
-  produces: { statId: StatId; amount: number }[]
-  consumes: { statId: StatId; amount: number }[]
-}
-
-function getCategoryStats(category: BuildingCategory, slots: SlotState[]): CategoryStats {
-  const produces: Map<StatId, number> = new Map()
-  const consumes: Map<StatId, number> = new Map()
-
-  for (const slot of slots) {
-    if (!slot.buildingId) continue
-    const building = Building.getById(slot.buildingId)
-    if (!building || building.category !== category) continue
-
-    for (const effect of building.effects) {
-      if (effect.perDay > 0) {
-        produces.set(effect.statId, (produces.get(effect.statId) ?? 0) + effect.perDay)
-      } else if (effect.perDay < 0) {
-        consumes.set(effect.statId, (consumes.get(effect.statId) ?? 0) + Math.abs(effect.perDay))
-      }
-    }
-  }
-
-  return {
-    produces: Array.from(produces.entries()).map(([statId, amount]) => ({ statId, amount })),
-    consumes: Array.from(consumes.entries()).map(([statId, amount]) => ({ statId, amount })),
-  }
-}
-
-const STAT_LABELS: Record<StatId, string> = {
-  money: '$',
-  guests: 'guests',
-  entertainment: 'fun',
-  food: 'food',
-  comfort: 'comfort',
-  cleanliness: 'clean',
-  appeal: 'appeal',
-  satisfaction: 'happy',
-}
 
 export function BuildingsPanel() {
   const slots = useGameStore((s) => s.slots)
@@ -137,11 +97,6 @@ function CategorySection({
   const state = useGameStore()
   const unlockSlot = useGameStore((s) => s.actions.unlockSlot)
 
-  const categoryStats = useMemo(
-    () => getCategoryStats(category.id, slots),
-    [category.id, slots]
-  )
-
   const buildingsInCategory = useMemo(() => {
     return slots
       .filter((slot) => {
@@ -178,7 +133,7 @@ function CategorySection({
       layout
       className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden"
     >
-      {/* Header */}
+      {/* Header - Clean and simple */}
       <motion.button
         layout="position"
         onClick={onToggle}
@@ -188,31 +143,10 @@ function CategorySection({
         <div className="flex-1 text-left">
           <div className="font-semibold">{category.label}</div>
           <div className="text-xs text-[var(--color-text-muted)]">
-            {buildingsInCategory.length} built
+            {buildingsInCategory.length === 0
+              ? category.hint
+              : `${buildingsInCategory.length} built`}
           </div>
-        </div>
-
-        {/* Stat chips */}
-        <div className="flex gap-1 mr-2">
-          {categoryStats.produces.slice(0, 2).map(({ statId, amount }) => (
-            <span
-              key={statId}
-              className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--color-positive)]/15 text-[var(--color-positive)] font-medium"
-            >
-              +{Math.floor(amount)} {STAT_LABELS[statId]}
-            </span>
-          ))}
-          {categoryStats.consumes
-            .filter((c) => c.statId === 'money')
-            .slice(0, 1)
-            .map(({ statId, amount }) => (
-              <span
-                key={statId}
-                className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--color-negative)]/15 text-[var(--color-negative)] font-medium"
-              >
-                -{Math.floor(amount)}{STAT_LABELS[statId]}
-              </span>
-            ))}
         </div>
 
         <motion.div
