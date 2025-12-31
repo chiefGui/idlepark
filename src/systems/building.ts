@@ -177,6 +177,50 @@ export class Building {
     requirements: [],
   }
 
+  static readonly CLEANING_CART: BuildingDef = {
+    id: 'cleaning_cart',
+    name: 'Cleaning Cart',
+    emoji: '🛒',
+    description: 'Mobile supplies for on-the-go tidying',
+    category: 'facilities',
+    costs: [{ statId: 'money', amount: 120 }],
+    effects: [
+      { statId: 'money', perDay: -3 },
+      { statId: 'cleanliness', perDay: 12 },
+    ],
+    requirements: [{ type: 'perk', id: 'spotless_park' }],
+  }
+
+  static readonly JANITOR_QUARTERS: BuildingDef = {
+    id: 'janitor_quarters',
+    name: 'Janitor Quarters',
+    emoji: '🏠',
+    description: 'Home base for your dedicated cleaning crew',
+    category: 'facilities',
+    costs: [{ statId: 'money', amount: 350 }],
+    effects: [
+      { statId: 'money', perDay: -8 },
+      { statId: 'cleanliness', perDay: 25 },
+      { statId: 'comfort', perDay: 5 },
+    ],
+    requirements: [{ type: 'perk', id: 'spotless_park' }],
+  }
+
+  static readonly RECYCLING_CENTER: BuildingDef = {
+    id: 'recycling_center',
+    name: 'Recycling Center',
+    emoji: '♻️',
+    description: 'Eco-friendly waste management that guests love',
+    category: 'facilities',
+    costs: [{ statId: 'money', amount: 800 }],
+    effects: [
+      { statId: 'money', perDay: -15 },
+      { statId: 'cleanliness', perDay: 40 },
+      { statId: 'appeal', perDay: 8 },
+    ],
+    requirements: [{ type: 'perk', id: 'spotless_park' }],
+  }
+
   // === DECOR ===
   static readonly FOUNTAIN: BuildingDef = {
     id: 'fountain',
@@ -237,6 +281,9 @@ export class Building {
     Building.FIRST_AID,
     Building.INFO_BOOTH,
     Building.TRASH_CAN,
+    Building.CLEANING_CART,
+    Building.JANITOR_QUARTERS,
+    Building.RECYCLING_CENTER,
     // Decor
     Building.FOUNTAIN,
     Building.GARDEN,
