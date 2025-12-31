@@ -191,13 +191,18 @@ export class Guest {
 
   /**
    * Calculate appeal - the single metric for park quality.
-   * Combines: entertainment, cleanliness, supply/demand balance, price fairness, and guest mood.
+   * Combines: entertainment, beauty, cleanliness, supply/demand balance, price fairness, and guest mood.
    */
   static calculateAppeal(state: GameState): number {
     if (state.stats.entertainment <= 0) return 0
 
     // Base from entertainment (max 40 points)
     const entertainmentBase = Math.min(40, state.stats.entertainment / 2.5)
+
+    // Beauty bonus (max 15 points)
+    // Beauty makes the park more attractive and inviting
+    const beauty = state.stats.beauty
+    const beautyBonus = (beauty / 100) * 15
 
     // Supply/demand balance bonus (max 25 points)
     const supplyDemandScore = this.calculateSupplyDemandScore(state)
@@ -238,7 +243,7 @@ export class Guest {
       moodBonus = happyRatio * this.HAPPY_APPEAL_BONUS + unhappyRatio * this.UNHAPPY_APPEAL_PENALTY
     }
 
-    let appeal = entertainmentBase + supplyDemandBonus + cleanlinessBonus + priceBonus + moodBonus
+    let appeal = entertainmentBase + beautyBonus + supplyDemandBonus + cleanlinessBonus + priceBonus + moodBonus
 
     // Apply supply consequence caps - critical undersupply limits max appeal
     const activeConsequences = this.getActiveConsequences(state)

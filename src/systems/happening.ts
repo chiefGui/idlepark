@@ -36,6 +36,16 @@ const HAPPENINGS: HappeningDef[] = [
       { stat: 'money', increased: 30 }, // +30% income
     ],
   },
+  {
+    id: 'garden_show',
+    name: 'Garden Show',
+    emoji: '🌻',
+    description: 'A prestigious garden show transforms your park into a floral wonderland!',
+    type: 'positive',
+    modifiers: [
+      { stat: 'beauty', flat: 20 }, // +20 beauty
+    ],
+  },
 
   // === NEGATIVE HAPPENINGS ===
   {
@@ -66,6 +76,16 @@ const HAPPENINGS: HappeningDef[] = [
     type: 'negative',
     modifiers: [
       { stat: 'money', more: 0.75 }, // -25% income
+    ],
+  },
+  {
+    id: 'vandalism_spree',
+    name: 'Vandalism Spree',
+    emoji: '🎨',
+    description: 'Troublemakers are defacing decorations and damaging landscaping.',
+    type: 'negative',
+    modifiers: [
+      { stat: 'beauty', flat: -15 }, // -15 beauty
     ],
   },
 ]
@@ -136,6 +156,26 @@ const HAPPENING_FLAVOR: Record<string, HappeningFlavorText> = {
     ended: {
       title: 'Economy recovering',
       description: 'The economic situation is improving. Wallets are opening up again!',
+    },
+  },
+  garden_show: {
+    started: {
+      title: 'Garden Show begins!',
+      description: 'Expert landscapers have transformed the park with stunning floral displays!',
+    },
+    ended: {
+      title: 'Garden Show concludes',
+      description: 'The garden show has ended, but visitors still talk about those beautiful flowers.',
+    },
+  },
+  vandalism_spree: {
+    started: {
+      title: 'Vandals strike!',
+      description: 'Troublemakers are spray-painting benches and trampling flower beds.',
+    },
+    ended: {
+      title: 'Vandals caught',
+      description: 'Security has apprehended the troublemakers. Time to repair the damage.',
     },
   },
 }

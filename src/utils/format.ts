@@ -10,6 +10,7 @@ const STAT_LABELS: Record<StatId | 'capacity', string> = {
   food: 'food',
   comfort: 'comfort',
   cleanliness: 'clean',
+  beauty: 'beauty',
   appeal: 'appeal',
   capacity: 'capacity',
 }
