@@ -19,6 +19,8 @@ const EVENT_EMOJI: Record<FeedEventType, string> = {
   financial_success: '📈',
   financial_warning: '📉',
   ambient: '💭',
+  happening_started: '🎪',
+  happening_ended: '🎬',
 }
 
 function FeedEntryCard({ entry, index }: { entry: FeedEntry; index: number }) {

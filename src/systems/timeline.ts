@@ -1,5 +1,6 @@
-import type { TimelineEntry, GameState } from '../engine/game-types'
+import type { TimelineEntry, GameState, MilestoneTimelineEntry, HappeningTimelineEntry } from '../engine/game-types'
 import { Milestone } from './milestone'
+import { Happening } from './happening'
 
 type FlavorText = {
   title: string
@@ -38,13 +39,18 @@ const MILESTONE_FLAVOR: Record<string, FlavorText> = {
 }
 
 export class Timeline {
-  static getFlavorText(milestoneId: string): FlavorText {
-    return (
-      MILESTONE_FLAVOR[milestoneId] ?? {
-        title: 'A new achievement',
-        description: 'Another milestone in our park\'s story.',
-      }
-    )
+  static getFlavorText(entry: TimelineEntry): FlavorText {
+    if (entry.type === 'milestone') {
+      return (
+        MILESTONE_FLAVOR[entry.milestoneId] ?? {
+          title: 'A new achievement',
+          description: 'Another milestone in our park\'s story.',
+        }
+      )
+    } else {
+      const event = entry.type === 'happening_started' ? 'started' : 'ended'
+      return Happening.getFlavorText(entry.happeningId, event)
+    }
   }
 
   static getEntries(state: GameState): TimelineEntry[] {
@@ -65,19 +71,40 @@ export class Timeline {
     return { entries, hasMore }
   }
 
-  static getMilestoneForEntry(entry: TimelineEntry) {
+  static getMilestoneForEntry(entry: MilestoneTimelineEntry) {
     return Milestone.getById(entry.milestoneId)
   }
 
-  static hasAchievedMilestone(milestoneId: string, state: GameState): boolean {
-    return state.timeline.some((e) => e.milestoneId === milestoneId)
+  static getHappeningForEntry(entry: HappeningTimelineEntry) {
+    return Happening.getById(entry.happeningId)
   }
 
+  static hasAchievedMilestone(milestoneId: string, state: GameState): boolean {
+    return state.timeline.some((e) => e.type === 'milestone' && e.milestoneId === milestoneId)
+  }
+
+  static addMilestoneEntry(
+    timeline: TimelineEntry[],
+    milestoneId: string,
+    day: number
+  ): TimelineEntry[] {
+    return [...timeline, { type: 'milestone' as const, milestoneId, day: Math.floor(day) }]
+  }
+
+  // Legacy support - maps to addMilestoneEntry
   static addEntry(
     timeline: TimelineEntry[],
     milestoneId: string,
     day: number
   ): TimelineEntry[] {
-    return [...timeline, { milestoneId, day: Math.floor(day) }]
+    return this.addMilestoneEntry(timeline, milestoneId, day)
+  }
+
+  static isMilestoneEntry(entry: TimelineEntry): entry is MilestoneTimelineEntry {
+    return entry.type === 'milestone'
+  }
+
+  static isHappeningEntry(entry: TimelineEntry): entry is HappeningTimelineEntry {
+    return entry.type === 'happening_started' || entry.type === 'happening_ended'
   }
 }
