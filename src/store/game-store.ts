@@ -93,9 +93,10 @@ export const useGameStore = create<GameStoreState>()(
           // Process guest tier system
           let guestBreakdown = state.guestBreakdown
 
-          // 1. Process arrivals (new guests start as neutral)
+          // 1. Process arrivals (new guests start as neutral, respects capacity)
           const arrivalRate = Guest.calculateArrivalRate(state)
-          guestBreakdown = Guest.processArrivals(guestBreakdown, arrivalRate, deltaDay)
+          const capacity = Guest.getCapacity(state)
+          guestBreakdown = Guest.processArrivals(guestBreakdown, arrivalRate, deltaDay, capacity)
 
           // 2. Process tier transitions based on appeal
           const currentAppeal = Guest.calculateAppeal(state)
