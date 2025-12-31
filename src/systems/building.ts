@@ -1,4 +1,4 @@
-import type { BuildingDef, BuildingCategory, Cost, GameState } from '../engine/game-types'
+import type { BuildingDef, BuildingCategory, Cost, GameState, StatId } from '../engine/game-types'
 import { Requirements } from '../engine/requirements'
 import type { Modifier } from '../engine/modifiers'
 
@@ -487,4 +487,34 @@ export class Building {
     }
     return total
   }
+
+  /**
+   * Get all displayable effects for a building.
+   * Includes stat effects + capacity bonus for lodging.
+   * Returns unified format: { statId, value, isPositive }
+   */
+  static getDisplayEffects(building: BuildingDef): DisplayEffect[] {
+    const effects: DisplayEffect[] = building.effects.map(e => ({
+      statId: e.statId,
+      value: e.perDay,
+      isPositive: e.perDay >= 0,
+    }))
+
+    // Add capacity bonus for lodging buildings
+    if (this.isLodging(building)) {
+      effects.push({
+        statId: 'capacity',
+        value: building.capacityBonus,
+        isPositive: true,
+      })
+    }
+
+    return effects
+  }
+}
+
+export type DisplayEffect = {
+  statId: StatId | 'capacity'
+  value: number
+  isPositive: boolean
 }
