@@ -54,7 +54,6 @@ export type MilestoneDef = {
   emoji: string
   description: string
   condition: Requirement
-  reward: number
 }
 
 export type MilestoneTimelineEntry = {

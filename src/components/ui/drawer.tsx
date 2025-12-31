@@ -1,8 +1,7 @@
 import { useState, createContext, useContext, useEffect, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronLeft, Trophy, Zap, BarChart3, RotateCcw, Building2, BookOpen, MessageCircle } from 'lucide-react'
+import { X, ChevronLeft, Zap, BarChart3, RotateCcw, Building2, BookOpen, MessageCircle } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
-import { MilestonesContent } from '../milestones/milestones-content'
 import { PerksContent } from '../perks/perks-content'
 import { AnalyticsContent } from '../analytics/analytics-content'
 import { ParkSettingsContent } from '../park/park-settings-content'
@@ -10,7 +9,7 @@ import { TimelineContent } from '../timeline/timeline-content'
 import { FeedContent } from '../feed/feed-content'
 import { Drawer, type DrawerStore } from './primitives'
 
-type DrawerScreen = 'menu' | 'milestones' | 'perks' | 'analytics' | 'park' | 'timeline' | 'feed'
+type DrawerScreen = 'menu' | 'perks' | 'analytics' | 'park' | 'timeline' | 'feed'
 
 const DrawerStoreContext = createContext<DrawerStore | null>(null)
 
@@ -41,7 +40,6 @@ const MENU_ITEMS = [
   { id: 'park' as const, label: 'HQ', icon: Building2, description: 'Manage your park' },
   { id: 'perks' as const, label: 'Perks', icon: Zap, description: 'Upgrade your park' },
   { id: 'analytics' as const, label: 'Analytics', icon: BarChart3, description: 'View park statistics' },
-  { id: 'milestones' as const, label: 'Milestones', icon: Trophy, description: 'Track your achievements' },
   { id: 'timeline' as const, label: 'Timeline', icon: BookOpen, description: "Your park's story" },
   { id: 'feed' as const, label: 'Feed', icon: MessageCircle, description: 'Guest chatter' },
 ]
@@ -141,7 +139,6 @@ function MenuDrawer() {
               {screen === 'feed' && <FeedContent />}
               {screen === 'park' && <ParkSettingsContent />}
               {screen === 'timeline' && <TimelineContent />}
-              {screen === 'milestones' && <MilestonesContent />}
               {screen === 'perks' && <PerksContent />}
               {screen === 'analytics' && <AnalyticsContent />}
             </motion.div>
