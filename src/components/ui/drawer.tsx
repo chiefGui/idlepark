@@ -1,4 +1,4 @@
-import { useState, createContext, useContext, useEffect, type ReactNode } from 'react'
+import { useState, createContext, useContext, useEffect, useCallback, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronLeft, Zap, BarChart3, RotateCcw, Building2, BookOpen, MessageCircle } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
@@ -7,16 +7,30 @@ import { AnalyticsContent } from '../analytics/analytics-content'
 import { ParkSettingsContent } from '../park/park-settings-content'
 import { TimelineContent } from '../timeline/timeline-content'
 import { FeedContent } from '../feed/feed-content'
+import { StatDetail } from '../stats/stat-detail'
 import { Drawer, type DrawerStore } from './primitives'
 
-type DrawerScreen = 'menu' | 'perks' | 'analytics' | 'park' | 'timeline' | 'feed'
+export type DrawerScreen = 'menu' | 'milestones' | 'perks' | 'analytics' | 'park' | 'timeline' | 'feed' | 'guests' | 'cleanliness'
 
-const DrawerStoreContext = createContext<DrawerStore | null>(null)
+type DrawerContextValue = {
+  store: DrawerStore
+  screen: DrawerScreen
+  setScreen: (screen: DrawerScreen) => void
+  navigateTo: (screen: DrawerScreen) => void
+}
+
+const DrawerContext = createContext<DrawerContextValue | null>(null)
 
 export function useDrawer() {
-  const store = useContext(DrawerStoreContext)
-  if (!store) throw new Error('useDrawer must be used within DrawerProvider')
-  return store
+  const ctx = useContext(DrawerContext)
+  if (!ctx) throw new Error('useDrawer must be used within DrawerProvider')
+  return ctx.store
+}
+
+export function useDrawerNavigation() {
+  const ctx = useContext(DrawerContext)
+  if (!ctx) throw new Error('useDrawerNavigation must be used within DrawerProvider')
+  return ctx.navigateTo
 }
 
 type DrawerProviderProps = {
@@ -25,14 +39,29 @@ type DrawerProviderProps = {
 
 export function DrawerProvider({ children }: DrawerProviderProps) {
   const store = Drawer.useStore()
+  const [screen, setScreen] = useState<DrawerScreen>('menu')
+
+  const navigateTo = useCallback((targetScreen: DrawerScreen) => {
+    setScreen(targetScreen)
+    store.show()
+  }, [store])
+
+  // Reset to menu when drawer closes
+  const open = store.useState('open')
+  useEffect(() => {
+    if (!open) {
+      const timeout = setTimeout(() => setScreen('menu'), 300)
+      return () => clearTimeout(timeout)
+    }
+  }, [open])
 
   return (
-    <DrawerStoreContext.Provider value={store}>
+    <DrawerContext.Provider value={{ store, screen, setScreen, navigateTo }}>
       <Drawer.Root store={store}>
         {children}
         <MenuDrawer />
       </Drawer.Root>
-    </DrawerStoreContext.Provider>
+    </DrawerContext.Provider>
   )
 }
 
@@ -44,19 +73,24 @@ const MENU_ITEMS = [
   { id: 'feed' as const, label: 'Feed', icon: MessageCircle, description: 'Guest chatter' },
 ]
 
+// Screen titles for non-menu screens
+const SCREEN_TITLES: Record<DrawerScreen, string> = {
+  menu: 'Menu',
+  park: 'HQ',
+  perks: 'Perks',
+  analytics: 'Analytics',
+  milestones: 'Milestones',
+  timeline: 'Timeline',
+  feed: 'Feed',
+  guests: 'Guests',
+  cleanliness: 'Clean',
+}
+
 function MenuDrawer() {
-  const store = useDrawer()
-  const [screen, setScreen] = useState<DrawerScreen>('menu')
+  const ctx = useContext(DrawerContext)!
+  const { store, screen, setScreen } = ctx
   const reset = useGameStore((s) => s.actions.reset)
   const unreadFeedCount = useGameStore((s) => s.unreadFeedCount)
-  const open = store.useState('open')
-
-  useEffect(() => {
-    if (!open) {
-      const timeout = setTimeout(() => setScreen('menu'), 300)
-      return () => clearTimeout(timeout)
-    }
-  }, [open])
 
   const handleBack = () => setScreen('menu')
 
@@ -68,6 +102,7 @@ function MenuDrawer() {
   }
 
   const currentMenuItem = MENU_ITEMS.find((item) => item.id === screen)
+  const title = currentMenuItem?.label ?? SCREEN_TITLES[screen] ?? 'Menu'
 
   return (
     <Drawer.Content
@@ -84,7 +119,7 @@ function MenuDrawer() {
           </button>
         ) : null}
         <Drawer.Title className="flex-1 text-lg font-semibold">
-          {screen === 'menu' ? 'Menu' : currentMenuItem?.label}
+          {title}
         </Drawer.Title>
         <Drawer.Close className="p-2 -mr-2 active:bg-[var(--color-surface)] rounded-lg transition-colors">
           <X size={20} />
@@ -141,6 +176,8 @@ function MenuDrawer() {
               {screen === 'timeline' && <TimelineContent />}
               {screen === 'perks' && <PerksContent />}
               {screen === 'analytics' && <AnalyticsContent />}
+              {screen === 'guests' && <StatDetail statId="guests" />}
+              {screen === 'cleanliness' && <StatDetail statId="cleanliness" />}
             </motion.div>
           )}
         </AnimatePresence>
