@@ -43,24 +43,24 @@ export function AnalyticsContent() {
     return Math.round(Math.max(0, Math.min(100, score)))
   }, [rates.money, guestBreakdown, totalGuests, stats.cleanliness])
 
-  const healthLabel = healthScore >= 70 ? 'Thriving' : healthScore >= 40 ? 'Stable' : 'Struggling'
-  const healthColor = healthScore >= 70 ? 'var(--color-positive)' : healthScore >= 40 ? 'var(--color-accent)' : 'var(--color-negative)'
+  const ratingLabel = healthScore >= 70 ? 'Thriving' : healthScore >= 40 ? 'Stable' : 'Struggling'
+  const ratingColor = healthScore >= 70 ? 'var(--color-positive)' : healthScore >= 40 ? 'var(--color-accent)' : 'var(--color-negative)'
 
   return (
     <div className="space-y-6">
-      {/* Park Health Score */}
+      {/* Park Rating */}
       <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm text-[var(--color-text-muted)]">Park Health</span>
-          <span className="text-sm font-medium" style={{ color: healthColor }}>{healthLabel}</span>
+          <span className="text-sm text-[var(--color-text-muted)]">Park Rating</span>
+          <span className="text-sm font-medium" style={{ color: ratingColor }}>{ratingLabel}</span>
         </div>
         <div className="flex items-end gap-4">
-          <div className="text-4xl font-bold" style={{ color: healthColor }}>{healthScore}</div>
+          <div className="text-4xl font-bold" style={{ color: ratingColor }}>{healthScore}</div>
           <div className="flex-1">
             <div className="h-3 rounded-full bg-[var(--color-bg)] overflow-hidden">
               <motion.div
                 className="h-full rounded-full"
-                style={{ backgroundColor: healthColor }}
+                style={{ backgroundColor: ratingColor }}
                 initial={{ width: 0 }}
                 animate={{ width: `${healthScore}%` }}
                 transition={{ duration: 0.5 }}
@@ -96,21 +96,21 @@ export function AnalyticsContent() {
         <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm text-[var(--color-text-muted)]">Guest Mood</span>
-            <span className="text-sm text-[var(--color-text-muted)]">{totalGuests} / {capacity}</span>
+            <span className="text-sm text-[var(--color-text-muted)]">{Math.round(totalGuests)} / {capacity}</span>
           </div>
           <GuestMoodBar breakdown={guestBreakdown} total={totalGuests} />
           <div className="flex justify-between mt-3 text-xs">
             <div className="flex items-center gap-1">
               <Smile size={14} className="text-[var(--color-positive)]" />
-              <span>{guestBreakdown.happy} happy</span>
+              <span>{Math.round(guestBreakdown.happy)} happy</span>
             </div>
             <div className="flex items-center gap-1">
               <Meh size={14} className="text-[var(--color-accent)]" />
-              <span>{guestBreakdown.neutral} neutral</span>
+              <span>{Math.round(guestBreakdown.neutral)} neutral</span>
             </div>
             <div className="flex items-center gap-1">
               <Frown size={14} className="text-[var(--color-negative)]" />
-              <span>{guestBreakdown.unhappy} unhappy</span>
+              <span>{Math.round(guestBreakdown.unhappy)} unhappy</span>
             </div>
           </div>
         </div>
