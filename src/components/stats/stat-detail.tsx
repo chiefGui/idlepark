@@ -7,23 +7,7 @@ import { Perk } from '../../systems/perk'
 import { Guest } from '../../systems/guest'
 import { Slot } from '../../systems/slot'
 import { Format } from '../../utils/format'
-
-type StatConfig = {
-  format: (value: number) => string
-  formatRate: (value: number) => string
-  color: string
-}
-
-const STAT_CONFIGS: Record<StatId, StatConfig> = {
-  money: { format: Format.money, formatRate: Format.rate, color: '#22c55e' },
-  guests: { format: Format.guests, formatRate: Format.rate, color: '#6366f1' },
-  entertainment: { format: (v) => Format.millify(v, 1), formatRate: Format.rate, color: '#f472b6' },
-  food: { format: (v) => Format.millify(v, 1), formatRate: Format.rate, color: '#fb923c' },
-  comfort: { format: (v) => Format.millify(v, 1), formatRate: Format.rate, color: '#a78bfa' },
-  cleanliness: { format: Format.percent, formatRate: Format.rate, color: '#22d3ee' },
-  appeal: { format: Format.percent, formatRate: Format.rate, color: '#fbbf24' },
-  satisfaction: { format: Format.percent, formatRate: Format.rate, color: '#f87171' },
-}
+import { STAT_CONFIG } from '../../constants/stats'
 
 type SourceContribution = {
   emoji: string
@@ -161,7 +145,7 @@ export function StatDetail({ statId }: StatDetailProps) {
   const ticketPrice = useGameStore((s) => s.ticketPrice)
   const guestBreakdown = useGameStore((s) => s.guestBreakdown)
 
-  const config = STAT_CONFIGS[statId]
+  const config = STAT_CONFIG[statId]
   const value = stats[statId]
   const rate = rates[statId]
   const state: GameState = { slots, ownedPerks, stats, ticketPrice, guestBreakdown } as GameState
@@ -208,7 +192,7 @@ export function StatDetail({ statId }: StatDetailProps) {
             <div className="mt-3 pt-3 border-t border-[var(--color-border)] flex items-center justify-center gap-1 text-sm"
               style={{ color: rate > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}>
               {rate > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-              <span>{config.formatRate(rate)}/day</span>
+              <span>{Format.ratePerDay(rate)}</span>
             </div>
           )}
         </div>
@@ -219,7 +203,7 @@ export function StatDetail({ statId }: StatDetailProps) {
             <div className="flex items-center gap-1 text-sm"
               style={{ color: rate > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}>
               {rate > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-              <span>{config.formatRate(rate)}/day</span>
+              <span>{Format.ratePerDay(rate)}</span>
             </div>
           )}
         </div>
@@ -239,7 +223,7 @@ export function StatDetail({ statId }: StatDetailProps) {
               </div>
               <span className="text-sm font-medium"
                 style={{ color: source.amount > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}>
-                {source.amount > 0 ? '+' : ''}{source.amount.toFixed(1)}/day
+                {Format.ratePerDay(source.amount)}
               </span>
             </div>
           ))}

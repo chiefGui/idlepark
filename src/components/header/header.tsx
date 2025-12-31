@@ -4,6 +4,7 @@ import { DayProgress } from './day-progress'
 import { useDrawer } from '../ui/drawer'
 import { useGameStore } from '../../store/game-store'
 import { GameTypes } from '../../engine/game-types'
+import { Format } from '../../utils/format'
 
 export function Header() {
   const store = useDrawer()
@@ -40,7 +41,7 @@ export function Header() {
           >
             <AlertTriangle size={14} className="text-[var(--color-negative)]" />
             <span className="text-xs font-medium text-[var(--color-negative)]">
-              {Math.ceil(GameTypes.BANKRUPTCY_THRESHOLD_DAYS - consecutiveNegativeDays)}d
+              {Format.days(GameTypes.BANKRUPTCY_THRESHOLD_DAYS - consecutiveNegativeDays)}
             </span>
           </motion.div>
         ) : null}

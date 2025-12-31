@@ -4,6 +4,7 @@ import { Perk } from '../../systems/perk'
 import { useGameStore } from '../../store/game-store'
 import { Requirements } from '../../engine/requirements'
 import { Button } from '../ui/button'
+import { Format } from '../../utils/format'
 
 export function PerksContent() {
   const state = useGameStore()
@@ -45,7 +46,7 @@ export function PerksContent() {
                         onClick={() => purchasePerk(perk.id)}
                         className="w-full"
                       >
-                        {canAfford ? `Buy for $${cost?.amount ?? 0}` : `Need $${cost?.amount ?? 0}`}
+                        {canAfford ? `Buy for ${Format.money(cost?.amount ?? 0)}` : `Need ${Format.money(cost?.amount ?? 0)}`}
                       </Button>
                     </div>
                   </div>

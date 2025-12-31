@@ -115,7 +115,7 @@ export function AnalyticsContent() {
     if (moneyRate < 0) {
       items.push({
         type: 'warning',
-        message: `You're losing $${Math.abs(moneyRate).toFixed(0)} each day. Try building more rides or removing costly buildings.`,
+        message: `You're losing ${Format.money(Math.abs(moneyRate))} each day. Try building more rides or removing costly buildings.`,
       })
     }
 
@@ -249,7 +249,7 @@ export function AnalyticsContent() {
           <AnalyticCard
             icon={Users}
             label="New Guests"
-            value={`${guestRate >= 0 ? '+' : ''}${guestRate.toFixed(1)}/day`}
+            value={`${Format.rate(guestRate)}/day`}
             trend={guestRate > 0 ? 'up' : guestRate < 0 ? 'down' : 'neutral'}
           />
           <div className="grid grid-cols-2 gap-3">

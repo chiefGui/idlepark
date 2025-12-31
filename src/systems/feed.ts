@@ -539,11 +539,6 @@ export class Feed {
     return `${days}d`
   }
 
-  static formatLikes(count: number): string {
-    if (count >= 1000) return `${(count / 1000).toFixed(1)}k`
-    return String(count)
-  }
-
   static shouldGenerateAmbient(guestCount: number): boolean {
     if (guestCount < 10) return false
     const chance = Math.min(0.0005, guestCount / 200000)

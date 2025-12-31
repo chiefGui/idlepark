@@ -1,63 +1,89 @@
+/**
+ * Centralized formatting utilities for consistent display across the app.
+ * All methods return clean, integer-based values (no decimals).
+ */
 export class Format {
-  static millify(value: number, decimals = 1): string {
+  /**
+   * Format any number with millification (1k, 1M, 1B)
+   * No decimals - always rounds to nearest integer
+   */
+  static number(value: number): string {
     const absValue = Math.abs(value)
     const sign = value < 0 ? '-' : ''
 
     if (absValue >= 1_000_000_000) {
-      return `${sign}${(absValue / 1_000_000_000).toFixed(decimals)}B`
+      return `${sign}${Math.round(absValue / 1_000_000_000)}B`
     }
     if (absValue >= 1_000_000) {
-      return `${sign}${(absValue / 1_000_000).toFixed(decimals)}M`
+      return `${sign}${Math.round(absValue / 1_000_000)}M`
     }
     if (absValue >= 1_000) {
-      return `${sign}${(absValue / 1_000).toFixed(decimals)}k`
+      return `${sign}${Math.round(absValue / 1_000)}k`
     }
-    return `${sign}${absValue.toFixed(decimals)}`
+    return `${sign}${Math.round(absValue)}`
   }
 
+  /**
+   * Format money values: $5, $1k, $2M
+   */
   static money(value: number): string {
     const absValue = Math.abs(value)
     const sign = value < 0 ? '-' : ''
 
-    if (absValue >= 1_000_000) {
-      return `${sign}$${(absValue / 1_000_000).toFixed(1)}M`
+    if (absValue >= 1_000_000_000) {
+      return `${sign}$${Math.round(absValue / 1_000_000_000)}B`
     }
-    if (absValue >= 10_000) {
-      return `${sign}$${(absValue / 1_000).toFixed(1)}k`
+    if (absValue >= 1_000_000) {
+      return `${sign}$${Math.round(absValue / 1_000_000)}M`
     }
     if (absValue >= 1_000) {
-      return `${sign}$${(absValue / 1_000).toFixed(2)}k`
+      return `${sign}$${Math.round(absValue / 1_000)}k`
     }
-    return `${sign}$${Math.floor(absValue)}`
+    return `${sign}$${Math.round(absValue)}`
   }
 
+  /**
+   * Format guest counts: 5, 1k, 2M
+   */
   static guests(value: number): string {
-    const absValue = Math.abs(value)
-
-    if (absValue >= 1_000_000) {
-      return `${(absValue / 1_000_000).toFixed(1)}M`
-    }
-    if (absValue >= 1_000) {
-      return `${(absValue / 1_000).toFixed(1)}k`
-    }
-    return Math.floor(absValue).toString()
+    return Format.number(Math.abs(value))
   }
 
+  /**
+   * Format percentages: 75%
+   */
   static percent(value: number): string {
-    return `${Math.floor(value)}%`
+    return `${Math.round(value)}%`
   }
 
+  /**
+   * Format rates with sign: +5, -2, +1k
+   * For displaying change rates (without /day suffix)
+   */
   static rate(value: number): string {
     if (value === 0) return '0'
     const sign = value > 0 ? '+' : ''
-    const absValue = Math.abs(value)
+    return `${sign}${Format.number(value)}`
+  }
 
-    if (absValue >= 1_000) {
-      return `${sign}${(value / 1_000).toFixed(1)}k`
-    }
-    if (absValue >= 100) {
-      return `${sign}${Math.floor(value)}`
-    }
-    return `${sign}${value.toFixed(1)}`
+  /**
+   * Format rates per day: +5/day, -2k/day
+   */
+  static ratePerDay(value: number): string {
+    if (value === 0) return '0/day'
+    return `${Format.rate(value)}/day`
+  }
+
+  /**
+   * Format duration in days: 7d or 7 days
+   */
+  static days(value: number, abbreviated = true): string {
+    const rounded = Math.ceil(value)
+    return abbreviated ? `${rounded}d` : `${rounded} day${rounded !== 1 ? 's' : ''}`
+  }
+
+  // Legacy alias for backwards compatibility during migration
+  static millify(value: number, _decimals = 0): string {
+    return Format.number(value)
   }
 }
