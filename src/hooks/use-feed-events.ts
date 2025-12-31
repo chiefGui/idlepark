@@ -56,6 +56,15 @@ export function useFeedEvents() {
       addWithCooldown(entry, true)
     })
 
+    // Guests departed - priority (important feedback)
+    const unsubDeparted = GameEvents.on('guests:departed', ({ count }) => {
+      if (count > 0) {
+        const state = useGameStore.getState()
+        const entry = Feed.createEntry('guest_departed', state.currentDay, { guestCount: count })
+        addWithCooldown(entry, true)
+      }
+    })
+
     // Tick-based events (satisfaction, guests, ambient, price, financial)
     const unsubTick = GameEvents.on('tick', () => {
       const state = useGameStore.getState()
@@ -135,6 +144,7 @@ export function useFeedEvents() {
       unsubDemolished()
       unsubMilestone()
       unsubPerk()
+      unsubDeparted()
       unsubTick()
       unsubReset()
     }

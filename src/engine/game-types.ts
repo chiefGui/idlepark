@@ -69,6 +69,7 @@ export type FeedEventType =
   | 'milestone_achieved'
   | 'perk_purchased'
   | 'guest_threshold'
+  | 'guest_departed'
   | 'satisfaction_high'
   | 'satisfaction_low'
   | 'price_complaint'
@@ -111,6 +112,14 @@ export type FinancialStats = {
   peakGuests: number         // Most guests ever
 }
 
+export type GuestMood = 'happy' | 'neutral' | 'unhappy'
+
+export type GuestBreakdown = {
+  happy: number
+  neutral: number
+  unhappy: number
+}
+
 export type GameState = {
   stats: Record<StatId, number>
   slots: SlotState[]
@@ -118,6 +127,7 @@ export type GameState = {
   timeline: TimelineEntry[]
   dailyRecords: DailyRecord[]
   financials: FinancialStats
+  guestBreakdown: GuestBreakdown
   feedEntries: FeedEntry[]
   unreadFeedCount: number
   currentDay: number
@@ -181,6 +191,14 @@ export class GameTypes {
     }
   }
 
+  static createInitialGuestBreakdown(): GuestBreakdown {
+    return { happy: 0, neutral: 0, unhappy: 0 }
+  }
+
+  static getTotalGuests(breakdown: GuestBreakdown): number {
+    return breakdown.happy + breakdown.neutral + breakdown.unhappy
+  }
+
   static createInitialState(): GameState {
     return {
       stats: this.createInitialStats(),
@@ -189,6 +207,7 @@ export class GameTypes {
       timeline: [],
       dailyRecords: [],
       financials: this.createInitialFinancials(),
+      guestBreakdown: this.createInitialGuestBreakdown(),
       feedEntries: [],
       unreadFeedCount: 0,
       currentDay: 1,

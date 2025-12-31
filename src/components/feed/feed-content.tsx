@@ -11,6 +11,7 @@ const EVENT_EMOJI: Record<FeedEventType, string> = {
   milestone_achieved: '🏆',
   perk_purchased: '⚡',
   guest_threshold: '👥',
+  guest_departed: '👋',
   satisfaction_high: '😍',
   satisfaction_low: '😕',
   price_complaint: '💸',

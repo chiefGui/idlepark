@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
-import { TrendingUp, TrendingDown, Minus, Plus, AlertCircle, Lightbulb } from 'lucide-react'
+import { TrendingUp, TrendingDown, Minus, Plus, AlertCircle, Lightbulb, Smile, Meh, Frown } from 'lucide-react'
 import type { StatId, GameState } from '../../engine/game-types'
+import { GameTypes } from '../../engine/game-types'
 import { useGameStore } from '../../store/game-store'
 import { Building } from '../../systems/building'
 import { Perk } from '../../systems/perk'
@@ -156,7 +157,7 @@ function getStatImpact(statId: StatId): string {
     case 'money':
       return "Your park's cash. You need this to build things and pay upkeep. If you're in the red for 7 days straight, it's game over."
     case 'guests':
-      return 'People visiting your park right now. More guests means more money coming in, but they also use up your food, fun, and comfort.'
+      return 'People visiting your park right now. Guests can be Happy, Neutral, or Unhappy based on how well you meet their needs. Unhappy guests may leave at the end of each day!'
     case 'entertainment':
       return "How much fun your park provides. Guests 'use up' entertainment as they enjoy rides. If there's not enough fun to go around, they get bored."
     case 'food':
@@ -187,14 +188,21 @@ function getStatSuggestions(statId: StatId, state: GameState, moneyRate: number)
       }
       break
 
-    case 'guests':
+    case 'guests': {
+      const breakdown = state.guestBreakdown ?? { happy: 0, neutral: 0, unhappy: 0 }
+      const unhappyRatio = state.stats.guests > 0 ? breakdown.unhappy / state.stats.guests : 0
+
       if (state.stats.appeal < 30) {
         suggestions.push('Your appeal is low. Build some rides to make your park more attractive!')
       }
+      if (unhappyRatio > 0.3) {
+        suggestions.push('Too many unhappy guests! Improve entertainment, food, or comfort before they leave.')
+      }
       if (state.stats.entertainment < state.stats.guests * 0.5) {
-        suggestions.push('Guests are leaving because there\'s not enough to do. Add more rides!')
+        suggestions.push('Guests need more entertainment. Add more rides to keep them happy!')
       }
       break
+    }
 
     case 'entertainment': {
       const rides = availableBuildings.filter((b) => b.category === 'rides')
@@ -292,12 +300,13 @@ export function StatDetail({ statId }: StatDetailProps) {
   const slots = useGameStore((s) => s.slots)
   const ownedPerks = useGameStore((s) => s.ownedPerks)
   const ticketPrice = useGameStore((s) => s.ticketPrice)
+  const guestBreakdown = useGameStore((s) => s.guestBreakdown)
   const config = STAT_CONFIGS[statId]
   const value = stats[statId]
   const rate = rates[statId]
 
   // Create a minimal state for helper functions
-  const state: GameState = { slots, ownedPerks, stats, ticketPrice } as GameState
+  const state: GameState = { slots, ownedPerks, stats, ticketPrice, guestBreakdown } as GameState
 
   const sources = useMemo(() => getStatSources(statId, state, ticketPrice), [statId, state, ticketPrice])
   const impact = getStatImpact(statId)
@@ -306,8 +315,47 @@ export function StatDetail({ statId }: StatDetailProps) {
   const positiveTotal = sources.filter((s) => s.amount > 0).reduce((sum, s) => sum + s.amount, 0)
   const negativeTotal = sources.filter((s) => s.amount < 0).reduce((sum, s) => sum + s.amount, 0)
 
+  const totalGuests = GameTypes.getTotalGuests(guestBreakdown)
+
   return (
     <div className="space-y-4">
+      {/* Guest Breakdown - only show for guests stat */}
+      {statId === 'guests' && totalGuests > 0 && (
+        <div className="p-3 rounded-xl bg-[var(--color-bg)]">
+          <div className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
+            Guest Mood
+          </div>
+          <div className="flex gap-3">
+            <div className="flex-1 flex items-center gap-2 p-2 rounded-lg bg-[#22c55e]/10">
+              <Smile size={18} className="text-[#22c55e]" />
+              <div>
+                <div className="text-sm font-semibold">{Math.floor(guestBreakdown.happy)}</div>
+                <div className="text-[10px] text-[var(--color-text-muted)]">Happy</div>
+              </div>
+            </div>
+            <div className="flex-1 flex items-center gap-2 p-2 rounded-lg bg-[#fbbf24]/10">
+              <Meh size={18} className="text-[#fbbf24]" />
+              <div>
+                <div className="text-sm font-semibold">{Math.floor(guestBreakdown.neutral)}</div>
+                <div className="text-[10px] text-[var(--color-text-muted)]">Neutral</div>
+              </div>
+            </div>
+            <div className="flex-1 flex items-center gap-2 p-2 rounded-lg bg-[#f87171]/10">
+              <Frown size={18} className="text-[#f87171]" />
+              <div>
+                <div className="text-sm font-semibold">{Math.floor(guestBreakdown.unhappy)}</div>
+                <div className="text-[10px] text-[var(--color-text-muted)]">Unhappy</div>
+              </div>
+            </div>
+          </div>
+          {guestBreakdown.unhappy > 0 && (
+            <div className="mt-2 text-xs text-[var(--color-text-muted)]">
+              ⚠️ Unhappy guests may leave at the end of each day
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Current Value */}
       <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-bg)]">
         <div className="flex-1">

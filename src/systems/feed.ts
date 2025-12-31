@@ -73,6 +73,16 @@ const MESSAGES: Record<FeedEventType, string[]> = {
     "Wow {count} guests! Remember when this place was empty? Growth",
     "The vibes when there's {count} of us here... immaculate",
   ],
+  guest_departed: [
+    "Just saw {count} people leave looking unhappy... yikes",
+    "Not gonna lie, {count} guests just bounced. Something's off",
+    "Oof {count} people left today. Hope they come back",
+    "{count} guests said goodbye. The vibes might need work",
+    "Watched {count} frustrated visitors leave. We can do better",
+    "Some ({count}) of us couldn't take it anymore. Peace out I guess",
+    "{count} people gave up and left. This is a wake up call fr",
+    "The exit line had {count} unhappy faces. That's rough",
+  ],
   satisfaction_high: [
     "10/10 no notes. This park is PERFECTION",
     "I have never been happier. This place just hits different",

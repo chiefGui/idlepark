@@ -9,6 +9,7 @@ type GameEventMap = {
   'slot:unlocked': { slotIndex: number }
   'perk:purchased': { perkId: string }
   'milestone:achieved': { milestoneId: string }
+  'guests:departed': { count: number }
   'bankruptcy': { day: number }
   'feed:new': { entry: FeedEntry }
   'game:reset': undefined
