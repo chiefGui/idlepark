@@ -73,12 +73,12 @@ export const STAT_CONFIG: Record<StatId, StatConfig> = {
   },
 }
 
-/** Stats shown in the compact secondary bar */
+/** Stats shown in the compact secondary bar (ordered by importance) */
 export const SECONDARY_STATS: StatId[] = [
-  'appeal',
-  'entertainment',
+  'appeal',       // outcome metric
+  'entertainment', // consumption stats
   'food',
   'comfort',
-  'cleanliness',
+  'cleanliness',  // condition stats
   'beauty',
 ]
