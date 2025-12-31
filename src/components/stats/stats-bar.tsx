@@ -14,6 +14,7 @@ import type { StatId } from '../../engine/game-types'
 import { useGameStore } from '../../store/game-store'
 import { Format } from '../../utils/format'
 import { InfoModal } from '../ui/info-modal'
+import { StatDetail } from './stat-detail'
 
 type StatConfig = {
   icon: typeof DollarSign
@@ -21,8 +22,6 @@ type StatConfig = {
   color: string
   format: (value: number) => string
   formatRate: (value: number) => string
-  description: string
-  tip: string
 }
 
 const STAT_CONFIG: Record<StatId, StatConfig> = {
@@ -32,8 +31,6 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
     color: '#22c55e',
     format: Format.money,
     formatRate: Format.rate,
-    description: 'Your park\'s funds. Earned from guests, spent on buildings and upkeep.',
-    tip: 'Keep it positive! 7 days in the red means bankruptcy.',
   },
   guests: {
     icon: Users,
@@ -41,8 +38,6 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
     color: '#6366f1',
     format: Format.guests,
     formatRate: Format.rate,
-    description: 'Visitors in your park. More guests = more income, but also more demand.',
-    tip: 'Guests arrive based on your park\'s appeal.',
   },
   entertainment: {
     icon: Sparkles,
@@ -50,8 +45,6 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
     color: '#f472b6',
     format: (v) => Format.millify(v, 1),
     formatRate: Format.rate,
-    description: 'How much fun your park provides. Guests consume entertainment.',
-    tip: 'Build rides like Carousel or Roller Coaster to increase.',
   },
   food: {
     icon: UtensilsCrossed,
@@ -59,8 +52,6 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
     color: '#fb923c',
     format: (v) => Format.millify(v, 1),
     formatRate: Format.rate,
-    description: 'Food availability. Hungry guests are unhappy guests!',
-    tip: 'Build Food Stands or Ice Cream Shops.',
   },
   comfort: {
     icon: Sofa,
@@ -68,8 +59,6 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
     color: '#a78bfa',
     format: (v) => Format.millify(v, 1),
     formatRate: Format.rate,
-    description: 'Guest comfort level. Includes restrooms and seating.',
-    tip: 'Restrooms are essential for guest comfort.',
   },
   cleanliness: {
     icon: Sparkle,
@@ -77,8 +66,6 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
     color: '#22d3ee',
     format: Format.percent,
     formatRate: Format.rate,
-    description: 'How clean your park is. Degrades as more guests visit.',
-    tip: 'Place Trash Cans or buy the Cleaning Crew perk.',
   },
   appeal: {
     icon: Star,
@@ -86,8 +73,6 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
     color: '#fbbf24',
     format: Format.percent,
     formatRate: Format.rate,
-    description: 'How attractive your park is. Higher appeal = more guests.',
-    tip: 'Improve satisfaction and add entertainment to boost appeal.',
   },
   satisfaction: {
     icon: Heart,
@@ -95,8 +80,6 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
     color: '#f87171',
     format: Format.percent,
     formatRate: Format.rate,
-    description: 'How happy your guests are. Based on meeting their needs.',
-    tip: 'Balance entertainment, food, comfort, and cleanliness.',
   },
 }
 
@@ -129,8 +112,6 @@ export function StatsBar() {
   }, [dayInt])
 
   const selectedConfig = selectedStat ? STAT_CONFIG[selectedStat] : null
-  const selectedValue = selectedStat ? stats[selectedStat] : 0
-  const selectedRate = selectedStat ? rates[selectedStat] : 0
 
   return (
     <>
@@ -183,40 +164,7 @@ export function StatsBar() {
         onClose={() => setSelectedStat(null)}
         title={selectedConfig?.label ?? ''}
       >
-        {selectedConfig && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-bg)]">
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: `${selectedConfig.color}20` }}
-              >
-                <selectedConfig.icon size={24} style={{ color: selectedConfig.color }} />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{selectedConfig.format(selectedValue)}</div>
-                {selectedRate !== 0 && (
-                  <div
-                    className="text-sm"
-                    style={{ color: selectedRate > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
-                  >
-                    {selectedConfig.formatRate(selectedRate)}/day
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <p className="text-sm text-[var(--color-text-muted)]">
-              {selectedConfig.description}
-            </p>
-
-            <div className="p-3 rounded-xl bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/20">
-              <div className="text-xs font-medium text-[var(--color-accent)] uppercase tracking-wider mb-1">
-                Tip
-              </div>
-              <p className="text-sm">{selectedConfig.tip}</p>
-            </div>
-          </div>
-        )}
+        {selectedStat && <StatDetail statId={selectedStat} />}
       </InfoModal>
     </>
   )
