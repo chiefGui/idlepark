@@ -1,17 +1,18 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, Plus, Lock } from 'lucide-react'
+import { ChevronDown, Plus } from 'lucide-react'
 import type { BuildingCategory, SlotState } from '../../engine/game-types'
 import { useGameStore } from '../../store/game-store'
 import { Building } from '../../systems/building'
 import { Slot } from '../../systems/slot'
 import { Perk } from '../../systems/perk'
-import { GameTypes } from '../../engine/game-types'
+import { Format } from '../../utils/format'
 import { BuildingSelector } from '../slots/building-selector'
 import { BuildingDetails } from '../slots/building-details'
 
 export function BuildingsPanel() {
   const slots = useGameStore((s) => s.slots)
+  const ownedPerks = useGameStore((s) => s.ownedPerks)
   const demolishSlot = useGameStore((s) => s.actions.demolishSlot)
   const [expandedCategories, setExpandedCategories] = useState<Set<BuildingCategory>>(
     new Set(['rides', 'food', 'facilities', 'decor'])
@@ -42,14 +43,42 @@ export function BuildingsPanel() {
     }
   }
 
+  // Park capacity info
+  const state = useGameStore()
+  const emptySlots = Slot.getEmpty(state)
+  const totalUnlocked = Slot.getUnlocked(state).length
+  const nextExpansion = Perk.getNextExpansionPerk(state)
+
   return (
     <>
       <div className="space-y-3 px-4 pb-4">
+        {/* Slot capacity bar */}
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">Park Capacity</span>
+            <span className="text-sm text-[var(--color-text-muted)]">
+              {totalUnlocked - emptySlots.length}/{totalUnlocked} slots used
+            </span>
+          </div>
+          <div className="h-2 bg-[var(--color-bg)] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[var(--color-accent)] rounded-full transition-all"
+              style={{ width: `${((totalUnlocked - emptySlots.length) / totalUnlocked) * 100}%` }}
+            />
+          </div>
+          {emptySlots.length === 0 && nextExpansion && (
+            <div className="mt-2 text-xs text-[var(--color-text-muted)]">
+              Park full! Buy <span className="text-[var(--color-accent)] font-medium">{nextExpansion.name}</span> in Perks for more slots ({Format.money(nextExpansion.costs[0]?.amount ?? 0)})
+            </div>
+          )}
+        </div>
+
         {Building.CATEGORIES.map((cat) => (
           <CategorySection
             key={cat.id}
             category={cat}
             slots={slots}
+            ownedPerks={ownedPerks}
             isExpanded={expandedCategories.has(cat.id)}
             onToggle={() => toggleCategory(cat.id)}
             onBuild={() => setBuildCategory(cat.id)}
@@ -80,6 +109,7 @@ export function BuildingsPanel() {
 type CategorySectionProps = {
   category: { id: BuildingCategory; label: string; emoji: string; hint: string }
   slots: SlotState[]
+  ownedPerks: string[]
   isExpanded: boolean
   onToggle: () => void
   onBuild: () => void
@@ -89,14 +119,12 @@ type CategorySectionProps = {
 function CategorySection({
   category,
   slots,
+  ownedPerks,
   isExpanded,
   onToggle,
   onBuild,
   onSelectBuilding,
 }: CategorySectionProps) {
-  const state = useGameStore()
-  const unlockSlot = useGameStore((s) => s.actions.unlockSlot)
-
   const buildingsInCategory = useMemo(() => {
     return slots
       .filter((slot) => {
@@ -110,30 +138,15 @@ function CategorySection({
       }))
   }, [slots, category.id])
 
-  const emptySlots = Slot.getEmpty({ slots } as any)
+  const emptySlots = Slot.getEmpty({ slots, ownedPerks } as any)
   const hasEmptySlot = emptySlots.length > 0
-
-  // Check if there's a locked slot that can be unlocked
-  const nextUnlockableSlot = Slot.getNextUnlockableSlot(state)
-  const canUnlockSlot = nextUnlockableSlot !== null
-  const unlockCost = nextUnlockableSlot
-    ? GameTypes.SLOT_UNLOCK_COSTS[nextUnlockableSlot.index] ?? 0
-    : 0
-  const canAffordUnlock = state.stats.money >= unlockCost
-
-  // Check for expansion perks
-  const ownedExpansions = state.ownedPerks.filter((p) => p.startsWith('extra_slot')).length
-  const nextExpansion = Perk.getById(`extra_slot_${ownedExpansions + 1}`)
-
-  const totalUnlocked = Slot.getUnlocked({ slots } as any).length
-  const totalSlots = slots.length
 
   return (
     <motion.div
       layout
       className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden"
     >
-      {/* Header - Clean and simple */}
+      {/* Header */}
       <motion.button
         layout="position"
         onClick={onToggle}
@@ -183,8 +196,8 @@ function CategorySection({
                   </motion.button>
                 ))}
 
-                {/* Add button */}
-                {hasEmptySlot ? (
+                {/* Add button - only show if there's an empty slot */}
+                {hasEmptySlot && (
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={onBuild}
@@ -193,43 +206,15 @@ function CategorySection({
                     <Plus size={24} className="text-[var(--color-accent)]" />
                     <span className="text-[10px] font-medium text-[var(--color-accent)]">Add</span>
                   </motion.button>
-                ) : canUnlockSlot ? (
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => unlockSlot(nextUnlockableSlot!.index)}
-                    disabled={!canAffordUnlock}
-                    className={`aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-colors ${
-                      canAffordUnlock
-                        ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 active:bg-[var(--color-accent)]/20'
-                        : 'border-[var(--color-border)] bg-[var(--color-surface)]/50 opacity-60'
-                    }`}
-                  >
-                    <Lock size={16} className={canAffordUnlock ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)]'} />
-                    <span className={`text-[10px] font-medium ${canAffordUnlock ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)]'}`}>
-                      ${unlockCost}
-                    </span>
-                  </motion.button>
-                ) : nextExpansion ? (
-                  <div className="aspect-square rounded-xl border-2 border-dashed border-[var(--color-border)] bg-[var(--color-surface)]/50 flex flex-col items-center justify-center gap-1 opacity-60 p-1">
-                    <Lock size={16} className="text-[var(--color-text-muted)]" />
-                    <span className="text-[8px] text-[var(--color-text-muted)] text-center leading-tight">
-                      Buy Expansion perk
-                    </span>
-                  </div>
-                ) : null}
+                )}
               </div>
 
-              {/* Empty state */}
-              {buildingsInCategory.length === 0 && !hasEmptySlot && !canUnlockSlot && (
+              {/* Empty state when no buildings and no slots */}
+              {buildingsInCategory.length === 0 && !hasEmptySlot && (
                 <div className="text-center py-4 text-sm text-[var(--color-text-muted)]">
                   No buildings yet
                 </div>
               )}
-
-              {/* Slot count */}
-              <div className="mt-2 text-[10px] text-[var(--color-text-muted)] text-center">
-                {totalUnlocked}/{totalSlots} slots unlocked
-              </div>
             </div>
           </motion.div>
         )}
