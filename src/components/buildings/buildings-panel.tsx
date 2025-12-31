@@ -5,7 +5,6 @@ import type { BuildingCategory, SlotState } from '../../engine/game-types'
 import { useGameStore } from '../../store/game-store'
 import { Building } from '../../systems/building'
 import { Slot } from '../../systems/slot'
-import { Perk } from '../../systems/perk'
 import { BuildingSelector } from '../slots/building-selector'
 import { BuildingDetails } from '../slots/building-details'
 
@@ -42,21 +41,9 @@ export function BuildingsPanel() {
     }
   }
 
-  // Check if park is full
-  const state = useGameStore()
-  const emptySlots = Slot.getEmpty(state)
-  const nextExpansion = Perk.getNextExpansionPerk(state)
-
   return (
     <>
       <div className="space-y-3 px-4 pb-4">
-        {/* Show message only when park is full */}
-        {emptySlots.length === 0 && nextExpansion && (
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-3 text-sm text-[var(--color-text-muted)]">
-            No room for more buildings. Get <span className="text-[var(--color-accent)] font-medium">{nextExpansion.name}</span> in Perks to expand.
-          </div>
-        )}
-
         {Building.CATEGORIES.map((cat) => (
           <CategorySection
             key={cat.id}

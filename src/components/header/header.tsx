@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { Menu, AlertTriangle } from 'lucide-react'
 import { DayProgress } from './day-progress'
+import { NotificationCenter } from './notification-center'
 import { useDrawer } from '../ui/drawer'
 import { useGameStore } from '../../store/game-store'
 import { GameTypes } from '../../engine/game-types'
@@ -45,6 +46,8 @@ export function Header() {
             </span>
           </motion.div>
         ) : null}
+
+        <NotificationCenter />
       </div>
 
       <DayProgress />
