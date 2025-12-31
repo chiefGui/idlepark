@@ -21,12 +21,13 @@ const STAT_LABELS: Record<StatId, string> = {
 type BuildingSelectorProps = {
   slotIndex: number
   onClose: () => void
+  initialCategory?: BuildingCategory
 }
 
-export function BuildingSelector({ slotIndex, onClose }: BuildingSelectorProps) {
+export function BuildingSelector({ slotIndex, onClose, initialCategory }: BuildingSelectorProps) {
   const state = useGameStore()
   const buildAtSlot = useGameStore((s) => s.actions.buildAtSlot)
-  const [activeCategory, setActiveCategory] = useState<BuildingCategory>('rides')
+  const [activeCategory, setActiveCategory] = useState<BuildingCategory>(initialCategory ?? 'rides')
 
   const categoryBuildings = useMemo(() => {
     return Building.getByCategory(activeCategory).map((building) => ({
