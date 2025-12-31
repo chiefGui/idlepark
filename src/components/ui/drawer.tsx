@@ -1,6 +1,6 @@
 import { useState, createContext, useContext, useEffect, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronLeft, Trophy, Zap, BarChart3, RotateCcw, Settings, BookOpen, MessageCircle } from 'lucide-react'
+import { X, ChevronLeft, Trophy, Zap, BarChart3, RotateCcw, Building2, BookOpen, MessageCircle } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { MilestonesContent } from '../milestones/milestones-content'
 import { PerksContent } from '../perks/perks-content'
@@ -38,12 +38,12 @@ export function DrawerProvider({ children }: DrawerProviderProps) {
 }
 
 const MENU_ITEMS = [
-  { id: 'feed' as const, label: 'Feed', icon: MessageCircle, description: 'Guest chatter' },
-  { id: 'park' as const, label: 'Park Settings', icon: Settings, description: 'Manage ticket prices' },
-  { id: 'timeline' as const, label: 'Timeline', icon: BookOpen, description: "Your park's story" },
-  { id: 'milestones' as const, label: 'Milestones', icon: Trophy, description: 'Track your achievements' },
+  { id: 'park' as const, label: 'HQ', icon: Building2, description: 'Manage your park' },
   { id: 'perks' as const, label: 'Perks', icon: Zap, description: 'Upgrade your park' },
   { id: 'analytics' as const, label: 'Analytics', icon: BarChart3, description: 'View park statistics' },
+  { id: 'milestones' as const, label: 'Milestones', icon: Trophy, description: 'Track your achievements' },
+  { id: 'timeline' as const, label: 'Timeline', icon: BookOpen, description: "Your park's story" },
+  { id: 'feed' as const, label: 'Feed', icon: MessageCircle, description: 'Guest chatter' },
 ]
 
 function MenuDrawer() {
