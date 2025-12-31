@@ -10,25 +10,23 @@ import {
   Wallet,
   PiggyBank,
   Trophy,
-  AlertTriangle,
+  Lightbulb,
   Sparkles,
-  BarChart3,
+  ThumbsUp,
+  AlertCircle,
 } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { Slot } from '../../systems/slot'
 import { Building } from '../../systems/building'
 import { Format } from '../../utils/format'
 
-type BuildingPerformance = {
+type BuildingStats = {
   buildingId: string
   name: string
   emoji: string
   count: number
-  totalUpkeep: number
-  totalEntertainment: number
-  totalFood: number
-  totalComfort: number
-  efficiency: number // value generated per $ upkeep
+  costPerDay: number
+  valuePerDay: number
 }
 
 export function AnalyticsContent() {
@@ -43,58 +41,47 @@ export function AnalyticsContent() {
   const occupiedSlots = Slot.getOccupied(state)
   const unlockedSlots = Slot.getUnlocked(state)
 
-  // Calculate building performance metrics
-  const buildingPerformance = useMemo(() => {
-    const perfMap = new Map<string, BuildingPerformance>()
+  // Calculate building stats
+  const buildingStats = useMemo(() => {
+    const statsMap = new Map<string, BuildingStats>()
 
     for (const slot of occupiedSlots) {
       if (!slot.buildingId) continue
       const building = Building.getById(slot.buildingId)
       if (!building) continue
 
-      const existing = perfMap.get(slot.buildingId)
-      const upkeep = Math.abs(
-        building.effects.find((e) => e.statId === 'money' && e.perDay < 0)?.perDay ?? 0
-      )
-      const entertainment =
-        building.effects.find((e) => e.statId === 'entertainment')?.perDay ?? 0
-      const food = building.effects.find((e) => e.statId === 'food')?.perDay ?? 0
-      const comfort = building.effects.find((e) => e.statId === 'comfort')?.perDay ?? 0
+      const existing = statsMap.get(slot.buildingId)
+      const cost = Building.getUpkeep(building)
+      const value = Building.getValue(building)
 
       if (existing) {
         existing.count++
-        existing.totalUpkeep += upkeep
-        existing.totalEntertainment += entertainment
-        existing.totalFood += food
-        existing.totalComfort += comfort
+        existing.costPerDay += cost
+        existing.valuePerDay += value
       } else {
-        perfMap.set(slot.buildingId, {
+        statsMap.set(slot.buildingId, {
           buildingId: slot.buildingId,
           name: building.name,
           emoji: building.emoji,
           count: 1,
-          totalUpkeep: upkeep,
-          totalEntertainment: entertainment,
-          totalFood: food,
-          totalComfort: comfort,
-          efficiency: 0,
+          costPerDay: cost,
+          valuePerDay: value,
         })
       }
     }
 
-    // Calculate efficiency (value per $ spent)
-    for (const perf of perfMap.values()) {
-      const totalValue = perf.totalEntertainment + perf.totalFood + perf.totalComfort
-      perf.efficiency = perf.totalUpkeep > 0 ? totalValue / perf.totalUpkeep : totalValue
-    }
-
-    return Array.from(perfMap.values()).sort((a, b) => b.efficiency - a.efficiency)
+    // Sort by value-to-cost ratio (best first)
+    return Array.from(statsMap.values()).sort((a, b) => {
+      const ratioA = a.costPerDay > 0 ? a.valuePerDay / a.costPerDay : a.valuePerDay
+      const ratioB = b.costPerDay > 0 ? b.valuePerDay / b.costPerDay : b.valuePerDay
+      return ratioB - ratioA
+    })
   }, [occupiedSlots])
 
-  const bestPerformer = buildingPerformance[0]
-  const worstPerformer = buildingPerformance[buildingPerformance.length - 1]
+  const topBuilding = buildingStats[0]
+  const weakBuilding = buildingStats.length > 1 ? buildingStats[buildingStats.length - 1] : null
 
-  // Calculate best/worst days from records
+  // Find best/worst days
   const bestDay = useMemo(() => {
     if (dailyRecords.length === 0) return null
     return dailyRecords.reduce((best, record) =>
@@ -109,134 +96,114 @@ export function AnalyticsContent() {
     )
   }, [dailyRecords])
 
-  // Calculate total upkeep
-  const totalUpkeep = occupiedSlots.reduce((total, slot) => {
+  // Total daily costs
+  const dailyCosts = occupiedSlots.reduce((total, slot) => {
     if (slot.buildingId) {
       const building = Building.getById(slot.buildingId)
       if (building) {
-        const upkeep = building.effects.find((e) => e.statId === 'money' && e.perDay < 0)
-        return total + Math.abs(upkeep?.perDay ?? 0)
+        const cost = building.effects.find((e) => e.statId === 'money' && e.perDay < 0)
+        return total + Math.abs(cost?.perDay ?? 0)
       }
     }
     return total
   }, 0)
 
-  // Calculate ROI
-  const netProfit = financials.totalEarned - financials.totalUpkeepPaid
-  const roi =
-    financials.totalInvested > 0
-      ? ((netProfit / financials.totalInvested) * 100).toFixed(1)
-      : '0'
-
-  // Insights
-  const insights = useMemo(() => {
-    const items: { type: 'warning' | 'success' | 'info'; message: string }[] = []
+  // Tips based on game state
+  const tips = useMemo(() => {
+    const items: { type: 'warning' | 'success' | 'tip'; message: string }[] = []
 
     if (moneyRate < 0) {
       items.push({
         type: 'warning',
-        message: `Losing $${Math.abs(moneyRate).toFixed(1)}/day. Build more revenue-generating attractions or reduce costs.`,
+        message: `You're losing $${Math.abs(moneyRate).toFixed(0)} each day. Try building more rides or removing costly buildings.`,
       })
     }
 
     if (state.stats.entertainment < state.stats.guests * 0.5 && state.stats.guests > 0) {
       items.push({
-        type: 'warning',
-        message: 'Not enough entertainment for your guests. Build more rides!',
+        type: 'tip',
+        message: 'Your guests want more fun! Add some rides to keep them happy.',
       })
     }
 
     if (state.stats.cleanliness < 40) {
       items.push({
         type: 'warning',
-        message: 'Park cleanliness is low. Add trash cans or get the Cleaning Crew perk.',
+        message: 'Your park is getting dirty. Add trash cans to clean things up!',
       })
     }
 
-    if (worstPerformer && worstPerformer.efficiency < 2 && worstPerformer.totalUpkeep > 0) {
-      items.push({
-        type: 'info',
-        message: `${worstPerformer.emoji} ${worstPerformer.name} has low efficiency. Consider replacing it.`,
-      })
+    if (weakBuilding && weakBuilding.costPerDay > 0) {
+      const ratio = weakBuilding.valuePerDay / weakBuilding.costPerDay
+      if (ratio < 2) {
+        items.push({
+          type: 'tip',
+          message: `${weakBuilding.emoji} ${weakBuilding.name} costs a lot for what it gives. Maybe swap it for something better?`,
+        })
+      }
     }
 
     if (moneyRate > 50) {
       items.push({
         type: 'success',
-        message: 'Excellent income! Consider expanding your park.',
+        message: "You're making great money! Time to expand your park.",
       })
     }
 
-    if (parseFloat(roi) > 100) {
+    const profit = financials.totalEarned - financials.totalUpkeepPaid
+    if (financials.totalInvested > 0 && profit > financials.totalInvested) {
       items.push({
         type: 'success',
-        message: `Great ROI of ${roi}%! Your investments are paying off.`,
+        message: "You've already made back more than you spent. Nice work!",
       })
     }
 
     return items
-  }, [moneyRate, state.stats, worstPerformer, roi])
+  }, [moneyRate, state.stats, weakBuilding, financials])
 
   return (
     <div className="space-y-6">
-      {/* Financial Overview */}
+      {/* Money */}
       <div>
         <h3 className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
-          Financial Overview
+          Money
         </h3>
         <div className="grid gap-3">
           <AnalyticCard
             icon={DollarSign}
-            label="Net Income"
+            label="Daily Profit"
             value={`${moneyRate >= 0 ? '+' : ''}${Format.money(moneyRate)}/day`}
             trend={moneyRate > 0 ? 'up' : moneyRate < 0 ? 'down' : 'neutral'}
           />
           <div className="grid grid-cols-2 gap-3">
             <AnalyticCard
               icon={PiggyBank}
-              label="Total Invested"
+              label="Spent"
               value={Format.money(financials.totalInvested)}
               trend="neutral"
               compact
             />
             <AnalyticCard
               icon={Wallet}
-              label="Total Earned"
+              label="Earned"
               value={Format.money(financials.totalEarned)}
               trend="up"
               color="var(--color-positive)"
               compact
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <AnalyticCard
-              icon={TrendingDown}
-              label="Upkeep Paid"
-              value={Format.money(financials.totalUpkeepPaid)}
-              trend="down"
-              color="var(--color-negative)"
-              compact
-            />
-            <AnalyticCard
-              icon={BarChart3}
-              label="ROI"
-              value={`${roi}%`}
-              trend={parseFloat(roi) > 0 ? 'up' : parseFloat(roi) < 0 ? 'down' : 'neutral'}
-              compact
-            />
-          </div>
         </div>
       </div>
 
-      {/* Peak Stats */}
+      {/* Your Best */}
       <div>
         <h3 className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
-          Records
+          Your Best
         </h3>
         <div className="grid grid-cols-2 gap-3">
           <AnalyticCard
             icon={Trophy}
-            label="Peak Money"
+            label="Most Money"
             value={Format.money(financials.peakMoney)}
             trend="up"
             color="#fbbf24"
@@ -244,7 +211,7 @@ export function AnalyticsContent() {
           />
           <AnalyticCard
             icon={Users}
-            label="Peak Guests"
+            label="Most Guests"
             value={financials.peakGuests.toString()}
             trend="up"
             color="#6366f1"
@@ -273,30 +240,30 @@ export function AnalyticsContent() {
         </div>
       </div>
 
-      {/* Park Stats */}
+      {/* Right Now */}
       <div>
         <h3 className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
-          Current Stats
+          Right Now
         </h3>
         <div className="grid gap-3">
           <AnalyticCard
             icon={Users}
-            label="Guest Growth"
+            label="New Guests"
             value={`${guestRate >= 0 ? '+' : ''}${guestRate.toFixed(1)}/day`}
             trend={guestRate > 0 ? 'up' : guestRate < 0 ? 'down' : 'neutral'}
           />
           <div className="grid grid-cols-2 gap-3">
             <AnalyticCard
               icon={Clock}
-              label="Days Survived"
-              value={`${Math.floor(state.currentDay)} days`}
+              label="Day"
+              value={`${Math.floor(state.currentDay)}`}
               trend="neutral"
               compact
             />
             <AnalyticCard
               icon={TrendingDown}
-              label="Daily Upkeep"
-              value={`${Format.money(totalUpkeep)}/day`}
+              label="Daily Costs"
+              value={`${Format.money(dailyCosts)}/day`}
               trend="down"
               color="var(--color-negative)"
               compact
@@ -305,45 +272,39 @@ export function AnalyticsContent() {
         </div>
       </div>
 
-      {/* Building Performance */}
-      {buildingPerformance.length > 0 && (
+      {/* Your Buildings */}
+      {buildingStats.length > 0 && (
         <div>
           <h3 className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
-            Building Performance
+            Your Buildings
           </h3>
           <div className="space-y-2">
-            {bestPerformer && (
+            {topBuilding && (
               <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-positive)]/10 border border-[var(--color-positive)]/20">
                 <div className="flex items-center gap-2">
                   <Sparkles size={16} className="text-[var(--color-positive)]" />
-                  <span className="text-xl">{bestPerformer.emoji}</span>
+                  <span className="text-xl">{topBuilding.emoji}</span>
                   <div>
-                    <div className="font-medium">{bestPerformer.name}</div>
-                    <div className="text-xs text-[var(--color-text-muted)]">Best Performer</div>
+                    <div className="font-medium">{topBuilding.name}</div>
+                    <div className="text-xs text-[var(--color-text-muted)]">Top performer</div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-semibold text-[var(--color-positive)]">
-                    {bestPerformer.efficiency.toFixed(1)} eff
-                  </div>
-                  <div className="text-xs text-[var(--color-text-muted)]">x{bestPerformer.count}</div>
+                  <div className="text-xs text-[var(--color-text-muted)]">x{topBuilding.count}</div>
                 </div>
               </div>
             )}
-            {worstPerformer && worstPerformer !== bestPerformer && (
+            {weakBuilding && weakBuilding !== topBuilding && (
               <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">{worstPerformer.emoji}</span>
+                  <span className="text-xl">{weakBuilding.emoji}</span>
                   <div>
-                    <div className="font-medium">{worstPerformer.name}</div>
-                    <div className="text-xs text-[var(--color-text-muted)]">Lowest Efficiency</div>
+                    <div className="font-medium">{weakBuilding.name}</div>
+                    <div className="text-xs text-[var(--color-text-muted)]">Could be better</div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-semibold text-[var(--color-text-muted)]">
-                    {worstPerformer.efficiency.toFixed(1)} eff
-                  </div>
-                  <div className="text-xs text-[var(--color-text-muted)]">x{worstPerformer.count}</div>
+                  <div className="text-xs text-[var(--color-text-muted)]">x{weakBuilding.count}</div>
                 </div>
               </div>
             )}
@@ -351,66 +312,74 @@ export function AnalyticsContent() {
         </div>
       )}
 
-      {/* Insights */}
-      {insights.length > 0 && (
+      {/* Tips */}
+      {tips.length > 0 && (
         <div>
           <h3 className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
-            Insights
+            Tips
           </h3>
           <div className="space-y-2">
-            {insights.map((insight, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className={`p-3 rounded-xl border ${
-                  insight.type === 'warning'
-                    ? 'bg-amber-500/10 border-amber-500/20'
-                    : insight.type === 'success'
-                      ? 'bg-[var(--color-positive)]/10 border-[var(--color-positive)]/20'
-                      : 'bg-[var(--color-accent)]/10 border-[var(--color-accent)]/20'
-                }`}
-              >
-                <div className="flex items-start gap-2">
-                  <AlertTriangle
-                    size={16}
-                    className={
-                      insight.type === 'warning'
-                        ? 'text-amber-500 mt-0.5'
-                        : insight.type === 'success'
-                          ? 'text-[var(--color-positive)] mt-0.5'
-                          : 'text-[var(--color-accent)] mt-0.5'
-                    }
-                  />
-                  <span className="text-sm">{insight.message}</span>
-                </div>
-              </motion.div>
-            ))}
+            {tips.map((tip, i) => {
+              const Icon =
+                tip.type === 'warning'
+                  ? AlertCircle
+                  : tip.type === 'success'
+                    ? ThumbsUp
+                    : Lightbulb
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className={`p-3 rounded-xl border ${
+                    tip.type === 'warning'
+                      ? 'bg-amber-500/10 border-amber-500/20'
+                      : tip.type === 'success'
+                        ? 'bg-[var(--color-positive)]/10 border-[var(--color-positive)]/20'
+                        : 'bg-[var(--color-accent)]/10 border-[var(--color-accent)]/20'
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <Icon
+                      size={16}
+                      className={`mt-0.5 ${
+                        tip.type === 'warning'
+                          ? 'text-amber-500'
+                          : tip.type === 'success'
+                            ? 'text-[var(--color-positive)]'
+                            : 'text-[var(--color-accent)]'
+                      }`}
+                    />
+                    <span className="text-sm">{tip.message}</span>
+                  </div>
+                </motion.div>
+              )
+            })}
           </div>
         </div>
       )}
 
-      {/* Buildings List */}
+      {/* All Buildings */}
       <div>
         <h3 className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
-          Buildings ({occupiedSlots.length}/{unlockedSlots.length} slots)
+          All Buildings ({occupiedSlots.length}/{unlockedSlots.length})
         </h3>
         <div className="space-y-2">
-          {buildingPerformance.map((perf) => (
+          {buildingStats.map((b) => (
             <div
-              key={perf.buildingId}
+              key={b.buildingId}
               className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]"
             >
               <div className="flex items-center gap-2">
-                <span className="text-xl">{perf.emoji}</span>
-                <span className="font-medium">{perf.name}</span>
+                <span className="text-xl">{b.emoji}</span>
+                <span className="font-medium">{b.name}</span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-xs text-[var(--color-negative)]">
-                  -{Format.money(perf.totalUpkeep)}/day
+                  -{Format.money(b.costPerDay)}/day
                 </span>
-                <span className="text-[var(--color-text-muted)]">x{perf.count}</span>
+                <span className="text-[var(--color-text-muted)]">x{b.count}</span>
               </div>
             </div>
           ))}

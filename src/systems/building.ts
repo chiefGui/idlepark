@@ -276,6 +276,20 @@ export class Building {
     return building.costs
   }
 
+  static getUpkeep(building: BuildingDef): number {
+    const effect = building.effects.find(e => e.statId === 'money' && e.perDay < 0)
+    return Math.abs(effect?.perDay ?? 0)
+  }
+
+  static getValue(building: BuildingDef): number {
+    return building.effects.reduce((sum, e) => {
+      if (['entertainment', 'food', 'comfort'].includes(e.statId)) {
+        return sum + e.perDay
+      }
+      return sum
+    }, 0)
+  }
+
   static getModifiers(buildingId: string, slotIndex: number): Modifier[] {
     const building = this.getById(buildingId)
     if (!building) return []
