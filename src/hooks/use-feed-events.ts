@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { GameEvents } from '../engine/events'
 import { Feed } from '../systems/feed'
+import { Guest } from '../systems/guest'
 import { useGameStore } from '../store/game-store'
 
 // Minimum time between feed entries (in ms)
@@ -114,7 +115,8 @@ export function useFeedEvents() {
 
       // Check price-based events (only if we have guests) - uses cooldown
       if (stats.guests >= 10) {
-        const priceEvent = Feed.getPriceEvent(ticketPrice)
+        const perceivedValue = Guest.calculatePerceivedValue(state)
+        const priceEvent = Feed.getPriceEvent(perceivedValue)
         if (priceEvent) {
           const entry = Feed.createEntry(priceEvent, state.currentDay, {
             ticketPrice,
