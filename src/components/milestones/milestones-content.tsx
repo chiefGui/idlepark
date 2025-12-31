@@ -3,6 +3,7 @@ import { Check } from 'lucide-react'
 import { Milestone } from '../../systems/milestone'
 import { useGameStore } from '../../store/game-store'
 import { Requirements } from '../../engine/requirements'
+import { Format } from '../../utils/format'
 
 export function MilestonesContent() {
   const state = useGameStore()
@@ -50,7 +51,7 @@ export function MilestonesContent() {
                       />
                     </div>
                     <span className="text-sm font-medium text-[var(--color-text-muted)] w-12 text-right">
-                      {Math.floor(progress * 100)}%
+                      {Format.percent(progress * 100)}
                     </span>
                   </div>
 

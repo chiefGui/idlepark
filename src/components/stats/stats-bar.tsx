@@ -1,82 +1,13 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import {
-  DollarSign,
-  Users,
-  Sparkles,
-  UtensilsCrossed,
-  Sofa,
-  Sparkle,
-  Star,
-  Heart,
-} from 'lucide-react'
+import { DollarSign, Users } from 'lucide-react'
 import type { StatId } from '../../engine/game-types'
 import { useGameStore } from '../../store/game-store'
 import { Guest } from '../../systems/guest'
 import { Format } from '../../utils/format'
+import { STAT_CONFIG, SECONDARY_STATS } from '../../constants/stats'
 import { InfoModal } from '../ui/info-modal'
 import { StatDetail } from './stat-detail'
-
-type StatConfig = {
-  icon: typeof DollarSign
-  label: string
-  color: string
-  format: (value: number) => string
-}
-
-const STAT_CONFIG: Record<StatId, StatConfig> = {
-  money: {
-    icon: DollarSign,
-    label: 'Money',
-    color: '#22c55e',
-    format: Format.money,
-  },
-  guests: {
-    icon: Users,
-    label: 'Guests',
-    color: '#6366f1',
-    format: Format.guests,
-  },
-  entertainment: {
-    icon: Sparkles,
-    label: 'Fun',
-    color: '#f472b6',
-    format: (v) => Format.millify(v, 1),
-  },
-  food: {
-    icon: UtensilsCrossed,
-    label: 'Food',
-    color: '#fb923c',
-    format: (v) => Format.millify(v, 1),
-  },
-  comfort: {
-    icon: Sofa,
-    label: 'Comfort',
-    color: '#a78bfa',
-    format: (v) => Format.millify(v, 1),
-  },
-  cleanliness: {
-    icon: Sparkle,
-    label: 'Clean',
-    color: '#22d3ee',
-    format: Format.percent,
-  },
-  appeal: {
-    icon: Star,
-    label: 'Appeal',
-    color: '#fbbf24',
-    format: Format.percent,
-  },
-  satisfaction: {
-    icon: Heart,
-    label: 'Happy',
-    color: '#f87171',
-    format: Format.percent,
-  },
-}
-
-// Secondary stats (compact display)
-const SECONDARY_STATS: StatId[] = ['satisfaction', 'appeal', 'entertainment', 'food', 'comfort', 'cleanliness']
 
 export function StatsBar() {
   const state = useGameStore()
@@ -108,7 +39,7 @@ export function StatsBar() {
             </div>
             <div className="flex flex-col min-w-0 text-left">
               <span className="text-[10px] text-[var(--color-text-muted)] leading-none">
-                Money
+                {STAT_CONFIG.money.label}
               </span>
               <div className="flex items-baseline gap-1">
                 <span className="text-base font-bold leading-tight">
@@ -140,7 +71,7 @@ export function StatsBar() {
             </div>
             <div className="flex flex-col min-w-0 text-left">
               <span className="text-[10px] text-[var(--color-text-muted)] leading-none">
-                Guests
+                {STAT_CONFIG.guests.label}
               </span>
               <div className="flex items-baseline gap-1">
                 <span className="text-base font-bold leading-tight">

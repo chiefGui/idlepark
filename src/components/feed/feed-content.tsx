@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { MessageCircle, Heart, Repeat2, Share } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { Feed } from '../../systems/feed'
+import { Format } from '../../utils/format'
 import type { FeedEntry, FeedEventType } from '../../engine/game-types'
 
 const EVENT_EMOJI: Record<FeedEventType, string> = {
@@ -72,11 +73,11 @@ function FeedEntryCard({ entry, index }: { entry: FeedEntry; index: number }) {
         </button>
         <button className="flex items-center gap-1.5 text-xs hover:text-green-500 transition-colors group">
           <Repeat2 size={16} className="group-hover:scale-110 transition-transform" />
-          <span>{Feed.formatLikes(entry.retweets)}</span>
+          <span>{Format.number(entry.retweets)}</span>
         </button>
         <button className="flex items-center gap-1.5 text-xs hover:text-red-500 transition-colors group">
           <Heart size={16} className="group-hover:scale-110 transition-transform" />
-          <span>{Feed.formatLikes(entry.likes)}</span>
+          <span>{Format.number(entry.likes)}</span>
         </button>
         <button className="flex items-center gap-1.5 text-xs hover:text-[var(--color-accent)] transition-colors group">
           <Share size={16} className="group-hover:scale-110 transition-transform" />

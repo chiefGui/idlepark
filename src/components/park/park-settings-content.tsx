@@ -99,7 +99,7 @@ export function ParkSettingsContent() {
                 priceMultiplier > 1 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
               }`}>
                 {priceMultiplier > 1 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                {Math.abs((priceMultiplier - 1) * 100).toFixed(0)}%
+                {Format.percent(Math.abs((priceMultiplier - 1) * 100))}
               </span>
             )}
           </div>
@@ -114,13 +114,13 @@ export function ParkSettingsContent() {
             <span className="text-xs text-[var(--color-text-muted)]">Guest Attraction</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold">{(arrivalMultiplier * 100).toFixed(0)}%</span>
+            <span className="text-lg font-bold">{Format.percent(arrivalMultiplier * 100)}</span>
             {arrivalMultiplier !== 1 && (
               <span className={`text-xs flex items-center gap-0.5 ${
                 arrivalMultiplier > 1 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
               }`}>
                 {arrivalMultiplier > 1 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                {Math.abs((arrivalMultiplier - 1) * 100).toFixed(0)}%
+                {Format.percent(Math.abs((arrivalMultiplier - 1) * 100))}
               </span>
             )}
           </div>

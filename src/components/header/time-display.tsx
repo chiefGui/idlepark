@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { Calendar, AlertTriangle } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { GameTypes } from '../../engine/game-types'
+import { Format } from '../../utils/format'
 
 export function TimeDisplay() {
   const currentDay = useGameStore((s) => s.currentDay)
@@ -25,7 +26,7 @@ export function TimeDisplay() {
         >
           <AlertTriangle size={16} className="text-[var(--color-negative)]" />
           <span className="text-sm text-[var(--color-negative)]">
-            Bankruptcy in {Math.ceil(GameTypes.BANKRUPTCY_THRESHOLD_DAYS - consecutiveNegativeDays)} days
+            Bankruptcy in {Format.days(GameTypes.BANKRUPTCY_THRESHOLD_DAYS - consecutiveNegativeDays, false)}
           </span>
         </motion.div>
       )}

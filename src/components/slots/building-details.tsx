@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Trash2, DollarSign } from 'lucide-react'
 import type { BuildingDef } from '../../engine/game-types'
 import { Button } from '../ui/button'
+import { Format } from '../../utils/format'
 
 type BuildingDetailsProps = {
   building: BuildingDef | null
@@ -15,7 +16,7 @@ export function BuildingDetails({ building, onClose, onDemolish }: BuildingDetai
   const refundAmount = Math.floor((building.costs[0]?.amount ?? 0) * 0.5)
 
   const handleDemolish = () => {
-    if (confirm(`Demolish ${building.name}? You'll receive $${refundAmount} back.`)) {
+    if (confirm(`Demolish ${building.name}? You'll receive ${Format.money(refundAmount)} back.`)) {
       onDemolish()
       onClose()
     }
@@ -79,7 +80,7 @@ export function BuildingDetails({ building, onClose, onDemolish }: BuildingDetai
                   <div className="flex items-center gap-2 text-sm">
                     <DollarSign size={16} className="text-[var(--color-positive)]" />
                     <span className="text-[var(--color-text-muted)]">Demolish refund:</span>
-                    <span className="font-semibold text-[var(--color-positive)]">${refundAmount}</span>
+                    <span className="font-semibold text-[var(--color-positive)]">{Format.money(refundAmount)}</span>
                     <span className="text-[var(--color-text-muted)]">(50% of cost)</span>
                   </div>
                 </div>

@@ -3,6 +3,7 @@ import { Check } from 'lucide-react'
 import { Panel } from '../ui/panel'
 import { Milestone } from '../../systems/milestone'
 import { useGameStore } from '../../store/game-store'
+import { Format } from '../../utils/format'
 
 export function MilestonesPanel() {
   const state = useGameStore()
@@ -39,7 +40,7 @@ export function MilestonesPanel() {
                 </div>
                 {!isAchieved && (
                   <div className="text-xs text-[var(--color-text-muted)]">
-                    {Math.floor(progress * 100)}%
+                    {Format.percent(progress * 100)}
                   </div>
                 )}
               </div>
