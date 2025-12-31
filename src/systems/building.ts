@@ -1,5 +1,6 @@
 import type { BuildingDef, BuildingCategory, Cost, GameState } from '../engine/game-types'
 import { Requirements } from '../engine/requirements'
+import type { Modifier } from '../engine/modifiers'
 
 export class Building {
   // === RIDES ===
@@ -273,5 +274,33 @@ export class Building {
 
   static getTotalCost(building: BuildingDef): Cost[] {
     return building.costs
+  }
+
+  static getUpkeep(building: BuildingDef): number {
+    const effect = building.effects.find(e => e.statId === 'money' && e.perDay < 0)
+    return Math.abs(effect?.perDay ?? 0)
+  }
+
+  static getValue(building: BuildingDef): number {
+    return building.effects.reduce((sum, e) => {
+      if (['entertainment', 'food', 'comfort'].includes(e.statId)) {
+        return sum + e.perDay
+      }
+      return sum
+    }, 0)
+  }
+
+  static getModifiers(buildingId: string, slotIndex: number): Modifier[] {
+    const building = this.getById(buildingId)
+    if (!building) return []
+
+    const source = { type: 'building' as const, slotIndex, buildingId }
+
+    return building.effects.map((effect) => ({
+      source,
+      stat: effect.statId,
+      flat: effect.perDay,
+      increased: effect.multiplier ? (effect.multiplier - 1) * 100 : undefined,
+    }))
   }
 }

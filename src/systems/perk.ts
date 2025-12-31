@@ -1,5 +1,6 @@
 import type { PerkDef, GameState } from '../engine/game-types'
 import { Requirements } from '../engine/requirements'
+import type { Modifier } from '../engine/modifiers'
 
 export class Perk {
   static readonly MARKETING_1: PerkDef = {
@@ -82,5 +83,19 @@ export class Perk {
 
   static isSlotPerk(perk: PerkDef): boolean {
     return perk.id.startsWith('extra_slot')
+  }
+
+  static getModifiers(perkId: string): Modifier[] {
+    const perk = this.getById(perkId)
+    if (!perk) return []
+
+    const source = { type: 'perk' as const, perkId }
+
+    return perk.effects.map((effect) => ({
+      source,
+      stat: effect.statId,
+      flat: effect.perDay || undefined,
+      increased: effect.multiplier ? (effect.multiplier - 1) * 100 : undefined,
+    }))
   }
 }

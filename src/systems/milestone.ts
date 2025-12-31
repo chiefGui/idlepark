@@ -1,8 +1,7 @@
 import type { MilestoneDef, GameState } from '../engine/game-types'
 import { Requirements } from '../engine/requirements'
 import { Timeline } from './timeline'
-import type { AggregatedRates } from '../engine/effects'
-import { Effects } from '../engine/effects'
+import type { ComputedRates } from '../engine/modifiers'
 
 export class Milestone {
   static readonly FIRST_BUILDING: MilestoneDef = {
@@ -116,7 +115,7 @@ export class Milestone {
     milestone: MilestoneDef,
     startDay: number,
     startStats: Record<string, number>,
-    rates: AggregatedRates,
+    rates: ComputedRates,
     endDay: number
   ): number {
     const { condition } = milestone
@@ -128,7 +127,7 @@ export class Milestone {
         if (condition.min === undefined) return startDay
         const currentValue = startStats[condition.statId] ?? 0
         if (currentValue >= condition.min) return startDay
-        const rate = Effects.getFinalRate(condition.statId, rates)
+        const rate = rates[condition.statId] ?? 0
         if (rate <= 0) return endDay
         const daysNeeded = (condition.min - currentValue) / rate
         return Math.min(endDay, Math.floor(startDay + daysNeeded))

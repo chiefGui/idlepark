@@ -69,11 +69,28 @@ export type SlotState = {
   locked: boolean
 }
 
+export type DailyRecord = {
+  day: number
+  moneyEarned: number
+  peakGuests: number
+  peakAppeal: number
+}
+
+export type FinancialStats = {
+  totalInvested: number      // Sum of all building/perk costs
+  totalEarned: number        // Cumulative income from guests
+  totalUpkeepPaid: number    // Cumulative upkeep costs
+  peakMoney: number          // Highest money ever reached
+  peakGuests: number         // Most guests ever
+}
+
 export type GameState = {
   stats: Record<StatId, number>
   slots: SlotState[]
   ownedPerks: string[]
   timeline: TimelineEntry[]
+  dailyRecords: DailyRecord[]
+  financials: FinancialStats
   currentDay: number
   lastTickTime: number
   consecutiveNegativeDays: number
@@ -111,7 +128,7 @@ export class GameTypes {
       food: 0,
       comfort: 0,
       cleanliness: 100,
-      appeal: 50,
+      appeal: 0,
       satisfaction: 100,
     }
   }
@@ -124,12 +141,24 @@ export class GameTypes {
     }))
   }
 
+  static createInitialFinancials(): FinancialStats {
+    return {
+      totalInvested: 0,
+      totalEarned: 0,
+      totalUpkeepPaid: 0,
+      peakMoney: this.STARTING_MONEY,
+      peakGuests: 0,
+    }
+  }
+
   static createInitialState(): GameState {
     return {
       stats: this.createInitialStats(),
       slots: this.createInitialSlots(),
       ownedPerks: [],
       timeline: [],
+      dailyRecords: [],
+      financials: this.createInitialFinancials(),
       currentDay: 1,
       lastTickTime: Date.now(),
       consecutiveNegativeDays: 0,

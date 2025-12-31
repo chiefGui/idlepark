@@ -1,5 +1,6 @@
-import type { StatId, GameState, Effect } from '../engine/game-types'
+import type { StatId, GameState } from '../engine/game-types'
 import { GameTypes } from '../engine/game-types'
+import type { Modifier } from '../engine/modifiers'
 
 export type GuestDemand = {
   statId: StatId
@@ -33,9 +34,15 @@ export class Guest {
     return this.BASE_ARRIVAL_RATE * appealFactor * arrivalPenalty
   }
 
-  static calculateIncome(guestCount: number, ticketPrice: number): number {
+  static calculateIncomeWithEntertainment(
+    guestCount: number,
+    ticketPrice: number,
+    entertainment: number
+  ): number {
     const priceMultiplier = this.getTicketPriceMultiplier(ticketPrice)
-    return guestCount * this.BASE_MONEY_PER_GUEST * priceMultiplier
+    // No rides/entertainment = guests don't pay much (they have nothing to do)
+    const entertainmentFactor = Math.min(1, entertainment / 20)
+    return guestCount * this.BASE_MONEY_PER_GUEST * priceMultiplier * entertainmentFactor
   }
 
   static calculateSatisfaction(state: GameState): number {
@@ -63,34 +70,43 @@ export class Guest {
   }
 
   static calculateAppeal(state: GameState): number {
-    const satisfactionFactor = state.stats.satisfaction / 100
-    const entertainmentBonus = Math.min(20, state.stats.entertainment / 10)
-    const cleanlinessBonus = (state.stats.cleanliness - 50) / 5
+    // Appeal is primarily driven by what the park offers (entertainment)
+    // An empty park has very low appeal - why would anyone come?
+    const entertainmentBase = Math.min(50, state.stats.entertainment / 2)
+    const satisfactionBonus = (state.stats.satisfaction / 100) * 30
+    const cleanlinessBonus = Math.max(-10, (state.stats.cleanliness - 50) / 5)
 
     return Math.max(0, Math.min(100,
-      30 + (satisfactionFactor * 40) + entertainmentBonus + cleanlinessBonus
+      entertainmentBase + satisfactionBonus + cleanlinessBonus
     ))
   }
 
-  static getEffects(state: GameState): Effect[] {
+  static getModifiers(state: GameState): Modifier[] {
     const arrivalRate = this.calculateArrivalRate(state)
-    const income = this.calculateIncome(state.stats.guests, state.ticketPrice)
+    const income = this.calculateIncomeWithEntertainment(
+      state.stats.guests,
+      state.ticketPrice,
+      state.stats.entertainment
+    )
 
-    const effects: Effect[] = [
-      { statId: 'guests', perDay: arrivalRate },
-      { statId: 'money', perDay: income },
+    const source = { type: 'guest' as const }
+
+    const modifiers: Modifier[] = [
+      { source, stat: 'guests', flat: arrivalRate },
+      { source, stat: 'money', flat: income },
     ]
 
     for (const demand of this.DEMANDS) {
-      effects.push({
-        statId: demand.statId,
-        perDay: -state.stats.guests * demand.perGuest,
+      modifiers.push({
+        source,
+        stat: demand.statId,
+        flat: -state.stats.guests * demand.perGuest,
       })
     }
 
     const cleanlinessDecay = -state.stats.guests * 0.1
-    effects.push({ statId: 'cleanliness', perDay: cleanlinessDecay })
+    modifiers.push({ source, stat: 'cleanliness', flat: cleanlinessDecay })
 
-    return effects
+    return modifiers
   }
 }
