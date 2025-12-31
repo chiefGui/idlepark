@@ -8,6 +8,7 @@ import { Format } from '../../utils/format'
 import { STAT_CONFIG, SECONDARY_STATS } from '../../constants/stats'
 import { InfoModal } from '../ui/info-modal'
 import { StatDetail } from './stat-detail'
+import { MoneyPopup } from '../ui/money-popup'
 
 export function StatsBar() {
   const state = useGameStore()
@@ -29,8 +30,9 @@ export function StatsBar() {
           <motion.button
             whileTap={{ scale: 0.98 }}
             onClick={() => setSelectedStat('money')}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] active:bg-[var(--color-surface-hover)] transition-colors"
+            className="relative flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] active:bg-[var(--color-surface-hover)] transition-colors"
           >
+            <MoneyPopup />
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
               style={{ backgroundColor: `${STAT_CONFIG.money.color}20` }}

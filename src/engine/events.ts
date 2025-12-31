@@ -1,6 +1,8 @@
 import mitt from 'mitt'
 import type { FeedEntry } from './game-types'
 
+export type MoneyPopupReason = 'building' | 'perk' | 'milestone' | 'demolish'
+
 type GameEventMap = {
   'tick': { deltaDay: number }
   'day:changed': { day: number }
@@ -16,6 +18,7 @@ type GameEventMap = {
   'game:loaded': undefined
   'happening:started': { happeningId: string }
   'happening:ended': { happeningId: string }
+  'money:changed': { amount: number; reason: MoneyPopupReason }
 }
 
 const emitter = mitt<GameEventMap>()
