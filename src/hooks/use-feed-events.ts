@@ -13,6 +13,7 @@ export function useFeedEvents() {
     appeal: number
     guests: number
     money: number
+    capacityPercent: number
   } | null>(null)
   const lastFeedTimeRef = useRef<number>(0)
 
@@ -85,12 +86,17 @@ export function useFeedEvents() {
       const state = useGameStore.getState()
       const { stats, ticketPrice, rates } = state
 
+      // Calculate capacity percentage
+      const capacity = Guest.getCapacity(state)
+      const capacityPercent = capacity > 0 ? (stats.guests / capacity) * 100 : 0
+
       // Initialize previous stats on first tick
       if (!previousStatsRef.current) {
         previousStatsRef.current = {
           appeal: stats.appeal,
           guests: stats.guests,
           money: stats.money,
+          capacityPercent,
         }
         return
       }
@@ -103,6 +109,17 @@ export function useFeedEvents() {
         const entry = Feed.createEntry('guest_threshold', state.currentDay, {
           guestCount: guestThreshold,
         })
+        addWithCooldown(entry, true)
+      }
+
+      // Check capacity thresholds - priority (important feedback)
+      if (capacityPercent >= 100 && prev.capacityPercent < 100) {
+        // Just hit full capacity
+        const entry = Feed.createEntry('capacity_reached', state.currentDay)
+        addWithCooldown(entry, true)
+      } else if (capacityPercent >= 80 && prev.capacityPercent < 80) {
+        // Just hit 80% capacity warning
+        const entry = Feed.createEntry('capacity_warning', state.currentDay)
         addWithCooldown(entry, true)
       }
 
@@ -147,6 +164,7 @@ export function useFeedEvents() {
         appeal: stats.appeal,
         guests: stats.guests,
         money: stats.money,
+        capacityPercent,
       }
     })
 

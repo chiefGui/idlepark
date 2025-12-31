@@ -417,6 +417,51 @@ const MESSAGES: Record<FeedEventType, string[]> = {
     "{happening} ended but the memories remain ✨",
     "Another {happening} in the books. Ready for whatever's next",
   ],
+  capacity_reached: [
+    // Frustrated
+    "The park is PACKED. Can't even get in line for anything 😤",
+    "They stopped letting people in?? I've been waiting forever!",
+    "At capacity means I'm stuck outside. Cool cool cool",
+    "Park's full. Standing here like 🧍watching everyone else have fun",
+    "This is what I get for not coming earlier. FULL CAPACITY",
+    // Observational
+    "Just heard they're at max capacity. Wild how popular this place got",
+    "Park is officially at capacity. That's either great marketing or a problem",
+    "No more room at the park. Success or chaos? You decide",
+    "They had to close the gates. That's a lot of people in there",
+    "Capacity reached! This park is living its main character moment",
+    // Impressed
+    "The fact that this park hits capacity... that's impressive honestly",
+    "From empty to FULL. What a glow up for this place 📈",
+    "Park so good they literally can't fit more people. Goals",
+    "Capacity reached means they're doing something right",
+    // Sympathetic
+    "Feel bad for people just arriving. Park's full 😕",
+    "Some families getting turned away. Rough scene at the gates",
+    "Hit capacity before noon. Some people drove hours for this...",
+  ],
+  capacity_warning: [
+    // Urgent
+    "Park is getting CROWDED. Might wanna get here soon! 🏃",
+    "Almost at capacity! Lines are getting crazy",
+    "Warning: this park is about to be FULL. Act fast",
+    "They're close to max capacity. Now or never folks",
+    "Park filling up FAST. This is not a drill",
+    // Excited
+    "It's getting packed in here! The energy is UNMATCHED 🔥",
+    "So many people! The vibes are absolutely electric rn",
+    "Crowded but in a fun way? Everyone's having a blast",
+    "Almost full and the atmosphere is incredible",
+    // Observational
+    "Park's pretty crowded today. Might hit capacity soon",
+    "Lines are longer than usual. Must be close to full",
+    "Noticed more people than ever before. Getting cozy in here",
+    "The crowd is real today. Plan accordingly",
+    // Tips
+    "Pro tip: park's almost full, hit the popular rides first",
+    "Getting packed. Grab food now before the lines get worse",
+    "Almost at capacity - perfect time to try the less popular spots",
+  ],
 }
 
 // Random spots for ambient messages

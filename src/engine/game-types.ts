@@ -81,6 +81,8 @@ export type FeedEventType =
   | 'ambient'
   | 'happening_started'
   | 'happening_ended'
+  | 'capacity_reached'
+  | 'capacity_warning'
 
 // === HAPPENINGS ===
 
