@@ -74,10 +74,8 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
   },
 }
 
-// Row 1: Key metrics (outcomes)
-// Row 2: Resources (inputs)
-const ROW_1: StatId[] = ['money', 'guests', 'satisfaction', 'appeal']
-const ROW_2: StatId[] = ['entertainment', 'food', 'comfort', 'cleanliness']
+// Secondary stats (compact display)
+const SECONDARY_STATS: StatId[] = ['satisfaction', 'appeal', 'entertainment', 'food', 'comfort', 'cleanliness']
 
 export function StatsBar() {
   const stats = useGameStore((s) => s.stats)
@@ -86,57 +84,102 @@ export function StatsBar() {
 
   const selectedConfig = selectedStat ? STAT_CONFIG[selectedStat] : null
 
-  const renderStat = (statId: StatId, showRate: boolean) => {
-    const config = STAT_CONFIG[statId]
-    const Icon = config.icon
-    const value = stats[statId]
-    const rate = rates[statId]
-
-    return (
-      <motion.button
-        key={statId}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setSelectedStat(statId)}
-        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] active:bg-[var(--color-surface-hover)] transition-colors min-w-0"
-      >
-        <div
-          className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
-          style={{ backgroundColor: `${config.color}20` }}
-        >
-          <Icon size={12} style={{ color: config.color }} />
-        </div>
-        <div className="flex flex-col min-w-0 text-left">
-          <span className="text-[9px] text-[var(--color-text-muted)] leading-none truncate">
-            {config.label}
-          </span>
-          <div className="flex items-baseline gap-0.5">
-            <span className="text-xs font-semibold leading-tight truncate">
-              {config.format(value)}
-            </span>
-            {showRate && rate !== 0 && (
-              <span
-                className="text-[9px] leading-none flex-shrink-0"
-                style={{ color: rate > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
-              >
-                {rate > 0 ? '+' : ''}{rate.toFixed(1)}
-              </span>
-            )}
-          </div>
-        </div>
-      </motion.button>
-    )
-  }
-
   return (
     <>
-      <div className="px-3 py-2 space-y-1.5">
-        {/* Row 1: Key metrics */}
-        <div className="grid grid-cols-4 gap-1.5">
-          {ROW_1.map((statId) => renderStat(statId, statId === 'money' || statId === 'guests'))}
+      <div className="px-4 py-2 space-y-2">
+        {/* Primary: Money & Guests */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* Money */}
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setSelectedStat('money')}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] active:bg-[var(--color-surface-hover)] transition-colors"
+          >
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: `${STAT_CONFIG.money.color}20` }}
+            >
+              <DollarSign size={18} style={{ color: STAT_CONFIG.money.color }} />
+            </div>
+            <div className="flex flex-col min-w-0 text-left">
+              <span className="text-[10px] text-[var(--color-text-muted)] leading-none">
+                Money
+              </span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-base font-bold leading-tight">
+                  {Format.money(stats.money)}
+                </span>
+                {rates.money !== 0 && (
+                  <span
+                    className="text-[10px] leading-none font-medium"
+                    style={{ color: rates.money > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
+                  >
+                    {rates.money > 0 ? '+' : ''}{Format.rate(rates.money)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </motion.button>
+
+          {/* Guests */}
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setSelectedStat('guests')}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] active:bg-[var(--color-surface-hover)] transition-colors"
+          >
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: `${STAT_CONFIG.guests.color}20` }}
+            >
+              <Users size={18} style={{ color: STAT_CONFIG.guests.color }} />
+            </div>
+            <div className="flex flex-col min-w-0 text-left">
+              <span className="text-[10px] text-[var(--color-text-muted)] leading-none">
+                Guests
+              </span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-base font-bold leading-tight">
+                  {Format.guests(stats.guests)}
+                </span>
+                {rates.guests !== 0 && (
+                  <span
+                    className="text-[10px] leading-none font-medium"
+                    style={{ color: rates.guests > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
+                  >
+                    {rates.guests > 0 ? '+' : ''}{Format.rate(rates.guests)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </motion.button>
         </div>
-        {/* Row 2: Resources */}
-        <div className="grid grid-cols-4 gap-1.5">
-          {ROW_2.map((statId) => renderStat(statId, false))}
+
+        {/* Secondary: Other stats - compact */}
+        <div className="grid grid-cols-6 gap-1.5">
+          {SECONDARY_STATS.map((statId) => {
+            const config = STAT_CONFIG[statId]
+            const Icon = config.icon
+            const value = stats[statId]
+
+            return (
+              <motion.button
+                key={statId}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setSelectedStat(statId)}
+                className="flex flex-col items-center gap-0.5 py-1.5 px-1 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] active:bg-[var(--color-surface-hover)] transition-colors"
+              >
+                <div
+                  className="w-5 h-5 rounded flex items-center justify-center"
+                  style={{ backgroundColor: `${config.color}20` }}
+                >
+                  <Icon size={12} style={{ color: config.color }} />
+                </div>
+                <span className="text-[10px] font-semibold leading-none">
+                  {config.format(value)}
+                </span>
+              </motion.button>
+            )
+          })}
         </div>
       </div>
 
