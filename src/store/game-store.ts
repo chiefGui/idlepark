@@ -12,6 +12,7 @@ import { Perk } from '../systems/perk'
 import { Milestone } from '../systems/milestone'
 import { Timeline } from '../systems/timeline'
 import { Feed } from '../systems/feed'
+import { Happening } from '../systems/happening'
 
 const MAX_DAILY_RECORDS = 30
 
@@ -49,6 +50,11 @@ const collectModifiers = (state: GameState): Modifier[] => {
 
   // Collect from guests (dynamic, depends on current state)
   modifiers.push(...Guest.getModifiers(state))
+
+  // Collect from active happening
+  if (state.currentHappening) {
+    modifiers.push(...Happening.getModifiers(state.currentHappening.happeningId))
+  }
 
   return modifiers
 }
@@ -209,6 +215,39 @@ export const useGameStore = create<GameStoreState>()(
             }
           }
 
+          // Process happenings
+          let currentHappening = state.currentHappening
+          let nextHappeningDay = state.nextHappeningDay
+          let lastHappeningType = state.lastHappeningType
+
+          // Check if current happening should end
+          if (currentHappening && newDay >= currentHappening.endDay) {
+            const endedHappening = Happening.getById(currentHappening.happeningId)
+            if (endedHappening) {
+              timeline = [...timeline, {
+                type: 'happening_ended' as const,
+                happeningId: currentHappening.happeningId,
+                day: Math.floor(currentHappening.endDay),
+              }]
+              GameEvents.emit('happening:ended', { happeningId: currentHappening.happeningId })
+              lastHappeningType = endedHappening.type
+            }
+            currentHappening = null
+            nextHappeningDay = Happening.calculateNextDay(newDay)
+          }
+
+          // Check if a new happening should start
+          if (!currentHappening && newDay >= nextHappeningDay) {
+            const nextHappening = Happening.selectNext(lastHappeningType)
+            currentHappening = Happening.start({ ...updatedState, currentDay: newDay }, nextHappening.id)
+            timeline = [...timeline, {
+              type: 'happening_started' as const,
+              happeningId: nextHappening.id,
+              day: Math.floor(newDay),
+            }]
+            GameEvents.emit('happening:started', { happeningId: nextHappening.id })
+          }
+
           set({
             stats: finalStats,
             guestBreakdown,
@@ -219,7 +258,10 @@ export const useGameStore = create<GameStoreState>()(
             timeline,
             dailyRecords,
             financials,
-            rates: computeRates({ ...updatedState, timeline, stats: finalStats, dailyRecords, financials, guestBreakdown }),
+            currentHappening,
+            nextHappeningDay,
+            lastHappeningType,
+            rates: computeRates({ ...updatedState, timeline, stats: finalStats, dailyRecords, financials, guestBreakdown, currentHappening, nextHappeningDay, lastHappeningType }),
           })
 
           GameEvents.emit('tick', { deltaDay })
@@ -418,6 +460,9 @@ export const useGameStore = create<GameStoreState>()(
         consecutiveNegativeDays: state.consecutiveNegativeDays,
         gameOver: state.gameOver,
         ticketPrice: state.ticketPrice,
+        currentHappening: state.currentHappening,
+        nextHappeningDay: state.nextHappeningDay,
+        lastHappeningType: state.lastHappeningType,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

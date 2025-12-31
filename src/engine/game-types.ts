@@ -58,10 +58,13 @@ export type MilestoneDef = {
   reward: number
 }
 
-export type TimelineEntry = {
+export type MilestoneTimelineEntry = {
+  type: 'milestone'
   milestoneId: string
   day: number
 }
+
+export type TimelineEntry = MilestoneTimelineEntry | HappeningTimelineEntry
 
 export type FeedEventType =
   | 'building_built'
@@ -77,6 +80,40 @@ export type FeedEventType =
   | 'financial_success'
   | 'financial_warning'
   | 'ambient'
+  | 'happening_started'
+  | 'happening_ended'
+
+// === HAPPENINGS ===
+
+export type HappeningType = 'positive' | 'negative'
+
+export type HappeningModifier = {
+  stat: StatId
+  flat?: number
+  increased?: number
+  more?: number
+}
+
+export type HappeningDef = {
+  id: string
+  name: string
+  emoji: string
+  description: string
+  type: HappeningType
+  modifiers: HappeningModifier[]
+}
+
+export type HappeningState = {
+  happeningId: string
+  startDay: number
+  endDay: number
+} | null
+
+export type HappeningTimelineEntry = {
+  type: 'happening_started' | 'happening_ended'
+  happeningId: string
+  day: number
+}
 
 export type FeedEntry = {
   id: string
@@ -135,6 +172,10 @@ export type GameState = {
   consecutiveNegativeDays: number
   gameOver: boolean
   ticketPrice: number
+  // Happenings
+  currentHappening: HappeningState
+  nextHappeningDay: number
+  lastHappeningType: HappeningType | null
 }
 
 export class GameTypes {
@@ -158,6 +199,12 @@ export class GameTypes {
   static readonly MIN_TICKET_PRICE = 5
   static readonly MAX_TICKET_PRICE = 25
   static readonly MAX_FEED_ENTRIES = 10
+
+  // Happenings
+  static readonly FIRST_HAPPENING_DAY = 15
+  static readonly HAPPENING_INTERVAL_MIN = 20
+  static readonly HAPPENING_INTERVAL_MAX = 30
+  static readonly HAPPENING_DURATION = 5
 
   static createInitialStats(): Record<StatId, number> {
     return {
@@ -214,6 +261,10 @@ export class GameTypes {
       consecutiveNegativeDays: 0,
       gameOver: false as boolean,
       ticketPrice: this.DEFAULT_TICKET_PRICE,
+      // Happenings
+      currentHappening: null,
+      nextHappeningDay: this.FIRST_HAPPENING_DAY,
+      lastHappeningType: null,
     }
   }
 }

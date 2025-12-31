@@ -6,6 +6,7 @@ export type ModifierSource =
   | { type: 'building'; slotIndex: number; buildingId: string }
   | { type: 'perk'; perkId: string }
   | { type: 'guest' }
+  | { type: 'happening'; happeningId: string }
 
 export type Modifier = {
   source: ModifierSource
@@ -28,6 +29,8 @@ function sourceEquals(a: ModifierSource, b: ModifierSource): boolean {
       return b.type === 'perk' && a.perkId === b.perkId
     case 'guest':
       return b.type === 'guest'
+    case 'happening':
+      return b.type === 'happening' && a.happeningId === b.happeningId
   }
 }
 
