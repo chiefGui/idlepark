@@ -660,6 +660,7 @@ export class Feed {
     { stat: 'guests', crossUp: 50, event: 'guest_threshold', context: { guestCount: 50 }, priority: true },
     { stat: 'guests', crossUp: 100, event: 'guest_threshold', context: { guestCount: 100 }, priority: true },
     { stat: 'guests', crossUp: 200, event: 'guest_threshold', context: { guestCount: 200 }, priority: true },
+    { stat: 'guests', crossUp: 300, event: 'guest_threshold', context: { guestCount: 300 }, priority: true },
     { stat: 'guests', crossUp: 500, event: 'guest_threshold', context: { guestCount: 500 }, priority: true },
     // Capacity (with hysteresis to prevent spam, non-priority to respect cooldown)
     { stat: 'capacityPercent', crossUp: 100, resetBelow: 90, event: 'capacity_reached', priority: false },
