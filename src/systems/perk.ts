@@ -39,9 +39,9 @@ export class Perk {
 
   static readonly SPOTLESS_PARK: PerkDef = {
     id: 'spotless_park',
-    name: 'Spotless Park Initiative',
+    name: 'Squeaky Clean Squad',
     emoji: '🧼',
-    description: 'Unlocks advanced cleanliness facilities',
+    description: 'Assemble your elite cleaning crew',
     costs: [{ statId: 'money', amount: 400 }],
     effects: [],
     requirements: [{ type: 'day', min: 5 }],
