@@ -2,6 +2,10 @@ import type { PerkDef, GameState } from '../engine/game-types'
 import { Requirements } from '../engine/requirements'
 import type { Modifier } from '../engine/modifiers'
 
+export type ExpansionPerkDef = PerkDef & {
+  slotsGranted: number
+}
+
 export class Perk {
   static readonly MARKETING_1: PerkDef = {
     id: 'marketing_1',
@@ -23,26 +27,6 @@ export class Perk {
     requirements: [{ type: 'day', min: 5 }],
   }
 
-  static readonly EXTRA_SLOT_1: PerkDef = {
-    id: 'extra_slot_1',
-    name: 'Park Expansion I',
-    emoji: '🏗️',
-    description: 'Unlock one additional building slot',
-    costs: [{ statId: 'money', amount: 250 }],
-    effects: [],
-    requirements: [],
-  }
-
-  static readonly EXTRA_SLOT_2: PerkDef = {
-    id: 'extra_slot_2',
-    name: 'Park Expansion II',
-    emoji: '🏗️',
-    description: 'Unlock one additional building slot',
-    costs: [{ statId: 'money', amount: 500 }],
-    effects: [],
-    requirements: [{ type: 'perk', id: 'extra_slot_1' }],
-  }
-
   static readonly CLEANLINESS_BOOST: PerkDef = {
     id: 'cleanliness_boost',
     name: 'Cleaning Crew',
@@ -53,12 +37,79 @@ export class Perk {
     requirements: [{ type: 'day', min: 3 }],
   }
 
+  // Park Expansion perks - these grant building slots
+  static readonly EXTRA_SLOT_1: ExpansionPerkDef = {
+    id: 'extra_slot_1',
+    name: 'Park Expansion I',
+    emoji: '🏗️',
+    description: 'Unlock 2 additional building slots',
+    costs: [{ statId: 'money', amount: 500 }],
+    effects: [],
+    requirements: [],
+    slotsGranted: 2,
+  }
+
+  static readonly EXTRA_SLOT_2: ExpansionPerkDef = {
+    id: 'extra_slot_2',
+    name: 'Park Expansion II',
+    emoji: '🏗️',
+    description: 'Unlock 2 additional building slots',
+    costs: [{ statId: 'money', amount: 2000 }],
+    effects: [],
+    requirements: [{ type: 'perk', id: 'extra_slot_1' }],
+    slotsGranted: 2,
+  }
+
+  static readonly EXTRA_SLOT_3: ExpansionPerkDef = {
+    id: 'extra_slot_3',
+    name: 'Park Expansion III',
+    emoji: '🏗️',
+    description: 'Unlock 4 additional building slots',
+    costs: [{ statId: 'money', amount: 8000 }],
+    effects: [],
+    requirements: [{ type: 'perk', id: 'extra_slot_2' }],
+    slotsGranted: 4,
+  }
+
+  static readonly EXTRA_SLOT_4: ExpansionPerkDef = {
+    id: 'extra_slot_4',
+    name: 'Park Expansion IV',
+    emoji: '🏗️',
+    description: 'Unlock 4 additional building slots',
+    costs: [{ statId: 'money', amount: 25000 }],
+    effects: [],
+    requirements: [{ type: 'perk', id: 'extra_slot_3' }],
+    slotsGranted: 4,
+  }
+
+  static readonly EXTRA_SLOT_5: ExpansionPerkDef = {
+    id: 'extra_slot_5',
+    name: 'Park Expansion V',
+    emoji: '🏗️',
+    description: 'Unlock 8 additional building slots',
+    costs: [{ statId: 'money', amount: 100000 }],
+    effects: [],
+    requirements: [{ type: 'perk', id: 'extra_slot_4' }],
+    slotsGranted: 8,
+  }
+
+  static readonly EXPANSION_PERKS: ExpansionPerkDef[] = [
+    Perk.EXTRA_SLOT_1,
+    Perk.EXTRA_SLOT_2,
+    Perk.EXTRA_SLOT_3,
+    Perk.EXTRA_SLOT_4,
+    Perk.EXTRA_SLOT_5,
+  ]
+
   static readonly ALL: PerkDef[] = [
     Perk.MARKETING_1,
     Perk.EFFICIENT_STAFF,
+    Perk.CLEANLINESS_BOOST,
     Perk.EXTRA_SLOT_1,
     Perk.EXTRA_SLOT_2,
-    Perk.CLEANLINESS_BOOST,
+    Perk.EXTRA_SLOT_3,
+    Perk.EXTRA_SLOT_4,
+    Perk.EXTRA_SLOT_5,
   ]
 
   static getById(id: string): PerkDef | undefined {
@@ -83,6 +134,16 @@ export class Perk {
 
   static isSlotPerk(perk: PerkDef): boolean {
     return perk.id.startsWith('extra_slot')
+  }
+
+  static getTotalSlotsFromPerks(state: GameState): number {
+    return this.EXPANSION_PERKS
+      .filter(p => state.ownedPerks.includes(p.id))
+      .reduce((sum, p) => sum + p.slotsGranted, 0)
+  }
+
+  static getNextExpansionPerk(state: GameState): ExpansionPerkDef | null {
+    return this.EXPANSION_PERKS.find(p => !state.ownedPerks.includes(p.id)) ?? null
   }
 
   static getModifiers(perkId: string): Modifier[] {

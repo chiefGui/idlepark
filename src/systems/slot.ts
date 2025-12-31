@@ -1,4 +1,5 @@
 import type { SlotState, GameState } from '../engine/game-types'
+import { GameTypes } from '../engine/game-types'
 import { Perk } from './perk'
 
 export class Slot {
@@ -31,38 +32,55 @@ export class Slot {
     return this.hasEmptySlot(state)
   }
 
-  static getSlotPerksOwned(state: GameState): number {
-    return Perk.ALL.filter(
-      (p) => Perk.isSlotPerk(p) && state.ownedPerks.includes(p.id)
-    ).length
+  /**
+   * Calculate total unlocked slots based on initial + expansion perks
+   */
+  static getTotalUnlockedSlots(state: GameState): number {
+    const fromPerks = Perk.getTotalSlotsFromPerks(state)
+    return GameTypes.INITIAL_UNLOCKED_SLOTS + fromPerks
   }
 
-  static getUnlockedBeyondInitial(state: GameState): number {
-    const initialUnlocked = 3
-    return state.slots.filter((s) => !s.locked).length - initialUnlocked
+  /**
+   * Check if there are slots that should be unlocked based on owned perks
+   * but aren't yet (for syncing state after perk purchase)
+   */
+  static getSlotsToUnlock(state: GameState): number[] {
+    const shouldBeUnlocked = this.getTotalUnlockedSlots(state)
+    const indicesToUnlock: number[] = []
+
+    for (let i = 0; i < shouldBeUnlocked && i < state.slots.length; i++) {
+      if (state.slots[i].locked) {
+        indicesToUnlock.push(i)
+      }
+    }
+
+    return indicesToUnlock
   }
 
-  static canUnlock(slotIndex: number, state: GameState): boolean {
-    const slot = state.slots[slotIndex]
-    if (!slot || !slot.locked) return false
-
-    const perksOwned = this.getSlotPerksOwned(state)
-    const alreadyUnlocked = this.getUnlockedBeyondInitial(state)
-
-    return perksOwned > alreadyUnlocked
+  /**
+   * Check if park is at max capacity (all unlockable slots are full)
+   */
+  static isParkFull(state: GameState): boolean {
+    return !this.hasEmptySlot(state)
   }
 
-  static getNextUnlockableSlot(state: GameState): SlotState | null {
-    const canUnlockAny =
-      this.getSlotPerksOwned(state) > this.getUnlockedBeyondInitial(state)
-    if (!canUnlockAny) return null
-
-    return state.slots.find((s) => s.locked) ?? null
+  /**
+   * Check if more slots can be unlocked via expansion perks
+   */
+  static canExpandPark(state: GameState): boolean {
+    return Perk.getNextExpansionPerk(state) !== null
   }
 
   static unlock(slots: SlotState[], slotIndex: number): SlotState[] {
     return slots.map((s) =>
       s.index === slotIndex ? { ...s, locked: false } : s
+    )
+  }
+
+  static unlockMultiple(slots: SlotState[], indices: number[]): SlotState[] {
+    const indexSet = new Set(indices)
+    return slots.map((s) =>
+      indexSet.has(s.index) ? { ...s, locked: false } : s
     )
   }
 
