@@ -7,36 +7,6 @@ export type ExpansionPerkDef = PerkDef & {
 }
 
 export class Perk {
-  static readonly MARKETING_1: PerkDef = {
-    id: 'marketing_1',
-    name: 'Basic Marketing',
-    emoji: '📢',
-    description: 'Attract 20% more guests',
-    costs: [{ statId: 'money', amount: 200 }],
-    effects: [{ statId: 'guests', perDay: 0, multiplier: 1.2 }],
-    requirements: [],
-  }
-
-  static readonly EFFICIENT_STAFF: PerkDef = {
-    id: 'efficient_staff',
-    name: 'Efficient Staff',
-    emoji: '👷',
-    description: 'Reduce building upkeep by 10%',
-    costs: [{ statId: 'money', amount: 300 }],
-    effects: [{ statId: 'money', perDay: 0, multiplier: 1.1 }],
-    requirements: [{ type: 'day', min: 5 }],
-  }
-
-  static readonly CLEANLINESS_BOOST: PerkDef = {
-    id: 'cleanliness_boost',
-    name: 'Cleaning Crew',
-    emoji: '🧹',
-    description: 'Passive cleanliness improvement',
-    costs: [{ statId: 'money', amount: 150 }],
-    effects: [{ statId: 'cleanliness', perDay: 3 }],
-    requirements: [{ type: 'day', min: 3 }],
-  }
-
   // Park Expansion perks - these grant building slots
   static readonly EXTRA_SLOT_1: ExpansionPerkDef = {
     id: 'extra_slot_1',
@@ -102,9 +72,6 @@ export class Perk {
   ]
 
   static readonly ALL: PerkDef[] = [
-    Perk.MARKETING_1,
-    Perk.EFFICIENT_STAFF,
-    Perk.CLEANLINESS_BOOST,
     Perk.EXTRA_SLOT_1,
     Perk.EXTRA_SLOT_2,
     Perk.EXTRA_SLOT_3,
