@@ -183,6 +183,9 @@ export const useGameStore = create<GameStoreState>()(
             timeline = Timeline.addEntry(timeline, milestone.id, achievedDay)
             rewardMoney += milestone.reward
             GameEvents.emit('milestone:achieved', { milestoneId: milestone.id })
+            if (milestone.reward > 0) {
+              GameEvents.emit('money:changed', { amount: milestone.reward, reason: 'milestone' })
+            }
           }
 
           const finalStats = { ...newStats, money: newStats.money + rewardMoney }
@@ -301,6 +304,9 @@ export const useGameStore = create<GameStoreState>()(
           })
 
           GameEvents.emit('building:built', { buildingId, slotIndex })
+          if (investmentAmount > 0) {
+            GameEvents.emit('money:changed', { amount: -investmentAmount, reason: 'building' })
+          }
           return true
         },
 
@@ -329,6 +335,9 @@ export const useGameStore = create<GameStoreState>()(
           })
 
           GameEvents.emit('building:demolished', { buildingId, slotIndex })
+          if (refundAmount > 0) {
+            GameEvents.emit('money:changed', { amount: refundAmount, reason: 'demolish' })
+          }
           return true
         },
 
@@ -377,6 +386,9 @@ export const useGameStore = create<GameStoreState>()(
           })
 
           GameEvents.emit('perk:purchased', { perkId })
+          if (investmentAmount > 0) {
+            GameEvents.emit('money:changed', { amount: -investmentAmount, reason: 'perk' })
+          }
           return true
         },
 
