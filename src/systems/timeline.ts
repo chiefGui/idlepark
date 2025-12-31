@@ -36,6 +36,27 @@ const MILESTONE_FLAVOR: Record<string, FlavorText> = {
     title: 'The vault grows',
     description: 'A thousand dollars saved. The future looks bright.',
   },
+  // Lodging milestones
+  first_lodging: {
+    title: 'Home away from home',
+    description: 'Guests can now stay overnight. The park never truly closes.',
+  },
+  guests_200: {
+    title: 'Rising through the ranks',
+    description: 'Two hundred guests! Our little park is becoming a true destination.',
+  },
+  guests_300: {
+    title: 'The talk of the town',
+    description: 'Three hundred souls seeking joy. We\'re making waves.',
+  },
+  guests_500: {
+    title: 'Legendary status achieved',
+    description: 'Five hundred guests! They\'ll write stories about this place.',
+  },
+  resort_mogul: {
+    title: 'The complete resort experience',
+    description: 'From tents to luxury suites—we offer it all. A hospitality empire.',
+  },
 }
 
 export class Timeline {

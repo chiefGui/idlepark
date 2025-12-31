@@ -60,14 +60,60 @@ export class Milestone {
     condition: { type: 'stat', statId: 'money', min: 1000 },
   }
 
+  // Lodging milestones
+  static readonly FIRST_LODGING: MilestoneDef = {
+    id: 'first_lodging',
+    name: 'Overnight Stays',
+    emoji: '🏕️',
+    description: 'Unlock your first lodging tier',
+    condition: { type: 'perk', id: 'lodging_1' },
+  }
+
+  static readonly GUESTS_200: MilestoneDef = {
+    id: 'guests_200',
+    name: 'Rising Star',
+    emoji: '🌟',
+    description: 'Have 200 guests in your park',
+    condition: { type: 'stat', statId: 'guests', min: 200 },
+  }
+
+  static readonly GUESTS_300: MilestoneDef = {
+    id: 'guests_300',
+    name: 'Park Sensation',
+    emoji: '✨',
+    description: 'Have 300 guests in your park',
+    condition: { type: 'stat', statId: 'guests', min: 300 },
+  }
+
+  static readonly GUESTS_500: MilestoneDef = {
+    id: 'guests_500',
+    name: 'Legendary Park',
+    emoji: '👑',
+    description: 'Have 500 guests in your park',
+    condition: { type: 'stat', statId: 'guests', min: 500 },
+  }
+
+  static readonly RESORT_MOGUL: MilestoneDef = {
+    id: 'resort_mogul',
+    name: 'Resort Mogul',
+    emoji: '🏰',
+    description: 'Unlock all lodging tiers',
+    condition: { type: 'perk', id: 'lodging_3' },
+  }
+
   static readonly ALL: MilestoneDef[] = [
     Milestone.FIRST_BUILDING,
     Milestone.GUESTS_10,
     Milestone.GUESTS_50,
     Milestone.GUESTS_100,
+    Milestone.GUESTS_200,
+    Milestone.GUESTS_300,
+    Milestone.GUESTS_500,
     Milestone.DAY_10,
     Milestone.DAY_30,
     Milestone.MONEY_1000,
+    Milestone.FIRST_LODGING,
+    Milestone.RESORT_MOGUL,
   ]
 
   static getById(id: string): MilestoneDef | undefined {
