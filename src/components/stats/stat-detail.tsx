@@ -36,7 +36,7 @@ type StatDetailProps = {
   statId: StatId
 }
 
-function getStatSources(statId: StatId, state: GameState): SourceContribution[] {
+function getStatSources(statId: StatId, state: GameState, ticketPrice: number): SourceContribution[] {
   const sources: SourceContribution[] = []
   const buildingContributions = new Map<string, { amount: number; count: number }>()
 
@@ -91,7 +91,36 @@ function getStatSources(statId: StatId, state: GameState): SourceContribution[] 
     }
   }
 
-  // Guests consume entertainment, food, comfort, cleanliness
+  // Money: add guest income
+  if (statId === 'money' && state.stats.guests > 0) {
+    const income = Guest.calculateIncomeWithEntertainment(
+      state.stats.guests,
+      ticketPrice,
+      state.stats.entertainment
+    )
+    if (income > 0) {
+      sources.push({
+        emoji: '🎟️',
+        name: 'Ticket sales',
+        amount: income,
+      })
+    }
+  }
+
+  // Guests: add arrival rate
+  if (statId === 'guests') {
+    const tempState = { ...state, ticketPrice } as GameState & { ticketPrice: number }
+    const arrivalRate = Guest.calculateArrivalRate(tempState)
+    if (arrivalRate > 0) {
+      sources.push({
+        emoji: '🚶',
+        name: 'New visitors',
+        amount: arrivalRate,
+      })
+    }
+  }
+
+  // Guests consume entertainment, food, comfort
   if (['entertainment', 'food', 'comfort'].includes(statId)) {
     const demand = Guest.DEMANDS.find((d) => d.statId === statId)
     if (demand && state.stats.guests > 0) {
@@ -104,6 +133,7 @@ function getStatSources(statId: StatId, state: GameState): SourceContribution[] 
     }
   }
 
+  // Cleanliness decay from guests
   if (statId === 'cleanliness' && state.stats.guests > 0) {
     const consumption = -state.stats.guests * 0.1
     sources.push({
@@ -261,14 +291,15 @@ export function StatDetail({ statId }: StatDetailProps) {
   const rates = useGameStore((s) => s.rates)
   const slots = useGameStore((s) => s.slots)
   const ownedPerks = useGameStore((s) => s.ownedPerks)
+  const ticketPrice = useGameStore((s) => s.ticketPrice)
   const config = STAT_CONFIGS[statId]
   const value = stats[statId]
   const rate = rates[statId]
 
   // Create a minimal state for helper functions
-  const state: GameState = { slots, ownedPerks, stats } as GameState
+  const state: GameState = { slots, ownedPerks, stats, ticketPrice } as GameState
 
-  const sources = useMemo(() => getStatSources(statId, state), [statId, state])
+  const sources = useMemo(() => getStatSources(statId, state, ticketPrice), [statId, state, ticketPrice])
   const impact = getStatImpact(statId)
   const suggestions = useMemo(() => getStatSuggestions(statId, state, rates.money), [statId, state, rates.money])
 
