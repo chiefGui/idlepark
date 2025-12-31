@@ -6,7 +6,6 @@ import { useGameStore } from '../../store/game-store'
 import { Building } from '../../systems/building'
 import { Slot } from '../../systems/slot'
 import { Perk } from '../../systems/perk'
-import { Format } from '../../utils/format'
 import { BuildingSelector } from '../slots/building-selector'
 import { BuildingDetails } from '../slots/building-details'
 
@@ -43,35 +42,20 @@ export function BuildingsPanel() {
     }
   }
 
-  // Park capacity info
+  // Check if park is full
   const state = useGameStore()
   const emptySlots = Slot.getEmpty(state)
-  const totalUnlocked = Slot.getUnlocked(state).length
   const nextExpansion = Perk.getNextExpansionPerk(state)
 
   return (
     <>
       <div className="space-y-3 px-4 pb-4">
-        {/* Slot capacity bar */}
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Park Capacity</span>
-            <span className="text-sm text-[var(--color-text-muted)]">
-              {totalUnlocked - emptySlots.length}/{totalUnlocked} slots used
-            </span>
+        {/* Show message only when park is full */}
+        {emptySlots.length === 0 && nextExpansion && (
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-3 text-sm text-[var(--color-text-muted)]">
+            No room for more buildings. Get <span className="text-[var(--color-accent)] font-medium">{nextExpansion.name}</span> in Perks to expand.
           </div>
-          <div className="h-2 bg-[var(--color-bg)] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[var(--color-accent)] rounded-full transition-all"
-              style={{ width: `${((totalUnlocked - emptySlots.length) / totalUnlocked) * 100}%` }}
-            />
-          </div>
-          {emptySlots.length === 0 && nextExpansion && (
-            <div className="mt-2 text-xs text-[var(--color-text-muted)]">
-              Park full! Buy <span className="text-[var(--color-accent)] font-medium">{nextExpansion.name}</span> in Perks for more slots ({Format.money(nextExpansion.costs[0]?.amount ?? 0)})
-            </div>
-          )}
-        </div>
+        )}
 
         {Building.CATEGORIES.map((cat) => (
           <CategorySection
@@ -209,12 +193,6 @@ function CategorySection({
                 )}
               </div>
 
-              {/* Empty state when no buildings and no slots */}
-              {buildingsInCategory.length === 0 && !hasEmptySlot && (
-                <div className="text-center py-4 text-sm text-[var(--color-text-muted)]">
-                  No buildings yet
-                </div>
-              )}
             </div>
           </motion.div>
         )}
