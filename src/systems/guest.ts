@@ -77,8 +77,19 @@ export class Guest {
       }
     }
 
-    const cleanlinessBonus = (state.stats.cleanliness - 50) / 50
-    satisfaction += cleanlinessBonus * 10
+    // Cleanliness has significant impact on satisfaction
+    // Below 50%: penalty scales harshly (0% clean = -40, 30% = -16, 50% = 0)
+    // Above 50%: bonus scales gently (100% = +15)
+    const cleanliness = state.stats.cleanliness
+    if (cleanliness < 50) {
+      // Harsh penalty for dirty parks - up to -40 points at 0%
+      const dirtPenalty = ((50 - cleanliness) / 50) * 40
+      satisfaction -= dirtPenalty
+    } else {
+      // Gentle bonus for clean parks - up to +15 at 100%
+      const cleanBonus = ((cleanliness - 50) / 50) * 15
+      satisfaction += cleanBonus
+    }
 
     const priceMultiplier = this.getTicketPriceMultiplier(state.ticketPrice)
     if (priceMultiplier > 1.5) {
