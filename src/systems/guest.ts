@@ -7,6 +7,12 @@ export type GuestDemand = {
   perGuest: number
 }
 
+export type SupplyConsequence = {
+  statId: StatId
+  threshold: number  // Supply ratio below this triggers the consequence
+  appealCap: number  // Maximum appeal when triggered
+}
+
 export class Guest {
   // Base rates
   static readonly BASE_ARRIVAL_RATE = 5
@@ -31,6 +37,13 @@ export class Guest {
     { statId: 'entertainment', perGuest: 0.5 },
     { statId: 'food', perGuest: 0.3 },
     { statId: 'comfort', perGuest: 0.2 },
+  ]
+
+  // Consequences for undersupply - when supply ratio falls below threshold,
+  // appeal is capped. Multiple entries per stat = tiered consequences.
+  static readonly SUPPLY_CONSEQUENCES: SupplyConsequence[] = [
+    { statId: 'food', threshold: 0.3, appealCap: 25 },
+    { statId: 'comfort', threshold: 0.2, appealCap: 35 },
   ]
 
   static getTicketPriceMultiplier(ticketPrice: number): number {
@@ -88,6 +101,33 @@ export class Guest {
    */
   static isAtCapacity(state: GameState): boolean {
     return this.getTotalGuests(state) >= this.getCapacity(state)
+  }
+
+  /**
+   * Get supply ratio for a specific demand stat.
+   * Returns 0-1 where 1 = fully meeting demand, 0 = no supply.
+   */
+  static getSupplyRatio(statId: StatId, state: GameState): number {
+    const demand = this.DEMANDS.find(d => d.statId === statId)
+    if (!demand) return 1
+
+    const totalGuests = this.getTotalGuests(state)
+    const required = totalGuests * demand.perGuest
+    if (required <= 0) return 1
+
+    const supply = state.stats[statId]
+    return Math.min(1, supply / required)
+  }
+
+  /**
+   * Get all supply consequences currently active.
+   * Returns consequences where supply ratio is below threshold.
+   */
+  static getActiveConsequences(state: GameState): SupplyConsequence[] {
+    return this.SUPPLY_CONSEQUENCES.filter(consequence => {
+      const ratio = this.getSupplyRatio(consequence.statId, state)
+      return ratio < consequence.threshold
+    })
   }
 
   static calculateArrivalRate(state: GameState): number {
@@ -188,7 +228,13 @@ export class Guest {
       moodBonus = happyRatio * this.HAPPY_APPEAL_BONUS + unhappyRatio * this.UNHAPPY_APPEAL_PENALTY
     }
 
-    const appeal = entertainmentBase + supplyDemandBonus + cleanlinessBonus + priceBonus + moodBonus
+    let appeal = entertainmentBase + supplyDemandBonus + cleanlinessBonus + priceBonus + moodBonus
+
+    // Apply supply consequence caps - critical undersupply limits max appeal
+    const activeConsequences = this.getActiveConsequences(state)
+    for (const consequence of activeConsequences) {
+      appeal = Math.min(appeal, consequence.appealCap)
+    }
 
     return Math.max(0, Math.min(100, appeal))
   }
