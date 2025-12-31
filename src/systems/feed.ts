@@ -650,58 +650,102 @@ export class Feed {
     return Math.random() < chance
   }
 
-  // === Threshold-based events ===
+  // === Tick Event System ===
+  // All tick-based events defined declaratively in one place
 
-  static readonly GUEST_THRESHOLDS = [10, 25, 50, 100, 200, 500]
-  static readonly CAPACITY_THRESHOLDS = [
-    { at: 100, event: 'capacity_reached' as const },
-    { at: 80, event: 'capacity_warning' as const },
+  static readonly TICK_EVENTS: TickEventConfig[] = [
+    // Guest milestones
+    { stat: 'guests', crossUp: 10, event: 'guest_threshold', context: { guestCount: 10 }, priority: true },
+    { stat: 'guests', crossUp: 25, event: 'guest_threshold', context: { guestCount: 25 }, priority: true },
+    { stat: 'guests', crossUp: 50, event: 'guest_threshold', context: { guestCount: 50 }, priority: true },
+    { stat: 'guests', crossUp: 100, event: 'guest_threshold', context: { guestCount: 100 }, priority: true },
+    { stat: 'guests', crossUp: 200, event: 'guest_threshold', context: { guestCount: 200 }, priority: true },
+    { stat: 'guests', crossUp: 500, event: 'guest_threshold', context: { guestCount: 500 }, priority: true },
+    // Capacity
+    { stat: 'capacityPercent', crossUp: 100, event: 'capacity_reached', priority: true },
+    { stat: 'capacityPercent', crossUp: 80, event: 'capacity_warning', priority: true },
+    // Appeal
+    { stat: 'appeal', crossUp: 85, event: 'appeal_high', priority: true },
+    { stat: 'appeal', crossDown: 40, event: 'appeal_low', priority: true },
+    // Financial
+    { stat: 'money', crossDown: 0, event: 'financial_warning', priority: true },
+    { stat: 'money', crossUp: 0, event: 'financial_success', priority: true, extraCheck: (curr) => curr.moneyRate > 50 },
+    // Random chance events
+    { stat: 'perceivedValue', below: 0.8, event: 'price_complaint', priority: false, chance: 0.002, includeTicketPrice: true },
+    { stat: 'perceivedValue', above: 1.3, event: 'price_praise', priority: false, chance: 0.002, includeTicketPrice: true },
   ]
-  static readonly APPEAL_THRESHOLDS = [
-    { above: 85, event: 'appeal_high' as const },
-    { below: 40, event: 'appeal_low' as const },
-  ]
 
-  static checkGuestThreshold(current: number, prev: number): number | null {
-    for (const threshold of this.GUEST_THRESHOLDS) {
-      if (current >= threshold && prev < threshold) return threshold
-    }
-    return null
-  }
+  static checkTickEvents(current: TickStats, prev: TickStats): TriggeredEvent[] {
+    const events: TriggeredEvent[] = []
 
-  static checkCapacityThreshold(current: number, prev: number): FeedEventType | null {
-    for (const { at, event } of this.CAPACITY_THRESHOLDS) {
-      if (current >= at && prev < at) return event
-    }
-    return null
-  }
+    for (const config of this.TICK_EVENTS) {
+      const curr = current[config.stat]
+      const pr = prev[config.stat]
 
-  static checkAppealThreshold(current: number, prev: number): FeedEventType | null {
-    for (const threshold of this.APPEAL_THRESHOLDS) {
-      if ('above' in threshold && threshold.above !== undefined) {
-        if (current >= threshold.above && prev < threshold.above) return threshold.event
-      } else if ('below' in threshold && threshold.below !== undefined) {
-        if (current <= threshold.below && prev > threshold.below) return threshold.event
+      let triggered = false
+
+      // Threshold crossing checks
+      if ('crossUp' in config && curr >= config.crossUp && pr < config.crossUp) {
+        triggered = true
+      } else if ('crossDown' in config && curr <= config.crossDown && pr > config.crossDown) {
+        triggered = true
+      } else if ('above' in config && curr > config.above && config.chance && Math.random() < config.chance) {
+        triggered = true
+      } else if ('below' in config && curr < config.below && config.chance && Math.random() < config.chance) {
+        triggered = true
+      }
+
+      // Extra condition check
+      if (triggered && config.extraCheck && !config.extraCheck(current)) {
+        triggered = false
+      }
+
+      if (triggered) {
+        events.push({
+          type: config.event,
+          context: config.includeTicketPrice ? { ticketPrice: current.ticketPrice, ...config.context } : config.context,
+          priority: config.priority,
+        })
       }
     }
-    return null
-  }
 
-  static checkFinancialThreshold(
-    currentMoney: number,
-    prevMoney: number,
-    moneyRate: number
-  ): FeedEventType | null {
-    // Turnaround: was in debt, now profitable and positive
-    if (moneyRate > 50 && prevMoney < 0 && currentMoney > 0) return 'financial_success'
-    // Just went into debt
-    if (currentMoney < 0 && prevMoney >= 0) return 'financial_warning'
-    return null
-  }
+    // Ambient (special case - random based on guest count)
+    if (this.shouldGenerateAmbient(current.guests)) {
+      events.push({ type: 'ambient', priority: false })
+    }
 
-  static getPriceEvent(perceivedValue: number): FeedEventType | null {
-    if (perceivedValue < 0.8 && Math.random() < 0.002) return 'price_complaint'
-    if (perceivedValue > 1.3 && Math.random() < 0.002) return 'price_praise'
-    return null
+    return events
   }
 }
+
+// Types for the tick event system
+export type TickStats = {
+  guests: number
+  appeal: number
+  money: number
+  capacityPercent: number
+  perceivedValue: number
+  moneyRate: number
+  ticketPrice: number
+}
+
+type TriggeredEvent = {
+  type: FeedEventType
+  context?: Record<string, unknown>
+  priority: boolean
+}
+
+type TickEventConfig = {
+  stat: keyof Omit<TickStats, 'moneyRate' | 'ticketPrice'>
+  event: FeedEventType
+  priority: boolean
+  context?: Record<string, unknown>
+  extraCheck?: (current: TickStats) => boolean
+  chance?: number
+  includeTicketPrice?: boolean
+} & (
+  | { crossUp: number }
+  | { crossDown: number }
+  | { above: number; chance: number }
+  | { below: number; chance: number }
+)
