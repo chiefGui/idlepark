@@ -81,9 +81,35 @@ export const useGameStore = create<GameStoreState>()(
           const state = get()
           if (state.gameOver) return
 
+          const prevDayInt = Math.floor(state.currentDay)
+          const newDay = state.currentDay + deltaDay
+          const newDayInt = Math.floor(newDay)
+          const crossedDayBoundary = newDayInt > prevDayInt
+
+          // Process guest tier system
+          let guestBreakdown = state.guestBreakdown
+
+          // 1. Process arrivals (new guests start as neutral)
+          const arrivalRate = Guest.calculateArrivalRate(state)
+          guestBreakdown = Guest.processArrivals(guestBreakdown, arrivalRate, deltaDay)
+
+          // 2. Process tier transitions based on satisfaction
+          const satisfaction = Guest.calculateSatisfaction(state)
+          guestBreakdown = Guest.processTransitions(guestBreakdown, satisfaction, deltaDay)
+
+          // 3. Process unhappy departures at day boundary
+          let departedGuests = 0
+          if (crossedDayBoundary) {
+            const result = Guest.processUnhappyDepartures(guestBreakdown)
+            guestBreakdown = result.newBreakdown
+            departedGuests = result.departed
+          }
+
+          const totalGuests = GameTypes.getTotalGuests(guestBreakdown)
+
           // Calculate income and upkeep separately for tracking
           const guestIncome = Guest.calculateIncomeWithEntertainment(
-            state.stats.guests,
+            totalGuests,
             state.ticketPrice,
             state.stats.entertainment
           ) * deltaDay
@@ -100,7 +126,11 @@ export const useGameStore = create<GameStoreState>()(
           }, 0)
 
           let newStats = Effects.applyRates(state.stats, state.rates, deltaDay)
-          const tempState = { ...state, stats: newStats }
+
+          // Sync guests stat with breakdown total
+          newStats.guests = totalGuests
+
+          const tempState = { ...state, stats: newStats, guestBreakdown }
 
           newStats = {
             ...newStats,
@@ -109,8 +139,9 @@ export const useGameStore = create<GameStoreState>()(
           }
 
           newStats = Effects.clampStats(newStats)
+          // Re-sync after clamp since clampStats floors guests
+          newStats.guests = totalGuests
 
-          const newDay = state.currentDay + deltaDay
           let consecutiveNegativeDays = state.consecutiveNegativeDays
           let gameOver: boolean = state.gameOver
 
@@ -127,6 +158,7 @@ export const useGameStore = create<GameStoreState>()(
           const updatedState: GameState = {
             ...state,
             stats: newStats,
+            guestBreakdown,
             currentDay: newDay,
             lastTickTime: Date.now(),
             consecutiveNegativeDays,
@@ -157,26 +189,30 @@ export const useGameStore = create<GameStoreState>()(
             totalEarned: state.financials.totalEarned + guestIncome + rewardMoney,
             totalUpkeepPaid: state.financials.totalUpkeepPaid + buildingUpkeep,
             peakMoney: Math.max(state.financials.peakMoney, finalStats.money),
-            peakGuests: Math.max(state.financials.peakGuests, finalStats.guests),
+            peakGuests: Math.max(state.financials.peakGuests, totalGuests),
           }
 
           // Update daily records when crossing day boundaries
           let dailyRecords = state.dailyRecords
-          const prevDayInt = Math.floor(state.currentDay)
-          const newDayInt = Math.floor(newDay)
 
-          if (newDayInt > prevDayInt) {
+          if (crossedDayBoundary) {
             const dayRecord: DailyRecord = {
               day: prevDayInt,
               moneyEarned: guestIncome + rewardMoney - buildingUpkeep,
-              peakGuests: Math.max(state.stats.guests, finalStats.guests),
+              peakGuests: Math.max(GameTypes.getTotalGuests(state.guestBreakdown), totalGuests),
               peakAppeal: Math.max(state.stats.appeal, finalStats.appeal),
             }
             dailyRecords = [...dailyRecords, dayRecord].slice(-MAX_DAILY_RECORDS)
+
+            // Emit event if guests departed
+            if (departedGuests > 0) {
+              GameEvents.emit('guests:departed', { count: departedGuests })
+            }
           }
 
           set({
             stats: finalStats,
+            guestBreakdown,
             currentDay: newDay,
             lastTickTime: Date.now(),
             consecutiveNegativeDays,
@@ -184,7 +220,7 @@ export const useGameStore = create<GameStoreState>()(
             timeline,
             dailyRecords,
             financials,
-            rates: computeRates({ ...updatedState, timeline, stats: finalStats, dailyRecords, financials }),
+            rates: computeRates({ ...updatedState, timeline, stats: finalStats, dailyRecords, financials, guestBreakdown }),
           })
 
           GameEvents.emit('tick', { deltaDay })
@@ -392,6 +428,7 @@ export const useGameStore = create<GameStoreState>()(
         timeline: state.timeline,
         dailyRecords: state.dailyRecords,
         financials: state.financials,
+        guestBreakdown: state.guestBreakdown,
         feedEntries: state.feedEntries,
         unreadFeedCount: state.unreadFeedCount,
         currentDay: state.currentDay,
