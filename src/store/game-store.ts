@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { GameState } from '../engine/game-types'
+import type { GameState, DailyRecord, FinancialStats } from '../engine/game-types'
 import { GameTypes } from '../engine/game-types'
 import { GameEvents } from '../engine/events'
 import { Effects } from '../engine/effects'
@@ -11,6 +11,8 @@ import { Guest } from '../systems/guest'
 import { Perk } from '../systems/perk'
 import { Milestone } from '../systems/milestone'
 import { Timeline } from '../systems/timeline'
+
+const MAX_DAILY_RECORDS = 30
 
 type GameActions = {
   tick: (deltaDay: number) => void
@@ -76,6 +78,24 @@ export const useGameStore = create<GameStoreState>()(
           const state = get()
           if (state.gameOver) return
 
+          // Calculate income and upkeep separately for tracking
+          const guestIncome = Guest.calculateIncomeWithEntertainment(
+            state.stats.guests,
+            state.ticketPrice,
+            state.stats.entertainment
+          ) * deltaDay
+
+          const buildingUpkeep = state.slots.reduce((total, slot) => {
+            if (slot.buildingId) {
+              const building = Building.getById(slot.buildingId)
+              if (building) {
+                const upkeep = building.effects.find(e => e.statId === 'money' && e.perDay < 0)
+                return total + Math.abs(upkeep?.perDay ?? 0) * deltaDay
+              }
+            }
+            return total
+          }, 0)
+
           let newStats = Effects.applyRates(state.stats, state.rates, deltaDay)
           const tempState = { ...state, stats: newStats }
 
@@ -128,6 +148,30 @@ export const useGameStore = create<GameStoreState>()(
 
           const finalStats = { ...newStats, money: newStats.money + rewardMoney }
 
+          // Update financials
+          const financials: FinancialStats = {
+            ...state.financials,
+            totalEarned: state.financials.totalEarned + guestIncome + rewardMoney,
+            totalUpkeepPaid: state.financials.totalUpkeepPaid + buildingUpkeep,
+            peakMoney: Math.max(state.financials.peakMoney, finalStats.money),
+            peakGuests: Math.max(state.financials.peakGuests, finalStats.guests),
+          }
+
+          // Update daily records when crossing day boundaries
+          let dailyRecords = state.dailyRecords
+          const prevDayInt = Math.floor(state.currentDay)
+          const newDayInt = Math.floor(newDay)
+
+          if (newDayInt > prevDayInt) {
+            const dayRecord: DailyRecord = {
+              day: prevDayInt,
+              moneyEarned: guestIncome + rewardMoney - buildingUpkeep,
+              peakGuests: Math.max(state.stats.guests, finalStats.guests),
+              peakAppeal: Math.max(state.stats.appeal, finalStats.appeal),
+            }
+            dailyRecords = [...dailyRecords, dayRecord].slice(-MAX_DAILY_RECORDS)
+          }
+
           set({
             stats: finalStats,
             currentDay: newDay,
@@ -135,7 +179,9 @@ export const useGameStore = create<GameStoreState>()(
             consecutiveNegativeDays,
             gameOver,
             timeline,
-            rates: computeRates({ ...updatedState, timeline, stats: finalStats }),
+            dailyRecords,
+            financials,
+            rates: computeRates({ ...updatedState, timeline, stats: finalStats, dailyRecords, financials }),
           })
 
           GameEvents.emit('tick', { deltaDay })
@@ -153,16 +199,25 @@ export const useGameStore = create<GameStoreState>()(
           if (!slot || slot.locked || slot.buildingId) return false
 
           const newStats = { ...state.stats }
+          let investmentAmount = 0
           for (const cost of building.costs) {
             newStats[cost.statId] -= cost.amount
+            if (cost.statId === 'money') {
+              investmentAmount += cost.amount
+            }
           }
 
           const newSlots = Slot.build(state.slots, slotIndex, buildingId)
-          const newState = { ...state, stats: newStats, slots: newSlots }
+          const financials = {
+            ...state.financials,
+            totalInvested: state.financials.totalInvested + investmentAmount,
+          }
+          const newState = { ...state, stats: newStats, slots: newSlots, financials }
 
           set({
             stats: newStats,
             slots: newSlots,
+            financials,
             rates: computeRates(newState),
           })
 
@@ -208,16 +263,25 @@ export const useGameStore = create<GameStoreState>()(
           if (!Perk.isUnlocked(perk, state)) return false
 
           const newStats = { ...state.stats }
+          let investmentAmount = 0
           for (const cost of perk.costs) {
             newStats[cost.statId] -= cost.amount
+            if (cost.statId === 'money') {
+              investmentAmount += cost.amount
+            }
           }
 
           const newOwnedPerks = [...state.ownedPerks, perkId]
-          const newState = { ...state, stats: newStats, ownedPerks: newOwnedPerks }
+          const financials = {
+            ...state.financials,
+            totalInvested: state.financials.totalInvested + investmentAmount,
+          }
+          const newState = { ...state, stats: newStats, ownedPerks: newOwnedPerks, financials }
 
           set({
             stats: newStats,
             ownedPerks: newOwnedPerks,
+            financials,
             rates: computeRates(newState),
           })
 
@@ -237,11 +301,16 @@ export const useGameStore = create<GameStoreState>()(
 
           const newStats = { ...state.stats, money: state.stats.money - cost }
           const newSlots = Slot.unlock(state.slots, slotIndex)
-          const newState = { ...state, stats: newStats, slots: newSlots }
+          const financials = {
+            ...state.financials,
+            totalInvested: state.financials.totalInvested + cost,
+          }
+          const newState = { ...state, stats: newStats, slots: newSlots, financials }
 
           set({
             stats: newStats,
             slots: newSlots,
+            financials,
             rates: computeRates(newState),
           })
 
@@ -304,6 +373,8 @@ export const useGameStore = create<GameStoreState>()(
         slots: state.slots,
         ownedPerks: state.ownedPerks,
         timeline: state.timeline,
+        dailyRecords: state.dailyRecords,
+        financials: state.financials,
         currentDay: state.currentDay,
         lastTickTime: state.lastTickTime,
         consecutiveNegativeDays: state.consecutiveNegativeDays,
@@ -312,6 +383,9 @@ export const useGameStore = create<GameStoreState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
+          // Handle missing fields for backwards compatibility
+          if (!state.dailyRecords) state.dailyRecords = []
+          if (!state.financials) state.financials = GameTypes.createInitialFinancials()
           state.rates = computeRates(state)
           state.actions.calculateOfflineProgress(state.lastTickTime)
           GameEvents.emit('game:loaded', undefined)
