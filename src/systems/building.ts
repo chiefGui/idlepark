@@ -1,5 +1,6 @@
 import type { BuildingDef, BuildingCategory, Cost, GameState } from '../engine/game-types'
 import { Requirements } from '../engine/requirements'
+import type { Modifier } from '../engine/modifiers'
 
 export class Building {
   // === RIDES ===
@@ -273,5 +274,19 @@ export class Building {
 
   static getTotalCost(building: BuildingDef): Cost[] {
     return building.costs
+  }
+
+  static getModifiers(buildingId: string, slotIndex: number): Modifier[] {
+    const building = this.getById(buildingId)
+    if (!building) return []
+
+    const source = { type: 'building' as const, slotIndex, buildingId }
+
+    return building.effects.map((effect) => ({
+      source,
+      stat: effect.statId,
+      flat: effect.perDay,
+      increased: effect.multiplier ? (effect.multiplier - 1) * 100 : undefined,
+    }))
   }
 }

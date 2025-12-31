@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion'
 import type { StatId } from '../../engine/game-types'
 import { useGameStore } from '../../store/game-store'
-import { Effects } from '../../engine/effects'
 import {
   DollarSign,
   Users,
@@ -90,7 +89,7 @@ export function StatDisplay({ statId }: StatDisplayProps) {
 
   const config = STAT_CONFIG[statId]
   const Icon = config.icon
-  const rate = Effects.getFinalRate(statId, rates)
+  const rate = rates[statId]
 
   return (
     <div className="flex items-center gap-3">

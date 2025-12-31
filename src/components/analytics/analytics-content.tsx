@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion'
 import { TrendingUp, TrendingDown, Minus, DollarSign, Users, Clock } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
-import { Effects } from '../../engine/effects'
 import { Slot } from '../../systems/slot'
 import { Building } from '../../systems/building'
 
@@ -9,8 +8,8 @@ export function AnalyticsContent() {
   const state = useGameStore()
   const rates = useGameStore((s) => s.rates)
 
-  const moneyRate = Effects.getFinalRate('money', rates)
-  const guestRate = Effects.getFinalRate('guests', rates)
+  const moneyRate = rates.money
+  const guestRate = rates.guests
 
   const occupiedSlots = Slot.getOccupied(state)
   const unlockedSlots = Slot.getUnlocked(state)

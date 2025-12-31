@@ -1,9 +1,10 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { GameState, Effect } from '../engine/game-types'
+import type { GameState } from '../engine/game-types'
 import { GameTypes } from '../engine/game-types'
 import { GameEvents } from '../engine/events'
-import { Effects, type AggregatedRates } from '../engine/effects'
+import { Effects } from '../engine/effects'
+import { Modifiers, type Modifier, type ComputedRates } from '../engine/modifiers'
 import { Building } from '../systems/building'
 import { Slot } from '../systems/slot'
 import { Guest } from '../systems/guest'
@@ -23,39 +24,52 @@ type GameActions = {
 }
 
 type GameStoreState = GameState & {
-  rates: AggregatedRates
+  rates: ComputedRates
   actions: GameActions
 }
 
-const computeRates = (state: GameState): AggregatedRates => {
-  const effects: Effect[] = []
+const collectModifiers = (state: GameState): Modifier[] => {
+  const modifiers: Modifier[] = []
 
+  // Collect from buildings
   for (const slot of state.slots) {
     if (slot.buildingId) {
-      const building = Building.getById(slot.buildingId)
-      if (building) {
-        effects.push(...building.effects)
-      }
+      modifiers.push(...Building.getModifiers(slot.buildingId, slot.index))
     }
   }
 
+  // Collect from perks
   for (const perkId of state.ownedPerks) {
-    const perk = Perk.getById(perkId)
-    if (perk) {
-      effects.push(...perk.effects)
-    }
+    modifiers.push(...Perk.getModifiers(perkId))
   }
 
-  effects.push(...Guest.getEffects(state))
+  // Collect from guests (dynamic, depends on current state)
+  modifiers.push(...Guest.getModifiers(state))
 
-  return Effects.aggregate(effects)
+  return modifiers
 }
+
+const computeRates = (state: GameState): ComputedRates => {
+  const modifiers = collectModifiers(state)
+  return Modifiers.computeAllRates(modifiers)
+}
+
+const emptyRates = (): ComputedRates => ({
+  money: 0,
+  guests: 0,
+  entertainment: 0,
+  food: 0,
+  comfort: 0,
+  cleanliness: 0,
+  appeal: 0,
+  satisfaction: 0,
+})
 
 export const useGameStore = create<GameStoreState>()(
   persist(
     (set, get) => ({
       ...GameTypes.createInitialState(),
-      rates: Effects.aggregate([]),
+      rates: emptyRates(),
 
       actions: {
         tick: (deltaDay: number) => {
@@ -253,7 +267,7 @@ export const useGameStore = create<GameStoreState>()(
           const initial = GameTypes.createInitialState()
           set({
             ...initial,
-            rates: Effects.aggregate([]),
+            rates: emptyRates(),
           })
           GameEvents.emit('game:reset', undefined)
         },
@@ -268,7 +282,7 @@ export const useGameStore = create<GameStoreState>()(
           const state = get()
           const rates = computeRates(state)
 
-          const moneyRate = Effects.getFinalRate('money', rates)
+          const moneyRate = rates.money
           let daysToSimulate = daysElapsed
 
           if (moneyRate < 0 && state.stats.money > 0) {

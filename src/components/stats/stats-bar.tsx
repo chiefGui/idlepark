@@ -12,7 +12,6 @@ import {
 } from 'lucide-react'
 import type { StatId } from '../../engine/game-types'
 import { useGameStore } from '../../store/game-store'
-import { Effects } from '../../engine/effects'
 import { Format } from '../../utils/format'
 import { InfoModal } from '../ui/info-modal'
 
@@ -124,14 +123,14 @@ export function StatsBar() {
     return DISPLAY_ORDER.map((statId) => ({
       statId,
       value: stats[statId],
-      rate: Effects.getFinalRate(statId, rates),
+      rate: rates[statId],
     }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dayInt])
 
   const selectedConfig = selectedStat ? STAT_CONFIG[selectedStat] : null
   const selectedValue = selectedStat ? stats[selectedStat] : 0
-  const selectedRate = selectedStat ? Effects.getFinalRate(selectedStat, rates) : 0
+  const selectedRate = selectedStat ? rates[selectedStat] : 0
 
   return (
     <>

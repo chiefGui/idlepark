@@ -1,5 +1,6 @@
-import type { StatId, GameState, Effect } from '../engine/game-types'
+import type { StatId, GameState } from '../engine/game-types'
 import { GameTypes } from '../engine/game-types'
+import type { Modifier } from '../engine/modifiers'
 
 export type GuestDemand = {
   statId: StatId
@@ -72,25 +73,28 @@ export class Guest {
     ))
   }
 
-  static getEffects(state: GameState): Effect[] {
+  static getModifiers(state: GameState): Modifier[] {
     const arrivalRate = this.calculateArrivalRate(state)
     const income = this.calculateIncome(state.stats.guests, state.ticketPrice)
 
-    const effects: Effect[] = [
-      { statId: 'guests', perDay: arrivalRate },
-      { statId: 'money', perDay: income },
+    const source = { type: 'guest' as const }
+
+    const modifiers: Modifier[] = [
+      { source, stat: 'guests', flat: arrivalRate },
+      { source, stat: 'money', flat: income },
     ]
 
     for (const demand of this.DEMANDS) {
-      effects.push({
-        statId: demand.statId,
-        perDay: -state.stats.guests * demand.perGuest,
+      modifiers.push({
+        source,
+        stat: demand.statId,
+        flat: -state.stats.guests * demand.perGuest,
       })
     }
 
     const cleanlinessDecay = -state.stats.guests * 0.1
-    effects.push({ statId: 'cleanliness', perDay: cleanlinessDecay })
+    modifiers.push({ source, stat: 'cleanliness', flat: cleanlinessDecay })
 
-    return effects
+    return modifiers
   }
 }
