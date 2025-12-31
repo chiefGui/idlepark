@@ -8,27 +8,20 @@ import { useGameStore } from '../store/game-store'
 const FEED_COOLDOWN = 5000
 
 // Declarative config for priority events (player actions / important events)
-type EventConfig = {
-  event: string
-  type: FeedEventType
-  contextKey?: string
-  condition?: (payload: Record<string, unknown>) => boolean
-}
-
-const PRIORITY_EVENTS: EventConfig[] = [
+const PRIORITY_EVENTS = [
   { event: 'building:built', type: 'building_built', contextKey: 'buildingId' },
   { event: 'building:demolished', type: 'building_demolished', contextKey: 'buildingId' },
   { event: 'milestone:achieved', type: 'milestone_achieved', contextKey: 'milestoneId' },
   { event: 'perk:purchased', type: 'perk_purchased', contextKey: 'perkId' },
   { event: 'happening:started', type: 'happening_started', contextKey: 'happeningId' },
   { event: 'happening:ended', type: 'happening_ended', contextKey: 'happeningId' },
-  {
-    event: 'guests:departed',
-    type: 'guest_departed',
-    contextKey: 'guestCount',
-    condition: (p) => (p.count as number) > 0,
-  },
-]
+  { event: 'guests:departed', type: 'guest_departed', contextKey: 'guestCount', condition: (p: { count: number }) => p.count > 0 },
+] as const satisfies ReadonlyArray<{
+  event: string
+  type: FeedEventType
+  contextKey?: string
+  condition?: (payload: { count: number }) => boolean
+}>
 
 type PrevStats = {
   appeal: number
@@ -55,7 +48,8 @@ export function useFeedEvents() {
 
     // Subscribe to all priority events declaratively
     for (const config of PRIORITY_EVENTS) {
-      const unsub = GameEvents.on(config.event, (payload: Record<string, unknown>) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const unsub = GameEvents.on(config.event as any, (payload: any) => {
         if (config.condition && !config.condition(payload)) return
         const state = useGameStore.getState()
         const context = config.contextKey

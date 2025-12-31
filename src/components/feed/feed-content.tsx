@@ -22,6 +22,8 @@ const EVENT_EMOJI: Record<FeedEventType, string> = {
   ambient: '💭',
   happening_started: '🎪',
   happening_ended: '🎬',
+  capacity_reached: '🚫',
+  capacity_warning: '⚠️',
 }
 
 function FeedEntryCard({ entry, index }: { entry: FeedEntry; index: number }) {
