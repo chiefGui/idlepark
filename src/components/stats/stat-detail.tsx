@@ -97,8 +97,8 @@ function getWarning(statId: StatId, state: GameState): string | null {
     const count = Math.floor(breakdown.unhappy)
     return `${count} unhappy guest${count >= 2 ? 's' : ''} may leave at day's end.`
   }
-  if (statId === 'satisfaction' && state.stats.satisfaction < 40) {
-    return "Guests are becoming unhappy. Improve their experience!"
+  if (statId === 'appeal' && state.stats.appeal < 40) {
+    return "Low appeal means guests may become unhappy. Improve their experience!"
   }
   if (statId === 'appeal' && state.stats.appeal < 20 && state.stats.guests < 5) {
     return "Low appeal means fewer visitors. Build more attractions!"

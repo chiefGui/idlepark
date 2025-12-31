@@ -15,7 +15,6 @@ const STAT_LABELS: Record<StatId, string> = {
   comfort: 'comfort',
   cleanliness: 'clean',
   appeal: 'appeal',
-  satisfaction: 'happy',
 }
 
 type BuildingSelectorProps = {

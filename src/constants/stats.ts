@@ -6,7 +6,6 @@ import {
   Sofa,
   Sparkle,
   Star,
-  Heart,
 } from 'lucide-react'
 import type { StatId } from '../engine/game-types'
 import { Format } from '../utils/format'
@@ -65,17 +64,10 @@ export const STAT_CONFIG: Record<StatId, StatConfig> = {
     color: '#fbbf24',
     format: Format.percent,
   },
-  satisfaction: {
-    icon: Heart,
-    label: 'Happy',
-    color: '#f87171',
-    format: Format.percent,
-  },
 }
 
 /** Stats shown in the compact secondary bar */
 export const SECONDARY_STATS: StatId[] = [
-  'satisfaction',
   'appeal',
   'entertainment',
   'food',

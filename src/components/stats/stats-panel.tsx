@@ -6,7 +6,6 @@ const DISPLAY_ORDER: StatId[] = [
   'money',
   'guests',
   'appeal',
-  'satisfaction',
   'entertainment',
   'food',
   'comfort',

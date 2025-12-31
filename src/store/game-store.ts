@@ -72,7 +72,6 @@ const emptyRates = (): ComputedRates => ({
   comfort: 0,
   cleanliness: 0,
   appeal: 0,
-  satisfaction: 0,
 })
 
 export const useGameStore = create<GameStoreState>()(
@@ -98,9 +97,9 @@ export const useGameStore = create<GameStoreState>()(
           const arrivalRate = Guest.calculateArrivalRate(state)
           guestBreakdown = Guest.processArrivals(guestBreakdown, arrivalRate, deltaDay)
 
-          // 2. Process tier transitions based on satisfaction
-          const satisfaction = Guest.calculateSatisfaction(state)
-          guestBreakdown = Guest.processTransitions(guestBreakdown, satisfaction, deltaDay)
+          // 2. Process tier transitions based on appeal
+          const currentAppeal = Guest.calculateAppeal(state)
+          guestBreakdown = Guest.processTransitions(guestBreakdown, currentAppeal, deltaDay)
 
           // 3. Process unhappy departures at day boundary
           let departedGuests = 0
@@ -139,7 +138,6 @@ export const useGameStore = create<GameStoreState>()(
 
           newStats = {
             ...newStats,
-            satisfaction: Guest.calculateSatisfaction(tempState),
             appeal: Guest.calculateAppeal(tempState),
           }
 

@@ -179,7 +179,7 @@ const MESSAGES: Record<FeedEventType, string[]> = {
     "{count} left but maybe they'll give it another chance?",
     "Bye to {count} visitors. Hope tomorrow's better for everyone",
   ],
-  satisfaction_high: [
+  appeal_high: [
     // Pure joy
     "10/10 no notes. This park is PERFECTION ✨",
     "I have never been happier. This place just hits different",
@@ -191,7 +191,7 @@ const MESSAGES: Record<FeedEventType, string[]> = {
     "Clean park, friendly staff, amazing attractions. Chef's kiss",
     "Every single thing about this place is exactly right",
     // Emotional
-    "I'm so satisfied I might just live here forever",
+    "I'm so happy I might just live here forever",
     "This park really said 'your happiness is our priority' and MEANT it",
     "My heart is so full rn you don't even understand",
     "Never felt this content anywhere. What is this magic",
@@ -204,7 +204,7 @@ const MESSAGES: Record<FeedEventType, string[]> = {
     "Didn't know a park could make me this happy. Wild",
     "Okay I was wrong to doubt this place. It's incredible",
   ],
-  satisfaction_low: [
+  appeal_low: [
     // Disappointed
     "Okay so... this place has seen better days 😕",
     "Not loving the vibes here lately ngl",
@@ -605,12 +605,12 @@ export class Feed {
     return Math.random() < chance
   }
 
-  static getSatisfactionEvent(
-    currentSatisfaction: number,
-    previousSatisfaction: number
+  static getAppealEvent(
+    currentAppeal: number,
+    previousAppeal: number
   ): FeedEventType | null {
-    if (currentSatisfaction >= 85 && previousSatisfaction < 85) return 'satisfaction_high'
-    if (currentSatisfaction <= 40 && previousSatisfaction > 40) return 'satisfaction_low'
+    if (currentAppeal >= 85 && previousAppeal < 85) return 'appeal_high'
+    if (currentAppeal <= 40 && previousAppeal > 40) return 'appeal_low'
     return null
   }
 

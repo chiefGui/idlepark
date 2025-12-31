@@ -6,7 +6,6 @@ export type StatId =
   | 'comfort'
   | 'cleanliness'
   | 'appeal'
-  | 'satisfaction'
 
 export type BuildingCategory = 'rides' | 'food' | 'facilities' | 'decor'
 
@@ -73,8 +72,8 @@ export type FeedEventType =
   | 'perk_purchased'
   | 'guest_threshold'
   | 'guest_departed'
-  | 'satisfaction_high'
-  | 'satisfaction_low'
+  | 'appeal_high'
+  | 'appeal_low'
   | 'price_complaint'
   | 'price_praise'
   | 'financial_success'
@@ -187,7 +186,6 @@ export class GameTypes {
     'comfort',
     'cleanliness',
     'appeal',
-    'satisfaction',
   ]
 
   static readonly TOTAL_SLOTS = 24
@@ -215,7 +213,6 @@ export class GameTypes {
       comfort: 0,
       cleanliness: 100,
       appeal: 0,
-      satisfaction: 100,
     }
   }
 

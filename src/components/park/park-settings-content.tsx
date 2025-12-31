@@ -147,7 +147,7 @@ export function ParkSettingsContent() {
           {priceLevel === 'low'
             ? 'Low prices attract more guests but earn less per visitor. Great for building up your guest count!'
             : priceLevel === 'high'
-            ? 'High prices maximize revenue but slow guest arrivals. Best when you have high appeal and satisfaction.'
+            ? 'High prices maximize revenue but slow guest arrivals. Best when you have high appeal.'
             : 'Standard pricing balances guest attraction with revenue. A safe choice for steady growth.'}
         </p>
       </div>
