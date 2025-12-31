@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { FeedEventType } from '../engine/game-types'
-import { GameEvents } from '../engine/events'
+import { GameEvents, type GameEventMap } from '../engine/events'
 import { Feed } from '../systems/feed'
 import { Guest } from '../systems/guest'
 import { useGameStore } from '../store/game-store'
@@ -9,10 +9,11 @@ const FEED_COOLDOWN = 5000
 
 // Declarative config for priority events (player actions / important events)
 type EventConfig = {
-  event: string
+  event: keyof GameEventMap
   type: FeedEventType
   contextKey?: string
-  condition?: (payload: Record<string, unknown>) => boolean
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  condition?: (payload: any) => boolean
 }
 
 const PRIORITY_EVENTS: EventConfig[] = [
@@ -26,7 +27,7 @@ const PRIORITY_EVENTS: EventConfig[] = [
     event: 'guests:departed',
     type: 'guest_departed',
     contextKey: 'guestCount',
-    condition: (p) => (p.count as number) > 0,
+    condition: (p: { count: number }) => p.count > 0,
   },
 ]
 
@@ -55,7 +56,8 @@ export function useFeedEvents() {
 
     // Subscribe to all priority events declaratively
     for (const config of PRIORITY_EVENTS) {
-      const unsub = GameEvents.on(config.event, (payload: Record<string, unknown>) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const unsub = GameEvents.on(config.event, (payload: any) => {
         if (config.condition && !config.condition(payload)) return
         const state = useGameStore.getState()
         const context = config.contextKey

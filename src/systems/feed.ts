@@ -678,9 +678,9 @@ export class Feed {
 
   static checkAppealThreshold(current: number, prev: number): FeedEventType | null {
     for (const threshold of this.APPEAL_THRESHOLDS) {
-      if ('above' in threshold) {
+      if ('above' in threshold && threshold.above !== undefined) {
         if (current >= threshold.above && prev < threshold.above) return threshold.event
-      } else {
+      } else if ('below' in threshold && threshold.below !== undefined) {
         if (current <= threshold.below && prev > threshold.below) return threshold.event
       }
     }
