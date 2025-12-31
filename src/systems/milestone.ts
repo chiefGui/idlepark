@@ -10,7 +10,6 @@ export class Milestone {
     emoji: '🎉',
     description: 'Build your first attraction',
     condition: { type: 'building', id: 'carousel' },
-    reward: 50,
   }
 
   static readonly GUESTS_10: MilestoneDef = {
@@ -19,7 +18,6 @@ export class Milestone {
     emoji: '👥',
     description: 'Have 10 guests in your park',
     condition: { type: 'stat', statId: 'guests', min: 10 },
-    reward: 75,
   }
 
   static readonly GUESTS_50: MilestoneDef = {
@@ -28,7 +26,6 @@ export class Milestone {
     emoji: '🎊',
     description: 'Have 50 guests in your park',
     condition: { type: 'stat', statId: 'guests', min: 50 },
-    reward: 150,
   }
 
   static readonly GUESTS_100: MilestoneDef = {
@@ -37,7 +34,6 @@ export class Milestone {
     emoji: '🏆',
     description: 'Have 100 guests in your park',
     condition: { type: 'stat', statId: 'guests', min: 100 },
-    reward: 300,
   }
 
   static readonly DAY_10: MilestoneDef = {
@@ -46,7 +42,6 @@ export class Milestone {
     emoji: '📅',
     description: 'Survive 10 days',
     condition: { type: 'day', min: 10 },
-    reward: 100,
   }
 
   static readonly DAY_30: MilestoneDef = {
@@ -55,7 +50,6 @@ export class Milestone {
     emoji: '🎖️',
     description: 'Survive 30 days',
     condition: { type: 'day', min: 30 },
-    reward: 250,
   }
 
   static readonly MONEY_1000: MilestoneDef = {
@@ -64,7 +58,6 @@ export class Milestone {
     emoji: '💰',
     description: 'Accumulate $1000',
     condition: { type: 'stat', statId: 'money', min: 1000 },
-    reward: 200,
   }
 
   static readonly ALL: MilestoneDef[] = [
