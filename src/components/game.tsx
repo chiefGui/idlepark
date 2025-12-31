@@ -5,6 +5,8 @@ import { Header } from './header/header'
 import { StatsBar } from './stats/stats-bar'
 import { BuildingsPanel } from './buildings/buildings-panel'
 import { FeedToast } from './feed/feed-toast'
+import { HappeningBanner } from './happening/happening-banner'
+import { HappeningToast } from './happening/happening-toast'
 
 export function Game() {
   useGameLoop()
@@ -14,6 +16,7 @@ export function Game() {
     <DrawerProvider>
       <div className="h-full flex flex-col bg-[var(--color-bg)]">
         <Header />
+        <HappeningBanner />
         <StatsBar />
 
         <main className="flex-1 overflow-auto">
@@ -23,6 +26,7 @@ export function Game() {
         </main>
 
         <FeedToast />
+        <HappeningToast />
       </div>
     </DrawerProvider>
   )

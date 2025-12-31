@@ -3,8 +3,27 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { BookOpen } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { Timeline } from '../../systems/timeline'
+import type { TimelineEntry } from '../../engine/game-types'
 
 const PAGE_SIZE = 5
+
+function getEntryKey(entry: TimelineEntry): string {
+  if (Timeline.isMilestoneEntry(entry)) {
+    return `milestone-${entry.milestoneId}-${entry.day}`
+  }
+  return `happening-${entry.type}-${entry.happeningId}-${entry.day}`
+}
+
+function getEntryColor(entry: TimelineEntry): string {
+  if (Timeline.isMilestoneEntry(entry)) {
+    return 'var(--color-accent)'
+  }
+  const happening = Timeline.getHappeningForEntry(entry)
+  if (happening?.type === 'positive') {
+    return 'var(--color-positive)'
+  }
+  return 'var(--color-negative)'
+}
 
 export function TimelineContent() {
   const state = useGameStore()
@@ -37,14 +56,57 @@ export function TimelineContent() {
 
         <AnimatePresence mode="popLayout">
           {entries.map((entry, index) => {
-            const milestone = Timeline.getMilestoneForEntry(entry)
-            const flavor = Timeline.getFlavorText(entry.milestoneId)
+            const flavor = Timeline.getFlavorText(entry)
+            const color = getEntryColor(entry)
 
-            if (!milestone) return null
+            if (Timeline.isMilestoneEntry(entry)) {
+              const milestone = Timeline.getMilestoneForEntry(entry)
+              if (!milestone) return null
+
+              return (
+                <motion.div
+                  key={getEntryKey(entry)}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="relative flex gap-4 pb-6 last:pb-0"
+                >
+                  <div className="relative z-10 flex-shrink-0">
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-lg border-2"
+                      style={{ borderColor: color, backgroundColor: `color-mix(in srgb, ${color} 20%, transparent)` }}
+                    >
+                      {milestone.emoji}
+                    </div>
+                  </div>
+
+                  <div className="flex-1 pt-1.5">
+                    <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color }}>
+                      Day {entry.day}
+                    </div>
+                    <h4 className="font-semibold mb-1">{flavor.title}</h4>
+                    <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
+                      {flavor.description}
+                    </p>
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-[var(--color-surface)] text-xs text-[var(--color-text-muted)]">
+                      <span>{milestone.emoji}</span>
+                      <span>{milestone.name}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )
+            }
+
+            // Happening entry
+            const happening = Timeline.getHappeningForEntry(entry)
+            if (!happening) return null
+
+            const isStarted = entry.type === 'happening_started'
 
             return (
               <motion.div
-                key={entry.milestoneId}
+                key={getEntryKey(entry)}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -52,22 +114,28 @@ export function TimelineContent() {
                 className="relative flex gap-4 pb-6 last:pb-0"
               >
                 <div className="relative z-10 flex-shrink-0">
-                  <div className="w-10 h-10 rounded-full bg-[var(--color-accent)]/20 border-2 border-[var(--color-accent)] flex items-center justify-center text-lg">
-                    {milestone.emoji}
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-lg border-2"
+                    style={{ borderColor: color, backgroundColor: `color-mix(in srgb, ${color} 20%, transparent)` }}
+                  >
+                    {happening.emoji}
                   </div>
                 </div>
 
                 <div className="flex-1 pt-1.5">
-                  <div className="text-xs font-medium text-[var(--color-accent)] uppercase tracking-wider mb-1">
+                  <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color }}>
                     Day {entry.day}
                   </div>
                   <h4 className="font-semibold mb-1">{flavor.title}</h4>
                   <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
                     {flavor.description}
                   </p>
-                  <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-[var(--color-surface)] text-xs text-[var(--color-text-muted)]">
-                    <span>{milestone.emoji}</span>
-                    <span>{milestone.name}</span>
+                  <div
+                    className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs"
+                    style={{ backgroundColor: `color-mix(in srgb, ${color} 15%, transparent)`, color }}
+                  >
+                    <span>{happening.emoji}</span>
+                    <span>{happening.name} {isStarted ? 'began' : 'ended'}</span>
                   </div>
                 </div>
               </motion.div>

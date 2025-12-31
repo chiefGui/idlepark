@@ -65,6 +65,20 @@ export function useFeedEvents() {
       }
     })
 
+    // Happening started - priority (important event)
+    const unsubHappeningStarted = GameEvents.on('happening:started', ({ happeningId }) => {
+      const state = useGameStore.getState()
+      const entry = Feed.createEntry('happening_started', state.currentDay, { happeningId })
+      addWithCooldown(entry, true)
+    })
+
+    // Happening ended - priority (important event)
+    const unsubHappeningEnded = GameEvents.on('happening:ended', ({ happeningId }) => {
+      const state = useGameStore.getState()
+      const entry = Feed.createEntry('happening_ended', state.currentDay, { happeningId })
+      addWithCooldown(entry, true)
+    })
+
     // Tick-based events (satisfaction, guests, ambient, price, financial)
     const unsubTick = GameEvents.on('tick', () => {
       const state = useGameStore.getState()
@@ -145,6 +159,8 @@ export function useFeedEvents() {
       unsubMilestone()
       unsubPerk()
       unsubDeparted()
+      unsubHappeningStarted()
+      unsubHappeningEnded()
       unsubTick()
       unsubReset()
     }

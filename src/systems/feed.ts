@@ -3,6 +3,7 @@ import { GameTypes } from '../engine/game-types'
 import { Building } from './building'
 import { Perk } from './perk'
 import { Milestone } from './milestone'
+import { Happening } from './happening'
 
 // Handle generation components
 const HANDLE_PREFIXES = [
@@ -364,6 +365,58 @@ const MESSAGES: Record<FeedEventType, string[]> = {
     "This is what weekends are for",
     "Reminder that joy exists and it's at the park",
   ],
+  happening_started: [
+    // Excited about positive
+    "Did you hear?? {happening} just started!! This is gonna be AMAZING 🎉",
+    "{happening} is happening and I'm HERE for it!!",
+    "OMG {happening}!! Everyone get to the park NOW",
+    "The {happening} just kicked off and the vibes are IMMACULATE",
+    "Can't believe {happening} is finally here!! Dreams do come true",
+    // Informative
+    "Heads up everyone: {happening} has begun at the park!",
+    "Breaking: {happening} starts today. You don't want to miss this",
+    "Just arrived and apparently there's a {happening}. Perfect timing!",
+    "PSA: {happening} is happening right now. Plan accordingly",
+    // Observational
+    "So there's a {happening} going on... interesting times ahead",
+    "Noticed something different today - it's the {happening}",
+    "Well well well, looks like {happening} has begun",
+    "The {happening} effect is real. You can feel it in the air",
+    // Skeptical
+    "Another {happening}? Let's see how this goes...",
+    "Okay so {happening} just started. Keeping an open mind",
+    "{happening} begins. Could be good, could be chaos. We'll see",
+    // Community
+    "We're all in this {happening} together! Let's make the best of it",
+    "{happening} squad where you at?? 🙌",
+    "Who else is excited/terrified about the {happening}?",
+  ],
+  happening_ended: [
+    // Relieved (for negative events)
+    "Finally! The {happening} is over. We made it through 🙏",
+    "Goodbye {happening}, you will NOT be missed",
+    "The {happening} has ended and I can breathe again",
+    "Survived the {happening}. Badge of honor honestly",
+    // Sad (for positive events)
+    "Noooo the {happening} is over 😭 Already miss it",
+    "Can't believe {happening} ended already. Time flies",
+    "The {happening} was amazing while it lasted...",
+    "Post-{happening} depression hitting hard rn",
+    // Reflective
+    "And just like that, the {happening} comes to an end",
+    "{happening} is done. What a wild ride that was",
+    "The {happening} chapter closes. Wonder what's next",
+    "Looking back, the {happening} wasn't so bad",
+    // Neutral
+    "The {happening} has officially ended. Back to normal!",
+    "That's a wrap on the {happening}. Life goes on",
+    "{happening} is over. Time to move forward",
+    "Well, the {happening} has passed. Onwards and upwards",
+    // Looking ahead
+    "Now that {happening} is done, what's the next adventure?",
+    "{happening} ended but the memories remain ✨",
+    "Another {happening} in the books. Ready for whatever's next",
+  ],
 }
 
 // Random spots for ambient messages
@@ -452,6 +505,8 @@ export class Feed {
       milestoneName?: string
       perkId?: string
       perkName?: string
+      happeningId?: string
+      happeningName?: string
       guestCount?: number
       ticketPrice?: number
     }
@@ -469,6 +524,9 @@ export class Feed {
     }
     if (context?.perkName) {
       message = message.replace(/{perk}/g, context.perkName)
+    }
+    if (context?.happeningName) {
+      message = message.replace(/{happening}/g, context.happeningName)
     }
     if (context?.guestCount !== undefined) {
       message = message.replace(/{count}/g, String(context.guestCount))
@@ -491,6 +549,7 @@ export class Feed {
       buildingId?: string
       milestoneId?: string
       perkId?: string
+      happeningId?: string
       guestCount?: number
       ticketPrice?: number
     }
@@ -498,6 +557,7 @@ export class Feed {
     const buildingName = context?.buildingId ? Building.getById(context.buildingId)?.name : undefined
     const milestoneName = context?.milestoneId ? Milestone.getById(context.milestoneId)?.name : undefined
     const perkName = context?.perkId ? Perk.getById(context.perkId)?.name : undefined
+    const happeningName = context?.happeningId ? Happening.getById(context.happeningId)?.name : undefined
 
     const handle = this.generateHandle()
     const avatarSeed = `${handle}-${Date.now()}-${Math.random()}`
@@ -507,7 +567,7 @@ export class Feed {
       type,
       handle,
       avatarSeed,
-      message: this.generateMessage(type, { ...context, buildingName, milestoneName, perkName }),
+      message: this.generateMessage(type, { ...context, buildingName, milestoneName, perkName, happeningName }),
       day: Math.floor(day),
       timestamp: Date.now(),
       likes: Math.floor(Math.random() * 500) + 1,
