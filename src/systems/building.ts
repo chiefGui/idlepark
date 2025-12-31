@@ -238,7 +238,7 @@ export class Building {
     costs: [{ statId: 'money', amount: 150 }],
     effects: [
       { statId: 'money', perDay: -3 },
-      { statId: 'appeal', perDay: 7 },
+      { statId: 'beauty', perDay: 10 },
     ],
     requirements: [{ type: 'day', min: 3 }],
   }
@@ -252,7 +252,7 @@ export class Building {
     costs: [{ statId: 'money', amount: 80 }],
     effects: [
       { statId: 'money', perDay: -2 },
-      { statId: 'appeal', perDay: 3 },
+      { statId: 'beauty', perDay: 5 },
       { statId: 'cleanliness', perDay: 2 },
     ],
     requirements: [],
@@ -267,6 +267,7 @@ export class Building {
     costs: [{ statId: 'money', amount: 25 }],
     effects: [
       { statId: 'money', perDay: -1 },
+      { statId: 'beauty', perDay: 2 },
       { statId: 'comfort', perDay: 8 },
     ],
     requirements: [],
@@ -310,7 +311,7 @@ export class Building {
     costs: [{ statId: 'money', amount: 5000 }],
     effects: [
       { statId: 'money', perDay: -20 },
-      { statId: 'appeal', perDay: 3 },
+      { statId: 'beauty', perDay: 3 },
     ],
     requirements: [{ type: 'perk', id: 'lodging_2' }],
     capacityBonus: 50,
@@ -326,7 +327,7 @@ export class Building {
     costs: [{ statId: 'money', amount: 8000 }],
     effects: [
       { statId: 'money', perDay: -30 },
-      { statId: 'appeal', perDay: 2 },
+      { statId: 'beauty', perDay: 2 },
     ],
     requirements: [{ type: 'perk', id: 'lodging_2' }],
     capacityBonus: 75,
@@ -343,7 +344,7 @@ export class Building {
     costs: [{ statId: 'money', amount: 20000 }],
     effects: [
       { statId: 'money', perDay: -60 },
-      { statId: 'appeal', perDay: 8 },
+      { statId: 'beauty', perDay: 8 },
     ],
     requirements: [{ type: 'perk', id: 'lodging_3' }],
     capacityBonus: 120,
@@ -359,7 +360,7 @@ export class Building {
     costs: [{ statId: 'money', amount: 30000 }],
     effects: [
       { statId: 'money', perDay: -80 },
-      { statId: 'appeal', perDay: 15 },
+      { statId: 'beauty', perDay: 15 },
     ],
     requirements: [{ type: 'perk', id: 'lodging_3' }],
     capacityBonus: 100,
@@ -411,7 +412,7 @@ export class Building {
     { id: 'rides', label: 'Rides', emoji: '🎢', hint: 'Entertainment' },
     { id: 'food', label: 'Food', emoji: '🍔', hint: 'Food & comfort' },
     { id: 'facilities', label: 'Facilities', emoji: '🚻', hint: 'Comfort & cleanliness' },
-    { id: 'decor', label: 'Decor', emoji: '🌷', hint: 'Appeal & cleanliness' },
+    { id: 'decor', label: 'Decor', emoji: '🌷', hint: 'Beauty & comfort' },
     { id: 'lodging', label: 'Lodging', emoji: '🏨', hint: 'Guest capacity' },
   ]
 

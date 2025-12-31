@@ -24,6 +24,7 @@ export class Effects {
       food: Math.max(0, stats.food),
       comfort: Math.max(0, stats.comfort),
       cleanliness: Math.max(0, Math.min(100, stats.cleanliness)),
+      beauty: Math.max(0, Math.min(100, stats.beauty)),
       appeal: Math.max(0, Math.min(100, stats.appeal)),
     }
   }

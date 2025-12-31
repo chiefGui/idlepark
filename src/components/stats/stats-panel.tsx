@@ -10,6 +10,7 @@ const DISPLAY_ORDER: StatId[] = [
   'food',
   'comfort',
   'cleanliness',
+  'beauty',
 ]
 
 export function StatsPanel() {

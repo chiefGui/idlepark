@@ -101,6 +101,23 @@ export class Milestone {
     condition: { type: 'perk', id: 'lodging_3' },
   }
 
+  // Beauty milestones
+  static readonly BEAUTY_50: MilestoneDef = {
+    id: 'beauty_50',
+    name: 'Picture Perfect',
+    emoji: '🌸',
+    description: 'Reach 50% park beauty',
+    condition: { type: 'stat', statId: 'beauty', min: 50 },
+  }
+
+  static readonly BEAUTY_80: MilestoneDef = {
+    id: 'beauty_80',
+    name: 'Garden Paradise',
+    emoji: '🌺',
+    description: 'Reach 80% park beauty',
+    condition: { type: 'stat', statId: 'beauty', min: 80 },
+  }
+
   static readonly ALL: MilestoneDef[] = [
     Milestone.FIRST_BUILDING,
     Milestone.GUESTS_10,
@@ -114,6 +131,8 @@ export class Milestone {
     Milestone.MONEY_1000,
     Milestone.FIRST_LODGING,
     Milestone.RESORT_MOGUL,
+    Milestone.BEAUTY_50,
+    Milestone.BEAUTY_80,
   ]
 
   static getById(id: string): MilestoneDef | undefined {
