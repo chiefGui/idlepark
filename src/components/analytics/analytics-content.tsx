@@ -142,11 +142,10 @@ export function AnalyticsContent() {
 
       {/* Insights */}
       <Insights
-        moneyRate={rates.money}
-        guestBreakdown={guestBreakdown}
+        dailyRecords={dailyRecords}
         totalGuests={totalGuests}
-        cleanliness={stats.cleanliness}
         capacity={capacity}
+        appeal={stats.appeal}
       />
     </div>
   )
@@ -193,15 +192,15 @@ function ProfitChart({ records }: ProfitChartProps) {
 
   const width = 100
   const height = 48
-  const padding = 2
+  const vPadding = 4 // Vertical only for dot visibility
 
   // Calculate zero line position
-  const zeroY = height - padding - ((0 - min) / range) * (height - padding * 2)
+  const zeroY = height - vPadding - ((0 - min) / range) * (height - vPadding * 2)
 
-  // Build path
+  // Build path - edge to edge horizontally
   const points = records.map((r, i) => {
-    const x = padding + (i / (records.length - 1)) * (width - padding * 2)
-    const y = height - padding - ((r.moneyEarned - min) / range) * (height - padding * 2)
+    const x = (i / (records.length - 1)) * width
+    const y = height - vPadding - ((r.moneyEarned - min) / range) * (height - vPadding * 2)
     return { x, y, value: r.moneyEarned }
   })
 
@@ -214,7 +213,7 @@ function ProfitChart({ records }: ProfitChartProps) {
   const isPositive = lastValue >= 0
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-12">
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-12" preserveAspectRatio="none">
       <defs>
         <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={isPositive ? 'var(--color-positive)' : 'var(--color-negative)'} stopOpacity="0.3" />
@@ -224,9 +223,9 @@ function ProfitChart({ records }: ProfitChartProps) {
 
       {/* Zero line */}
       <line
-        x1={padding}
+        x1={0}
         y1={zeroY}
-        x2={width - padding}
+        x2={width}
         y2={zeroY}
         stroke="var(--color-border)"
         strokeWidth="1"
@@ -244,6 +243,7 @@ function ProfitChart({ records }: ProfitChartProps) {
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
       />
 
       {/* End point */}
@@ -252,6 +252,7 @@ function ProfitChart({ records }: ProfitChartProps) {
         cy={points[points.length - 1].y}
         r="3"
         fill={isPositive ? 'var(--color-positive)' : 'var(--color-negative)'}
+        vectorEffect="non-scaling-stroke"
       />
     </svg>
   )
@@ -300,70 +301,80 @@ function GuestMoodBar({ breakdown, total }: GuestMoodBarProps) {
 }
 
 type InsightsProps = {
-  moneyRate: number
-  guestBreakdown: { happy: number; neutral: number; unhappy: number }
+  dailyRecords: { day: number; moneyEarned: number; peakGuests: number; peakAppeal: number }[]
   totalGuests: number
-  cleanliness: number
   capacity: number
+  appeal: number
 }
 
-function Insights({ moneyRate, guestBreakdown, totalGuests, cleanliness, capacity }: InsightsProps) {
-  const insights: { type: 'good' | 'warn' | 'bad'; text: string }[] = []
+function Insights({ dailyRecords, totalGuests, capacity, appeal }: InsightsProps) {
+  const insights: { type: 'up' | 'down' | 'neutral'; text: string }[] = []
 
-  // Money insights
-  if (moneyRate < -20) {
-    insights.push({ type: 'bad', text: 'Losing money fast. Remove costly buildings or add more rides.' })
-  } else if (moneyRate < 0) {
-    insights.push({ type: 'warn', text: 'Slightly in the red. Need more income.' })
-  } else if (moneyRate > 50) {
-    insights.push({ type: 'good', text: 'Great profit! Consider expanding.' })
-  }
+  // Need at least 2 days of data for comparisons
+  if (dailyRecords.length >= 2) {
+    const today = dailyRecords[dailyRecords.length - 1]
+    const yesterday = dailyRecords[dailyRecords.length - 2]
 
-  // Guest insights
-  if (totalGuests >= capacity) {
-    insights.push({ type: 'warn', text: 'At capacity! Get Lodging perks for more guests.' })
-  }
+    // Profit trend
+    const profitChange = today.moneyEarned - yesterday.moneyEarned
+    if (profitChange !== 0) {
+      const sign = profitChange > 0 ? '+' : ''
+      insights.push({
+        type: profitChange > 0 ? 'up' : 'down',
+        text: `${sign}${Format.money(profitChange)} vs yesterday`
+      })
+    }
 
-  if (totalGuests > 5) {
-    const unhappyRatio = guestBreakdown.unhappy / totalGuests
-    if (unhappyRatio > 0.3) {
-      insights.push({ type: 'bad', text: 'Too many unhappy guests. Improve appeal or lower prices.' })
-    } else if (unhappyRatio > 0.15) {
-      insights.push({ type: 'warn', text: 'Some guests unhappy. Check what they need.' })
+    // Guest trend
+    const guestChange = today.peakGuests - yesterday.peakGuests
+    if (guestChange !== 0) {
+      const sign = guestChange > 0 ? '+' : ''
+      insights.push({
+        type: guestChange > 0 ? 'up' : 'down',
+        text: `${sign}${Math.round(guestChange)} peak guests vs yesterday`
+      })
+    }
+
+    // 7-day trend if enough data
+    if (dailyRecords.length >= 7) {
+      const last7 = dailyRecords.slice(-7)
+      const avgProfit = last7.reduce((sum, r) => sum + r.moneyEarned, 0) / 7
+      insights.push({
+        type: avgProfit > 0 ? 'up' : avgProfit < 0 ? 'down' : 'neutral',
+        text: `${Format.money(avgProfit)}/day avg (7d)`
+      })
     }
   }
 
-  // Cleanliness
-  if (cleanliness < 30) {
-    insights.push({ type: 'bad', text: 'Park is filthy! Add trash cans now.' })
-  } else if (cleanliness < 50) {
-    insights.push({ type: 'warn', text: 'Getting dirty. Consider more trash cans.' })
+  // Capacity utilization
+  if (capacity > 0) {
+    const utilization = Math.round((totalGuests / capacity) * 100)
+    insights.push({
+      type: utilization >= 90 ? 'up' : utilization < 50 ? 'down' : 'neutral',
+      text: `${utilization}% capacity used (${Math.round(totalGuests)}/${capacity})`
+    })
   }
 
-  if (insights.length === 0) {
-    insights.push({ type: 'good', text: 'Everything looks good! Keep it up.' })
-  }
+  // Current appeal
+  insights.push({
+    type: appeal >= 50 ? 'up' : appeal < 30 ? 'down' : 'neutral',
+    text: `Appeal: ${Math.round(appeal)}`
+  })
 
   return (
     <div className="space-y-2">
-      <div className="text-sm text-[var(--color-text-muted)]">Insights</div>
-      {insights.slice(0, 3).map((insight, i) => (
+      <div className="text-sm text-[var(--color-text-muted)]">Trends</div>
+      {insights.slice(0, 4).map((insight, i) => (
         <motion.div
           key={i}
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: i * 0.1 }}
-          className={`p-3 rounded-xl text-sm flex items-start gap-2 ${
-            insight.type === 'good'
-              ? 'bg-[var(--color-positive)]/10 border border-[var(--color-positive)]/20'
-              : insight.type === 'warn'
-                ? 'bg-amber-500/10 border border-amber-500/20'
-                : 'bg-[var(--color-negative)]/10 border border-[var(--color-negative)]/20'
-          }`}
+          transition={{ delay: i * 0.05 }}
+          className="p-3 rounded-xl text-sm flex items-center gap-2 bg-[var(--color-surface)] border border-[var(--color-border)]"
         >
-          <span className="flex-shrink-0 mt-0.5">
-            {insight.type === 'good' ? '✓' : insight.type === 'warn' ? '!' : '✗'}
-          </span>
+          {insight.type === 'up' && <TrendingUp size={14} className="text-[var(--color-positive)] flex-shrink-0" />}
+          {insight.type === 'down' && <TrendingDown size={14} className="text-[var(--color-negative)] flex-shrink-0" />}
+          {insight.type === 'neutral' && <Minus size={14} className="text-[var(--color-text-muted)] flex-shrink-0" />}
           <span>{insight.text}</span>
         </motion.div>
       ))}
