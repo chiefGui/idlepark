@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { FeedEventType } from '../engine/game-types'
 import { GameEvents } from '../engine/events'
-import { Feed } from '../systems/feed'
+import { Feed, type TickStats } from '../systems/feed'
 import { Guest } from '../systems/guest'
 import { useGameStore } from '../store/game-store'
 
@@ -23,16 +23,9 @@ const PRIORITY_EVENTS = [
   condition?: (payload: { count: number }) => boolean
 }>
 
-type PrevStats = {
-  appeal: number
-  guests: number
-  money: number
-  capacityPercent: number
-}
-
 export function useFeedEvents() {
   const addFeedEntry = useGameStore((s) => s.actions.addFeedEntry)
-  const prevRef = useRef<PrevStats | null>(null)
+  const prevRef = useRef<TickStats | null>(null)
   const lastFeedTimeRef = useRef<number>(0)
 
   useEffect(() => {
@@ -61,69 +54,36 @@ export function useFeedEvents() {
       unsubs.push(unsub)
     }
 
-    // Tick-based threshold events
+    // Tick-based events - all handled by Feed.checkTickEvents
     unsubs.push(
       GameEvents.on('tick', () => {
         const state = useGameStore.getState()
         const { stats, ticketPrice, rates } = state
 
         const capacity = Guest.getCapacity(state)
-        const capacityPercent = capacity > 0 ? (stats.guests / capacity) * 100 : 0
+        const current: TickStats = {
+          guests: stats.guests,
+          appeal: stats.appeal,
+          money: stats.money,
+          capacityPercent: capacity > 0 ? (stats.guests / capacity) * 100 : 0,
+          perceivedValue: stats.guests >= 10 ? Guest.calculatePerceivedValue(state) : 1,
+          moneyRate: rates.money,
+          ticketPrice,
+        }
 
         // Initialize on first tick
         if (!prevRef.current) {
-          prevRef.current = {
-            appeal: stats.appeal,
-            guests: stats.guests,
-            money: stats.money,
-            capacityPercent,
-          }
+          prevRef.current = current
           return
         }
 
-        const prev = prevRef.current
-
-        // Check all thresholds
-        const guestThreshold = Feed.checkGuestThreshold(stats.guests, prev.guests)
-        if (guestThreshold) {
-          addWithCooldown(Feed.createEntry('guest_threshold', state.currentDay, { guestCount: guestThreshold }), true)
+        // Check all events and process them
+        const events = Feed.checkTickEvents(current, prevRef.current)
+        for (const { type, context, priority } of events) {
+          addWithCooldown(Feed.createEntry(type, state.currentDay, context), priority)
         }
 
-        const capacityEvent = Feed.checkCapacityThreshold(capacityPercent, prev.capacityPercent)
-        if (capacityEvent) {
-          addWithCooldown(Feed.createEntry(capacityEvent, state.currentDay), true)
-        }
-
-        const appealEvent = Feed.checkAppealThreshold(stats.appeal, prev.appeal)
-        if (appealEvent) {
-          addWithCooldown(Feed.createEntry(appealEvent, state.currentDay), true)
-        }
-
-        const financialEvent = Feed.checkFinancialThreshold(stats.money, prev.money, rates.money)
-        if (financialEvent) {
-          addWithCooldown(Feed.createEntry(financialEvent, state.currentDay), true)
-        }
-
-        // Price events (random chance, uses cooldown)
-        if (stats.guests >= 10) {
-          const priceEvent = Feed.getPriceEvent(Guest.calculatePerceivedValue(state))
-          if (priceEvent) {
-            addWithCooldown(Feed.createEntry(priceEvent, state.currentDay, { ticketPrice }))
-          }
-        }
-
-        // Ambient tweets (random chance, uses cooldown)
-        if (Feed.shouldGenerateAmbient(stats.guests)) {
-          addWithCooldown(Feed.createEntry('ambient', state.currentDay))
-        }
-
-        // Update previous stats
-        prevRef.current = {
-          appeal: stats.appeal,
-          guests: stats.guests,
-          money: stats.money,
-          capacityPercent,
-        }
+        prevRef.current = current
       })
     )
 
