@@ -6,6 +6,10 @@ export type ExpansionPerkDef = PerkDef & {
   slotsGranted: number
 }
 
+export type LodgingPerkDef = PerkDef & {
+  lodgingTier: 1 | 2 | 3
+}
+
 export class Perk {
   static readonly SPOTLESS_PARK: PerkDef = {
     id: 'spotless_park',
@@ -81,6 +85,46 @@ export class Perk {
     Perk.EXTRA_SLOT_5,
   ]
 
+  // Lodging perks - unlock lodging buildings
+  static readonly LODGING_1: LodgingPerkDef = {
+    id: 'lodging_1',
+    name: 'Lodging I',
+    emoji: '🏕️',
+    description: 'Unlock basic overnight accommodations',
+    costs: [{ statId: 'money', amount: 3000 }],
+    effects: [],
+    requirements: [{ type: 'stat', statId: 'guests', min: 40 }],
+    lodgingTier: 1,
+  }
+
+  static readonly LODGING_2: LodgingPerkDef = {
+    id: 'lodging_2',
+    name: 'Lodging II',
+    emoji: '🏨',
+    description: 'Unlock comfortable mid-tier lodging',
+    costs: [{ statId: 'money', amount: 12000 }],
+    effects: [],
+    requirements: [{ type: 'perk', id: 'lodging_1' }],
+    lodgingTier: 2,
+  }
+
+  static readonly LODGING_3: LodgingPerkDef = {
+    id: 'lodging_3',
+    name: 'Lodging III',
+    emoji: '🏰',
+    description: 'Unlock premium resort accommodations',
+    costs: [{ statId: 'money', amount: 35000 }],
+    effects: [],
+    requirements: [{ type: 'perk', id: 'lodging_2' }],
+    lodgingTier: 3,
+  }
+
+  static readonly LODGING_PERKS: LodgingPerkDef[] = [
+    Perk.LODGING_1,
+    Perk.LODGING_2,
+    Perk.LODGING_3,
+  ]
+
   static readonly ALL: PerkDef[] = [
     Perk.SPOTLESS_PARK,
     Perk.EXTRA_SLOT_1,
@@ -88,6 +132,9 @@ export class Perk {
     Perk.EXTRA_SLOT_3,
     Perk.EXTRA_SLOT_4,
     Perk.EXTRA_SLOT_5,
+    Perk.LODGING_1,
+    Perk.LODGING_2,
+    Perk.LODGING_3,
   ]
 
   static getById(id: string): PerkDef | undefined {
@@ -122,6 +169,17 @@ export class Perk {
 
   static getNextExpansionPerk(state: GameState): ExpansionPerkDef | null {
     return this.EXPANSION_PERKS.find(p => !state.ownedPerks.includes(p.id)) ?? null
+  }
+
+  static getMaxLodgingTier(state: GameState): 0 | 1 | 2 | 3 {
+    if (state.ownedPerks.includes('lodging_3')) return 3
+    if (state.ownedPerks.includes('lodging_2')) return 2
+    if (state.ownedPerks.includes('lodging_1')) return 1
+    return 0
+  }
+
+  static getNextLodgingPerk(state: GameState): LodgingPerkDef | null {
+    return this.LODGING_PERKS.find(p => !state.ownedPerks.includes(p.id)) ?? null
   }
 
   static getModifiers(perkId: string): Modifier[] {

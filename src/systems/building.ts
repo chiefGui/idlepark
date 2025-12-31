@@ -2,6 +2,11 @@ import type { BuildingDef, BuildingCategory, Cost, GameState } from '../engine/g
 import { Requirements } from '../engine/requirements'
 import type { Modifier } from '../engine/modifiers'
 
+export type LodgingBuildingDef = BuildingDef & {
+  capacityBonus: number
+  lodgingTier: 1 | 2 | 3
+}
+
 export class Building {
   // === RIDES ===
   static readonly CAROUSEL: BuildingDef = {
@@ -267,6 +272,109 @@ export class Building {
     requirements: [],
   }
 
+  // === LODGING ===
+  // Tier 1 - Basic (unlocked by Lodging I)
+  static readonly CAMPGROUND: LodgingBuildingDef = {
+    id: 'campground',
+    name: 'Campground',
+    emoji: '🏕️',
+    description: 'Rustic tent sites under the stars',
+    category: 'lodging',
+    costs: [{ statId: 'money', amount: 1000 }],
+    effects: [{ statId: 'money', perDay: -5 }],
+    requirements: [{ type: 'perk', id: 'lodging_1' }],
+    capacityBonus: 20,
+    lodgingTier: 1,
+  }
+
+  static readonly STARLIGHT_MOTEL: LodgingBuildingDef = {
+    id: 'starlight_motel',
+    name: 'Starlight Motel',
+    emoji: '🌙',
+    description: 'Cozy roadside rooms with retro charm',
+    category: 'lodging',
+    costs: [{ statId: 'money', amount: 2000 }],
+    effects: [{ statId: 'money', perDay: -10 }],
+    requirements: [{ type: 'perk', id: 'lodging_1' }],
+    capacityBonus: 35,
+    lodgingTier: 1,
+  }
+
+  // Tier 2 - Comfortable (unlocked by Lodging II)
+  static readonly PINEWOOD_CABINS: LodgingBuildingDef = {
+    id: 'pinewood_cabins',
+    name: 'Pinewood Cabins',
+    emoji: '🪵',
+    description: 'Charming woodland retreats',
+    category: 'lodging',
+    costs: [{ statId: 'money', amount: 5000 }],
+    effects: [
+      { statId: 'money', perDay: -20 },
+      { statId: 'appeal', perDay: 3 },
+    ],
+    requirements: [{ type: 'perk', id: 'lodging_2' }],
+    capacityBonus: 50,
+    lodgingTier: 2,
+  }
+
+  static readonly PARKVIEW_INN: LodgingBuildingDef = {
+    id: 'parkview_inn',
+    name: 'Parkview Inn',
+    emoji: '🏨',
+    description: 'Comfortable family hotel with park views',
+    category: 'lodging',
+    costs: [{ statId: 'money', amount: 8000 }],
+    effects: [
+      { statId: 'money', perDay: -30 },
+      { statId: 'appeal', perDay: 2 },
+    ],
+    requirements: [{ type: 'perk', id: 'lodging_2' }],
+    capacityBonus: 75,
+    lodgingTier: 2,
+  }
+
+  // Tier 3 - Premium (unlocked by Lodging III)
+  static readonly LAKESIDE_RESORT: LodgingBuildingDef = {
+    id: 'lakeside_resort',
+    name: 'Lakeside Resort',
+    emoji: '🏖️',
+    description: 'Luxurious waterfront destination',
+    category: 'lodging',
+    costs: [{ statId: 'money', amount: 20000 }],
+    effects: [
+      { statId: 'money', perDay: -60 },
+      { statId: 'appeal', perDay: 8 },
+    ],
+    requirements: [{ type: 'perk', id: 'lodging_3' }],
+    capacityBonus: 120,
+    lodgingTier: 3,
+  }
+
+  static readonly CLOUD_NINE_SUITES: LodgingBuildingDef = {
+    id: 'cloud_nine_suites',
+    name: 'Cloud Nine Suites',
+    emoji: '☁️',
+    description: 'Ultra-premium boutique hotel experience',
+    category: 'lodging',
+    costs: [{ statId: 'money', amount: 30000 }],
+    effects: [
+      { statId: 'money', perDay: -80 },
+      { statId: 'appeal', perDay: 15 },
+    ],
+    requirements: [{ type: 'perk', id: 'lodging_3' }],
+    capacityBonus: 100,
+    lodgingTier: 3,
+  }
+
+  static readonly LODGING_BUILDINGS: LodgingBuildingDef[] = [
+    Building.CAMPGROUND,
+    Building.STARLIGHT_MOTEL,
+    Building.PINEWOOD_CABINS,
+    Building.PARKVIEW_INN,
+    Building.LAKESIDE_RESORT,
+    Building.CLOUD_NINE_SUITES,
+  ]
+
   static readonly ALL: BuildingDef[] = [
     // Rides
     Building.CAROUSEL,
@@ -290,6 +398,13 @@ export class Building {
     Building.FOUNTAIN,
     Building.GARDEN,
     Building.BENCH,
+    // Lodging
+    Building.CAMPGROUND,
+    Building.STARLIGHT_MOTEL,
+    Building.PINEWOOD_CABINS,
+    Building.PARKVIEW_INN,
+    Building.LAKESIDE_RESORT,
+    Building.CLOUD_NINE_SUITES,
   ]
 
   static readonly CATEGORIES: { id: BuildingCategory; label: string; emoji: string; hint: string }[] = [
@@ -297,6 +412,7 @@ export class Building {
     { id: 'food', label: 'Food', emoji: '🍔', hint: 'Food & comfort' },
     { id: 'facilities', label: 'Facilities', emoji: '🚻', hint: 'Comfort & cleanliness' },
     { id: 'decor', label: 'Decor', emoji: '🌷', hint: 'Appeal & cleanliness' },
+    { id: 'lodging', label: 'Lodging', emoji: '🏨', hint: 'Guest capacity' },
   ]
 
   static getById(id: string): BuildingDef | undefined {
@@ -351,5 +467,24 @@ export class Building {
       flat: effect.perDay,
       increased: effect.multiplier ? (effect.multiplier - 1) * 100 : undefined,
     }))
+  }
+
+  static isLodging(building: BuildingDef): building is LodgingBuildingDef {
+    return building.category === 'lodging'
+  }
+
+  static getCapacityBonus(buildingId: string): number {
+    const building = this.LODGING_BUILDINGS.find(b => b.id === buildingId)
+    return building?.capacityBonus ?? 0
+  }
+
+  static getTotalCapacityBonus(state: GameState): number {
+    let total = 0
+    for (const slot of state.slots) {
+      if (slot.buildingId) {
+        total += this.getCapacityBonus(slot.buildingId)
+      }
+    }
+    return total
   }
 }

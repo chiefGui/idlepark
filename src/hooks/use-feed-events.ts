@@ -29,6 +29,7 @@ export function useFeedEvents() {
   const addFeedEntry = useGameStore((s) => s.actions.addFeedEntry)
   const prevRef = useRef<TickStats | null>(null)
   const lastFeedTimeRef = useRef<number>(0)
+  const firedThresholdsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     const addWithCooldown = (entry: ReturnType<typeof Feed.createEntry>, priority = false) => {
@@ -79,8 +80,8 @@ export function useFeedEvents() {
           return
         }
 
-        // Check all events and process them
-        const events = Feed.checkTickEvents(current, prevRef.current)
+        // Check all events and process them (firedThresholdsRef is mutated by checkTickEvents)
+        const events = Feed.checkTickEvents(current, prevRef.current, firedThresholdsRef.current)
         for (const { type, context, priority } of events) {
           addWithCooldown(Feed.createEntry(type, state.currentDay, context), priority)
         }
@@ -93,6 +94,7 @@ export function useFeedEvents() {
     unsubs.push(
       GameEvents.on('game:reset', () => {
         prevRef.current = null
+        firedThresholdsRef.current.clear()
       })
     )
 
