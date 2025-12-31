@@ -10,7 +10,7 @@ const FEED_COOLDOWN = 5000
 export function useFeedEvents() {
   const addFeedEntry = useGameStore((s) => s.actions.addFeedEntry)
   const previousStatsRef = useRef<{
-    satisfaction: number
+    appeal: number
     guests: number
     money: number
   } | null>(null)
@@ -80,7 +80,7 @@ export function useFeedEvents() {
       addWithCooldown(entry, true)
     })
 
-    // Tick-based events (satisfaction, guests, ambient, price, financial)
+    // Tick-based events (appeal, guests, ambient, price, financial)
     const unsubTick = GameEvents.on('tick', () => {
       const state = useGameStore.getState()
       const { stats, ticketPrice, rates } = state
@@ -88,7 +88,7 @@ export function useFeedEvents() {
       // Initialize previous stats on first tick
       if (!previousStatsRef.current) {
         previousStatsRef.current = {
-          satisfaction: stats.satisfaction,
+          appeal: stats.appeal,
           guests: stats.guests,
           money: stats.money,
         }
@@ -106,10 +106,10 @@ export function useFeedEvents() {
         addWithCooldown(entry, true)
       }
 
-      // Check satisfaction changes - priority (important feedback)
-      const satisfactionEvent = Feed.getSatisfactionEvent(stats.satisfaction, prev.satisfaction)
-      if (satisfactionEvent) {
-        const entry = Feed.createEntry(satisfactionEvent, state.currentDay)
+      // Check appeal changes - priority (important feedback)
+      const appealEvent = Feed.getAppealEvent(stats.appeal, prev.appeal)
+      if (appealEvent) {
+        const entry = Feed.createEntry(appealEvent, state.currentDay)
         addWithCooldown(entry, true)
       }
 
@@ -144,7 +144,7 @@ export function useFeedEvents() {
 
       // Update previous stats
       previousStatsRef.current = {
-        satisfaction: stats.satisfaction,
+        appeal: stats.appeal,
         guests: stats.guests,
         money: stats.money,
       }

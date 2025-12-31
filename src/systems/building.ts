@@ -86,7 +86,7 @@ export class Building {
     effects: [
       { statId: 'money', perDay: -4 },
       { statId: 'food', perDay: 15 },
-      { statId: 'satisfaction', perDay: 5 },
+      { statId: 'appeal', perDay: 5 },
     ],
     requirements: [{ type: 'building', id: 'food_stand' }],
   }
@@ -145,7 +145,7 @@ export class Building {
     effects: [
       { statId: 'money', perDay: -4 },
       { statId: 'comfort', perDay: 20 },
-      { statId: 'satisfaction', perDay: 3 },
+      { statId: 'appeal', perDay: 3 },
       { statId: 'cleanliness', perDay: 5 },
     ],
     requirements: [{ type: 'stat', statId: 'guests', min: 50 }],
@@ -160,7 +160,7 @@ export class Building {
     costs: [{ statId: 'money', amount: 40 }],
     effects: [
       { statId: 'money', perDay: -1 },
-      { statId: 'satisfaction', perDay: 5 },
+      { statId: 'appeal', perDay: 5 },
     ],
     requirements: [],
   }
@@ -233,8 +233,7 @@ export class Building {
     costs: [{ statId: 'money', amount: 150 }],
     effects: [
       { statId: 'money', perDay: -3 },
-      { statId: 'appeal', perDay: 5 },
-      { statId: 'satisfaction', perDay: 2 },
+      { statId: 'appeal', perDay: 7 },
     ],
     requirements: [{ type: 'day', min: 3 }],
   }
@@ -296,7 +295,7 @@ export class Building {
   static readonly CATEGORIES: { id: BuildingCategory; label: string; emoji: string; hint: string }[] = [
     { id: 'rides', label: 'Rides', emoji: '🎢', hint: 'Entertainment' },
     { id: 'food', label: 'Food', emoji: '🍔', hint: 'Food & comfort' },
-    { id: 'facilities', label: 'Facilities', emoji: '🚻', hint: 'Comfort & satisfaction' },
+    { id: 'facilities', label: 'Facilities', emoji: '🚻', hint: 'Comfort & cleanliness' },
     { id: 'decor', label: 'Decor', emoji: '🌷', hint: 'Appeal & cleanliness' },
   ]
 

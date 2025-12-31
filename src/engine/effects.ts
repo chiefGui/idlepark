@@ -25,7 +25,6 @@ export class Effects {
       comfort: Math.max(0, stats.comfort),
       cleanliness: Math.max(0, Math.min(100, stats.cleanliness)),
       appeal: Math.max(0, Math.min(100, stats.appeal)),
-      satisfaction: Math.max(0, Math.min(100, stats.satisfaction)),
     }
   }
 }

@@ -13,9 +13,9 @@ export class Guest {
   static readonly BASE_MONEY_PER_GUEST = 2
   static readonly APPEAL_BASELINE = 50
 
-  // Mood thresholds (satisfaction score)
-  static readonly HAPPY_THRESHOLD = 70
-  static readonly UNHAPPY_THRESHOLD = 40
+  // Mood thresholds (based on appeal)
+  static readonly HAPPY_THRESHOLD = 60
+  static readonly UNHAPPY_THRESHOLD = 30
 
   // Tier transition rate (% of guests that can shift per tick) - arcade-y = fast
   static readonly TRANSITION_RATE = 0.15
@@ -23,7 +23,7 @@ export class Guest {
   // Unhappy departure rate (% that leave at end of day)
   static readonly UNHAPPY_DEPARTURE_RATE = 0.5
 
-  // Appeal modifiers by mood
+  // Appeal modifiers by mood (feedback loop)
   static readonly HAPPY_APPEAL_BONUS = 5
   static readonly UNHAPPY_APPEAL_PENALTY = -10
 
@@ -89,9 +89,13 @@ export class Guest {
     return guestCount * this.BASE_MONEY_PER_GUEST * priceMultiplier * entertainmentFactor
   }
 
-  static calculateSatisfaction(state: GameState): number {
+  /**
+   * Calculate supply/demand ratio - how well is the park meeting guest needs?
+   * Returns 0-100 score used internally for appeal calculation.
+   */
+  static calculateSupplyDemandScore(state: GameState): number {
     const totalGuests = this.getTotalGuests(state)
-    let satisfaction = 100
+    let score = 100
 
     for (const demand of this.DEMANDS) {
       const supply = state.stats[demand.statId]
@@ -99,55 +103,60 @@ export class Guest {
 
       if (required > 0) {
         const ratio = Math.min(1, supply / required)
-        satisfaction *= ratio
+        score *= ratio
       }
     }
 
-    // Cleanliness has significant impact on satisfaction
-    // Below 50%: penalty scales harshly (0% clean = -40, 30% = -16, 50% = 0)
-    // Above 50%: bonus scales gently (100% = +15)
-    const cleanliness = state.stats.cleanliness
-    if (cleanliness < 50) {
-      // Harsh penalty for dirty parks - up to -40 points at 0%
-      const dirtPenalty = ((50 - cleanliness) / 50) * 40
-      satisfaction -= dirtPenalty
-    } else {
-      // Gentle bonus for clean parks - up to +15 at 100%
-      const cleanBonus = ((cleanliness - 50) / 50) * 15
-      satisfaction += cleanBonus
-    }
-
-    // Perceived value: is the price fair for what guests are getting?
-    const perceivedValue = this.calculatePerceivedValue(state)
-    if (perceivedValue < 1) {
-      // Overpriced for quality - guests feel ripped off
-      // At 0.5 value (2x overpriced): -25 satisfaction
-      const ripoffPenalty = (1 - perceivedValue) * 50
-      satisfaction -= ripoffPenalty
-    } else if (perceivedValue > 1.2) {
-      // Great value - guests feel they got a deal
-      // Cap bonus at +10
-      const valuebonus = Math.min(10, (perceivedValue - 1.2) * 15)
-      satisfaction += valuebonus
-    }
-
-    return Math.max(0, Math.min(100, satisfaction))
+    return Math.max(0, Math.min(100, score))
   }
 
-  static getMoodFromSatisfaction(satisfaction: number): GuestMood {
-    if (satisfaction >= this.HAPPY_THRESHOLD) return 'happy'
-    if (satisfaction < this.UNHAPPY_THRESHOLD) return 'unhappy'
+  /**
+   * Get mood based on current appeal level.
+   * High appeal = guests are happy, low appeal = guests are unhappy.
+   */
+  static getMoodFromAppeal(appeal: number): GuestMood {
+    if (appeal >= this.HAPPY_THRESHOLD) return 'happy'
+    if (appeal < this.UNHAPPY_THRESHOLD) return 'unhappy'
     return 'neutral'
   }
 
+  /**
+   * Calculate appeal - the single metric for park quality.
+   * Combines: entertainment, cleanliness, supply/demand balance, price fairness, and guest mood.
+   */
   static calculateAppeal(state: GameState): number {
     if (state.stats.entertainment <= 0) return 0
 
-    const entertainmentBase = Math.min(50, state.stats.entertainment / 2)
-    const satisfactionBonus = (state.stats.satisfaction / 100) * 30
-    const cleanlinessBonus = Math.max(-10, (state.stats.cleanliness - 50) / 5)
+    // Base from entertainment (max 40 points)
+    const entertainmentBase = Math.min(40, state.stats.entertainment / 2.5)
 
-    // Mood-based appeal modifier
+    // Supply/demand balance bonus (max 25 points)
+    const supplyDemandScore = this.calculateSupplyDemandScore(state)
+    const supplyDemandBonus = (supplyDemandScore / 100) * 25
+
+    // Cleanliness bonus/penalty (max ±15 points)
+    const cleanliness = state.stats.cleanliness
+    let cleanlinessBonus = 0
+    if (cleanliness < 50) {
+      // Dirty parks get penalized
+      cleanlinessBonus = -((50 - cleanliness) / 50) * 15
+    } else {
+      // Clean parks get bonus
+      cleanlinessBonus = ((cleanliness - 50) / 50) * 15
+    }
+
+    // Price fairness bonus/penalty (max ±10 points)
+    const perceivedValue = this.calculatePerceivedValue(state)
+    let priceBonus = 0
+    if (perceivedValue < 1) {
+      // Overpriced - penalty
+      priceBonus = (perceivedValue - 1) * 20 // up to -10 at 0.5 value
+    } else if (perceivedValue > 1.2) {
+      // Great value - bonus
+      priceBonus = Math.min(10, (perceivedValue - 1.2) * 15)
+    }
+
+    // Mood-based feedback loop (max ±10 points)
     const { happy, unhappy } = state.guestBreakdown
     const totalGuests = this.getTotalGuests(state)
     let moodBonus = 0
@@ -157,21 +166,21 @@ export class Guest {
       moodBonus = happyRatio * this.HAPPY_APPEAL_BONUS + unhappyRatio * this.UNHAPPY_APPEAL_PENALTY
     }
 
-    return Math.max(0, Math.min(100,
-      entertainmentBase + satisfactionBonus + cleanlinessBonus + moodBonus
-    ))
+    const appeal = entertainmentBase + supplyDemandBonus + cleanlinessBonus + priceBonus + moodBonus
+
+    return Math.max(0, Math.min(100, appeal))
   }
 
   /**
-   * Process tier transitions based on current satisfaction.
+   * Process tier transitions based on current appeal.
    * Returns new breakdown after transitions.
    */
   static processTransitions(
     breakdown: GuestBreakdown,
-    satisfaction: number,
+    appeal: number,
     deltaDay: number
   ): GuestBreakdown {
-    const targetMood = this.getMoodFromSatisfaction(satisfaction)
+    const targetMood = this.getMoodFromAppeal(appeal)
     const transitionAmount = this.TRANSITION_RATE * deltaDay
 
     let { happy, neutral, unhappy } = breakdown

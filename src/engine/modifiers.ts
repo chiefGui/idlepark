@@ -75,7 +75,6 @@ export class Modifiers {
       'comfort',
       'cleanliness',
       'appeal',
-      'satisfaction',
     ]
 
     const rates: ComputedRates = {} as ComputedRates

@@ -23,7 +23,7 @@ const HAPPENINGS: HappeningDef[] = [
     description: 'A glowing review goes viral on social media!',
     type: 'positive',
     modifiers: [
-      { stat: 'satisfaction', flat: 15 }, // +15 flat satisfaction
+      { stat: 'appeal', flat: 20 }, // +20 appeal (visible in stats bar)
     ],
   },
   {
@@ -91,7 +91,7 @@ const HAPPENING_FLAVOR: Record<string, HappeningFlavorText> = {
   viral_review: {
     started: {
       title: 'Going viral!',
-      description: 'A rave review is spreading like wildfire across social media. Everyone\'s talking about us!',
+      description: 'A rave review is spreading like wildfire. The park\'s appeal is through the roof!',
     },
     ended: {
       title: 'Back to normal',
