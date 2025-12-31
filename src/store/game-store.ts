@@ -102,10 +102,10 @@ export const useGameStore = create<GameStoreState>()(
           const currentAppeal = Guest.calculateAppeal(state)
           guestBreakdown = Guest.processTransitions(guestBreakdown, currentAppeal, deltaDay)
 
-          // 3. Process unhappy departures at day boundary
+          // 3. Process departures at day boundary (natural turnover + unhappy extra)
           let departedGuests = 0
           if (crossedDayBoundary) {
-            const result = Guest.processUnhappyDepartures(guestBreakdown)
+            const result = Guest.processDepartures(guestBreakdown)
             guestBreakdown = result.newBreakdown
             departedGuests = result.departed
           }

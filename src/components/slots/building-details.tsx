@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Trash2, DollarSign } from 'lucide-react'
 import type { BuildingDef } from '../../engine/game-types'
+import { Building } from '../../systems/building'
 import { Button } from '../ui/button'
 import { Format } from '../../utils/format'
 
@@ -58,19 +59,19 @@ export function BuildingDetails({ building, onClose, onDemolish }: BuildingDetai
               <div className="p-4 space-y-4">
                 <div>
                   <div className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-2">
-                    Effects per day
+                    Effects
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {building.effects.map((effect, i) => (
+                    {Building.getDisplayEffects(building).map((effect, i) => (
                       <span
                         key={i}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
-                          effect.perDay >= 0
+                          effect.isPositive
                             ? 'bg-[var(--color-positive)]/20 text-[var(--color-positive)]'
                             : 'bg-[var(--color-negative)]/20 text-[var(--color-negative)]'
                         }`}
                       >
-                        {effect.perDay >= 0 ? '+' : ''}{effect.perDay} {effect.statId}
+                        {Format.effect(effect.value, effect.statId)}
                       </span>
                     ))}
                   </div>
