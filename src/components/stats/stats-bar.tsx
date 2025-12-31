@@ -43,23 +43,23 @@ export function StatsBar() {
             >
               <DollarSign size={18} style={{ color: STAT_CONFIG.money.color }} />
             </div>
-            <div className="flex flex-col min-w-0 text-left">
-              <span className="text-[10px] text-[var(--color-text-muted)] leading-none">
-                {STAT_CONFIG.money.label}
-              </span>
-              <div className="flex items-baseline gap-1">
-                <span className="text-base font-bold leading-tight">
-                  {Format.money(stats.money)}
+            <div className="flex flex-col min-w-0 text-left flex-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-[var(--color-text-muted)] leading-none">
+                  {STAT_CONFIG.money.label}
                 </span>
                 {rates.money !== 0 && (
                   <span
                     className="text-[10px] leading-none font-medium"
                     style={{ color: rates.money > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
                   >
-                    {Format.rate(rates.money)}
+                    {Format.rate(rates.money)}/day
                   </span>
                 )}
               </div>
+              <span className="text-base font-bold leading-tight">
+                {Format.money(stats.money)}
+              </span>
             </div>
           </motion.button>
 

@@ -417,6 +417,51 @@ const MESSAGES: Record<FeedEventType, string[]> = {
     "{happening} ended but the memories remain ✨",
     "Another {happening} in the books. Ready for whatever's next",
   ],
+  capacity_reached: [
+    // Frustrated
+    "The park is PACKED. Can't even get in line for anything 😤",
+    "They stopped letting people in?? I've been waiting forever!",
+    "At capacity means I'm stuck outside. Cool cool cool",
+    "Park's full. Standing here like 🧍watching everyone else have fun",
+    "This is what I get for not coming earlier. FULL CAPACITY",
+    // Observational
+    "Just heard they're at max capacity. Wild how popular this place got",
+    "Park is officially at capacity. That's either great marketing or a problem",
+    "No more room at the park. Success or chaos? You decide",
+    "They had to close the gates. That's a lot of people in there",
+    "Capacity reached! This park is living its main character moment",
+    // Impressed
+    "The fact that this park hits capacity... that's impressive honestly",
+    "From empty to FULL. What a glow up for this place 📈",
+    "Park so good they literally can't fit more people. Goals",
+    "Capacity reached means they're doing something right",
+    // Sympathetic
+    "Feel bad for people just arriving. Park's full 😕",
+    "Some families getting turned away. Rough scene at the gates",
+    "Hit capacity before noon. Some people drove hours for this...",
+  ],
+  capacity_warning: [
+    // Urgent
+    "Park is getting CROWDED. Might wanna get here soon! 🏃",
+    "Almost at capacity! Lines are getting crazy",
+    "Warning: this park is about to be FULL. Act fast",
+    "They're close to max capacity. Now or never folks",
+    "Park filling up FAST. This is not a drill",
+    // Excited
+    "It's getting packed in here! The energy is UNMATCHED 🔥",
+    "So many people! The vibes are absolutely electric rn",
+    "Crowded but in a fun way? Everyone's having a blast",
+    "Almost full and the atmosphere is incredible",
+    // Observational
+    "Park's pretty crowded today. Might hit capacity soon",
+    "Lines are longer than usual. Must be close to full",
+    "Noticed more people than ever before. Getting cozy in here",
+    "The crowd is real today. Plan accordingly",
+    // Tips
+    "Pro tip: park's almost full, hit the popular rides first",
+    "Getting packed. Grab food now before the lines get worse",
+    "Almost at capacity - perfect time to try the less popular spots",
+  ],
 }
 
 // Random spots for ambient messages
@@ -605,29 +650,58 @@ export class Feed {
     return Math.random() < chance
   }
 
-  static getAppealEvent(
-    currentAppeal: number,
-    previousAppeal: number
+  // === Threshold-based events ===
+
+  static readonly GUEST_THRESHOLDS = [10, 25, 50, 100, 200, 500]
+  static readonly CAPACITY_THRESHOLDS = [
+    { at: 100, event: 'capacity_reached' as const },
+    { at: 80, event: 'capacity_warning' as const },
+  ]
+  static readonly APPEAL_THRESHOLDS = [
+    { above: 85, event: 'appeal_high' as const },
+    { below: 40, event: 'appeal_low' as const },
+  ]
+
+  static checkGuestThreshold(current: number, prev: number): number | null {
+    for (const threshold of this.GUEST_THRESHOLDS) {
+      if (current >= threshold && prev < threshold) return threshold
+    }
+    return null
+  }
+
+  static checkCapacityThreshold(current: number, prev: number): FeedEventType | null {
+    for (const { at, event } of this.CAPACITY_THRESHOLDS) {
+      if (current >= at && prev < at) return event
+    }
+    return null
+  }
+
+  static checkAppealThreshold(current: number, prev: number): FeedEventType | null {
+    for (const threshold of this.APPEAL_THRESHOLDS) {
+      if ('above' in threshold) {
+        if (current >= threshold.above && prev < threshold.above) return threshold.event
+      } else {
+        if (current <= threshold.below && prev > threshold.below) return threshold.event
+      }
+    }
+    return null
+  }
+
+  static checkFinancialThreshold(
+    currentMoney: number,
+    prevMoney: number,
+    moneyRate: number
   ): FeedEventType | null {
-    if (currentAppeal >= 85 && previousAppeal < 85) return 'appeal_high'
-    if (currentAppeal <= 40 && previousAppeal > 40) return 'appeal_low'
+    // Turnaround: was in debt, now profitable and positive
+    if (moneyRate > 50 && prevMoney < 0 && currentMoney > 0) return 'financial_success'
+    // Just went into debt
+    if (currentMoney < 0 && prevMoney >= 0) return 'financial_warning'
     return null
   }
 
   static getPriceEvent(perceivedValue: number): FeedEventType | null {
-    // Complaints when overpriced for quality (value < 0.8)
     if (perceivedValue < 0.8 && Math.random() < 0.002) return 'price_complaint'
-    // Praise when great value for quality (value > 1.3)
     if (perceivedValue > 1.3 && Math.random() < 0.002) return 'price_praise'
-    return null
-  }
-
-  static readonly GUEST_THRESHOLDS = [10, 25, 50, 100, 200, 500]
-
-  static checkGuestThreshold(currentGuests: number, previousGuests: number): number | null {
-    for (const threshold of this.GUEST_THRESHOLDS) {
-      if (currentGuests >= threshold && previousGuests < threshold) return threshold
-    }
     return null
   }
 }

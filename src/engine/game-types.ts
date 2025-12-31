@@ -54,7 +54,6 @@ export type MilestoneDef = {
   emoji: string
   description: string
   condition: Requirement
-  reward: number
 }
 
 export type MilestoneTimelineEntry = {
@@ -81,6 +80,8 @@ export type FeedEventType =
   | 'ambient'
   | 'happening_started'
   | 'happening_ended'
+  | 'capacity_reached'
+  | 'capacity_warning'
 
 // === HAPPENINGS ===
 
@@ -199,7 +200,7 @@ export class GameTypes {
   static readonly MAX_FEED_ENTRIES = 10
 
   // Guest Capacity
-  static readonly INITIAL_GUEST_CAPACITY = 30
+  static readonly INITIAL_GUEST_CAPACITY = 50
 
   // Happenings
   static readonly FIRST_HAPPENING_DAY = 15

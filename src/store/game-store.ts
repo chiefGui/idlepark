@@ -171,7 +171,6 @@ export const useGameStore = create<GameStoreState>()(
 
           const newMilestones = Milestone.getNewlyAchieved(updatedState)
           let timeline = state.timeline
-          let rewardMoney = 0
           for (const milestone of newMilestones) {
             const achievedDay = Milestone.estimateAchievedDay(
               milestone,
@@ -181,19 +180,15 @@ export const useGameStore = create<GameStoreState>()(
               newDay
             )
             timeline = Timeline.addEntry(timeline, milestone.id, achievedDay)
-            rewardMoney += milestone.reward
             GameEvents.emit('milestone:achieved', { milestoneId: milestone.id })
-            if (milestone.reward > 0) {
-              GameEvents.emit('money:changed', { amount: milestone.reward, reason: 'milestone' })
-            }
           }
 
-          const finalStats = { ...newStats, money: newStats.money + rewardMoney }
+          const finalStats = newStats
 
           // Update financials
           const financials: FinancialStats = {
             ...state.financials,
-            totalEarned: state.financials.totalEarned + guestIncome + rewardMoney,
+            totalEarned: state.financials.totalEarned + guestIncome,
             totalUpkeepPaid: state.financials.totalUpkeepPaid + buildingUpkeep,
             peakMoney: Math.max(state.financials.peakMoney, finalStats.money),
             peakGuests: Math.max(state.financials.peakGuests, totalGuests),
@@ -205,7 +200,7 @@ export const useGameStore = create<GameStoreState>()(
           if (crossedDayBoundary) {
             const dayRecord: DailyRecord = {
               day: prevDayInt,
-              moneyEarned: guestIncome + rewardMoney - buildingUpkeep,
+              moneyEarned: guestIncome - buildingUpkeep,
               peakGuests: Math.max(GameTypes.getTotalGuests(state.guestBreakdown), totalGuests),
               peakAppeal: Math.max(state.stats.appeal, finalStats.appeal),
             }
