@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import type { StatId } from '../../engine/game-types'
 import { useGameStore } from '../../store/game-store'
+import { Guest } from '../../systems/guest'
 import { Format } from '../../utils/format'
 import { InfoModal } from '../ui/info-modal'
 import { StatDetail } from './stat-detail'
@@ -78,11 +79,15 @@ const STAT_CONFIG: Record<StatId, StatConfig> = {
 const SECONDARY_STATS: StatId[] = ['satisfaction', 'appeal', 'entertainment', 'food', 'comfort', 'cleanliness']
 
 export function StatsBar() {
-  const stats = useGameStore((s) => s.stats)
-  const rates = useGameStore((s) => s.rates)
+  const state = useGameStore()
+  const stats = state.stats
+  const rates = state.rates
   const [selectedStat, setSelectedStat] = useState<StatId | null>(null)
 
   const selectedConfig = selectedStat ? STAT_CONFIG[selectedStat] : null
+
+  // Calculate guest arrival rate (not in rates.guests)
+  const guestArrivalRate = Guest.calculateArrivalRate(state)
 
   return (
     <>
@@ -114,7 +119,7 @@ export function StatsBar() {
                     className="text-[10px] leading-none font-medium"
                     style={{ color: rates.money > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
                   >
-                    {rates.money > 0 ? '+' : ''}{Format.rate(rates.money)}
+                    {Format.rate(rates.money)}
                   </span>
                 )}
               </div>
@@ -141,12 +146,12 @@ export function StatsBar() {
                 <span className="text-base font-bold leading-tight">
                   {Format.guests(stats.guests)}
                 </span>
-                {rates.guests !== 0 && (
+                {guestArrivalRate > 0 && (
                   <span
                     className="text-[10px] leading-none font-medium"
-                    style={{ color: rates.guests > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
+                    style={{ color: 'var(--color-positive)' }}
                   >
-                    {rates.guests > 0 ? '+' : ''}{Format.rate(rates.guests)}
+                    {Format.rate(guestArrivalRate)}/day
                   </span>
                 )}
               </div>
