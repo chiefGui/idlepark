@@ -7,7 +7,7 @@ export type StatId =
   | 'cleanliness'
   | 'appeal'
 
-export type BuildingCategory = 'rides' | 'food' | 'facilities' | 'decor'
+export type BuildingCategory = 'rides' | 'food' | 'facilities' | 'decor' | 'lodging'
 
 export type Effect = {
   statId: StatId
