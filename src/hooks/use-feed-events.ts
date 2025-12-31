@@ -8,20 +8,22 @@ import { useGameStore } from '../store/game-store'
 const FEED_COOLDOWN = 5000
 
 // Declarative config for priority events (player actions / important events)
-const PRIORITY_EVENTS = [
+type PriorityEventConfig = {
+  event: string
+  type: FeedEventType
+  contextKey?: string
+  condition?: (payload: { count: number }) => boolean
+}
+
+const PRIORITY_EVENTS: PriorityEventConfig[] = [
   { event: 'building:built', type: 'building_built', contextKey: 'buildingId' },
   { event: 'building:demolished', type: 'building_demolished', contextKey: 'buildingId' },
   { event: 'milestone:achieved', type: 'milestone_achieved', contextKey: 'milestoneId' },
   { event: 'perk:purchased', type: 'perk_purchased', contextKey: 'perkId' },
   { event: 'happening:started', type: 'happening_started', contextKey: 'happeningId' },
   { event: 'happening:ended', type: 'happening_ended', contextKey: 'happeningId' },
-  { event: 'guests:departed', type: 'guest_departed', contextKey: 'guestCount', condition: (p: { count: number }) => p.count > 0 },
-] as const satisfies ReadonlyArray<{
-  event: string
-  type: FeedEventType
-  contextKey?: string
-  condition?: (payload: { count: number }) => boolean
-}>
+  { event: 'guests:departed', type: 'guest_departed', contextKey: 'guestCount', condition: (p) => p.count > 0 },
+]
 
 export function useFeedEvents() {
   const addFeedEntry = useGameStore((s) => s.actions.addFeedEntry)
