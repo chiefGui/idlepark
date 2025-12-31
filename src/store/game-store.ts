@@ -20,7 +20,6 @@ type GameActions = {
   buildAtSlot: (buildingId: string, slotIndex: number) => boolean
   demolishSlot: (slotIndex: number) => boolean
   purchasePerk: (perkId: string) => boolean
-  unlockSlot: (slotIndex: number) => boolean
   setTicketPrice: (price: number) => void
   addFeedEntry: (entry: FeedEntry) => void
   markFeedRead: () => void
@@ -315,45 +314,28 @@ export const useGameStore = create<GameStoreState>()(
             ...state.financials,
             totalInvested: state.financials.totalInvested + investmentAmount,
           }
-          const newState = { ...state, stats: newStats, ownedPerks: newOwnedPerks, financials }
+
+          // If this is an expansion perk, unlock the new slots
+          let newSlots = state.slots
+          if (Perk.isSlotPerk(perk)) {
+            const tempState = { ...state, ownedPerks: newOwnedPerks }
+            const slotsToUnlock = Slot.getSlotsToUnlock(tempState)
+            if (slotsToUnlock.length > 0) {
+              newSlots = Slot.unlockMultiple(state.slots, slotsToUnlock)
+            }
+          }
+
+          const newState = { ...state, stats: newStats, ownedPerks: newOwnedPerks, slots: newSlots, financials }
 
           set({
             stats: newStats,
             ownedPerks: newOwnedPerks,
-            financials,
-            rates: computeRates(newState),
-          })
-
-          GameEvents.emit('perk:purchased', { perkId })
-          return true
-        },
-
-        unlockSlot: (slotIndex: number) => {
-          const state = get()
-          const slot = state.slots[slotIndex]
-
-          if (!slot || !slot.locked) return false
-          if (!Slot.canUnlock(slotIndex, state)) return false
-
-          const cost = GameTypes.SLOT_UNLOCK_COSTS[slotIndex] ?? 0
-          if (state.stats.money < cost) return false
-
-          const newStats = { ...state.stats, money: state.stats.money - cost }
-          const newSlots = Slot.unlock(state.slots, slotIndex)
-          const financials = {
-            ...state.financials,
-            totalInvested: state.financials.totalInvested + cost,
-          }
-          const newState = { ...state, stats: newStats, slots: newSlots, financials }
-
-          set({
-            stats: newStats,
             slots: newSlots,
             financials,
             rates: computeRates(newState),
           })
 
-          GameEvents.emit('slot:unlocked', { slotIndex })
+          GameEvents.emit('perk:purchased', { perkId })
           return true
         },
 

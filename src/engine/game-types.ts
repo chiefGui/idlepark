@@ -149,15 +149,14 @@ export class GameTypes {
     'satisfaction',
   ]
 
-  static readonly TOTAL_SLOTS = 8
-  static readonly INITIAL_UNLOCKED_SLOTS = 3
+  static readonly TOTAL_SLOTS = 24
+  static readonly INITIAL_UNLOCKED_SLOTS = 4
   static readonly DAY_LENGTH_MS = 30000
   static readonly BANKRUPTCY_THRESHOLD_DAYS = 7
   static readonly STARTING_MONEY = 500
   static readonly DEFAULT_TICKET_PRICE = 10
   static readonly MIN_TICKET_PRICE = 5
   static readonly MAX_TICKET_PRICE = 25
-  static readonly SLOT_UNLOCK_COSTS = [0, 0, 0, 100, 150, 200, 300, 500]
   static readonly MAX_FEED_ENTRIES = 10
 
   static createInitialStats(): Record<StatId, number> {
