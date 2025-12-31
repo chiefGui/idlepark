@@ -30,6 +30,12 @@ export class Guest {
   // Unhappy departure rate (% that leave at end of day)
   static readonly UNHAPPY_DEPARTURE_RATE = 0.5
 
+  // Natural turnover - guests leave after their "visit" regardless of mood
+  // This creates healthy churn and prevents permanent capacity lock
+  static readonly NATURAL_DEPARTURE_RATE = 0.1 // Base 10% of guests leave per day
+  static readonly HAPPY_DEPARTURE_MODIFIER = 0.5 // Happy guests leave 50% slower
+  static readonly UNHAPPY_DEPARTURE_MODIFIER = 1.5 // Unhappy guests leave 50% faster
+
   // Appeal modifiers by mood (feedback loop)
   static readonly HAPPY_APPEAL_BONUS = 5
   static readonly UNHAPPY_APPEAL_PENALTY = -10
@@ -309,21 +315,50 @@ export class Guest {
   }
 
   /**
-   * Process unhappy guest departures at end of day.
+   * Process guest departures at end of day.
+   * Includes both natural turnover (all guests) and extra unhappy departures.
    * Returns guests that left.
+   */
+  static processDepartures(breakdown: GuestBreakdown): {
+    newBreakdown: GuestBreakdown
+    departed: number
+  } {
+    // Natural turnover - even happy guests eventually go home
+    const happyDeparting = Math.floor(
+      breakdown.happy * this.NATURAL_DEPARTURE_RATE * this.HAPPY_DEPARTURE_MODIFIER
+    )
+    const neutralDeparting = Math.floor(
+      breakdown.neutral * this.NATURAL_DEPARTURE_RATE
+    )
+    // Unhappy get both natural turnover AND the extra unhappy departure rate
+    const unhappyNatural = Math.floor(
+      breakdown.unhappy * this.NATURAL_DEPARTURE_RATE * this.UNHAPPY_DEPARTURE_MODIFIER
+    )
+    const unhappyExtra = Math.floor(
+      (breakdown.unhappy - unhappyNatural) * this.UNHAPPY_DEPARTURE_RATE
+    )
+    const unhappyDeparting = unhappyNatural + unhappyExtra
+
+    const departed = happyDeparting + neutralDeparting + unhappyDeparting
+
+    return {
+      newBreakdown: {
+        happy: Math.max(0, breakdown.happy - happyDeparting),
+        neutral: Math.max(0, breakdown.neutral - neutralDeparting),
+        unhappy: Math.max(0, breakdown.unhappy - unhappyDeparting),
+      },
+      departed,
+    }
+  }
+
+  /**
+   * @deprecated Use processDepartures instead
    */
   static processUnhappyDepartures(breakdown: GuestBreakdown): {
     newBreakdown: GuestBreakdown
     departed: number
   } {
-    const departed = Math.floor(breakdown.unhappy * this.UNHAPPY_DEPARTURE_RATE)
-    return {
-      newBreakdown: {
-        ...breakdown,
-        unhappy: breakdown.unhappy - departed,
-      },
-      departed,
-    }
+    return this.processDepartures(breakdown)
   }
 
   static getModifiers(state: GameState): Modifier[] {

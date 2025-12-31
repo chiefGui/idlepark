@@ -661,12 +661,12 @@ export class Feed {
     { stat: 'guests', crossUp: 100, event: 'guest_threshold', context: { guestCount: 100 }, priority: true },
     { stat: 'guests', crossUp: 200, event: 'guest_threshold', context: { guestCount: 200 }, priority: true },
     { stat: 'guests', crossUp: 500, event: 'guest_threshold', context: { guestCount: 500 }, priority: true },
-    // Capacity (with hysteresis to prevent spam)
-    { stat: 'capacityPercent', crossUp: 100, resetBelow: 90, event: 'capacity_reached', priority: true },
-    { stat: 'capacityPercent', crossUp: 80, resetBelow: 70, event: 'capacity_warning', priority: true },
-    // Appeal (with hysteresis)
-    { stat: 'appeal', crossUp: 85, resetBelow: 75, event: 'appeal_high', priority: true },
-    { stat: 'appeal', crossDown: 40, resetAbove: 50, event: 'appeal_low', priority: true },
+    // Capacity (with hysteresis to prevent spam, non-priority to respect cooldown)
+    { stat: 'capacityPercent', crossUp: 100, resetBelow: 90, event: 'capacity_reached', priority: false },
+    { stat: 'capacityPercent', crossUp: 80, resetBelow: 70, event: 'capacity_warning', priority: false },
+    // Appeal (with hysteresis, non-priority to respect cooldown)
+    { stat: 'appeal', crossUp: 85, resetBelow: 75, event: 'appeal_high', priority: false },
+    { stat: 'appeal', crossDown: 40, resetAbove: 50, event: 'appeal_low', priority: false },
     // Financial (with hysteresis)
     { stat: 'money', crossDown: 0, resetAbove: 500, event: 'financial_warning', priority: true },
     { stat: 'money', crossUp: 0, resetBelow: -500, event: 'financial_success', priority: true, extraCheck: (curr) => curr.moneyRate > 50 },
