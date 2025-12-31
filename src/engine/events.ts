@@ -1,4 +1,5 @@
 import mitt from 'mitt'
+import type { FeedEntry } from './game-types'
 
 type GameEventMap = {
   'tick': { deltaDay: number }
@@ -9,6 +10,7 @@ type GameEventMap = {
   'perk:purchased': { perkId: string }
   'milestone:achieved': { milestoneId: string }
   'bankruptcy': { day: number }
+  'feed:new': { entry: FeedEntry }
   'game:reset': undefined
   'game:loaded': undefined
 }
