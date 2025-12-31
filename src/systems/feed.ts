@@ -650,29 +650,58 @@ export class Feed {
     return Math.random() < chance
   }
 
-  static getAppealEvent(
-    currentAppeal: number,
-    previousAppeal: number
+  // === Threshold-based events ===
+
+  static readonly GUEST_THRESHOLDS = [10, 25, 50, 100, 200, 500]
+  static readonly CAPACITY_THRESHOLDS = [
+    { at: 100, event: 'capacity_reached' as const },
+    { at: 80, event: 'capacity_warning' as const },
+  ]
+  static readonly APPEAL_THRESHOLDS = [
+    { above: 85, event: 'appeal_high' as const },
+    { below: 40, event: 'appeal_low' as const },
+  ]
+
+  static checkGuestThreshold(current: number, prev: number): number | null {
+    for (const threshold of this.GUEST_THRESHOLDS) {
+      if (current >= threshold && prev < threshold) return threshold
+    }
+    return null
+  }
+
+  static checkCapacityThreshold(current: number, prev: number): FeedEventType | null {
+    for (const { at, event } of this.CAPACITY_THRESHOLDS) {
+      if (current >= at && prev < at) return event
+    }
+    return null
+  }
+
+  static checkAppealThreshold(current: number, prev: number): FeedEventType | null {
+    for (const threshold of this.APPEAL_THRESHOLDS) {
+      if ('above' in threshold) {
+        if (current >= threshold.above && prev < threshold.above) return threshold.event
+      } else {
+        if (current <= threshold.below && prev > threshold.below) return threshold.event
+      }
+    }
+    return null
+  }
+
+  static checkFinancialThreshold(
+    currentMoney: number,
+    prevMoney: number,
+    moneyRate: number
   ): FeedEventType | null {
-    if (currentAppeal >= 85 && previousAppeal < 85) return 'appeal_high'
-    if (currentAppeal <= 40 && previousAppeal > 40) return 'appeal_low'
+    // Turnaround: was in debt, now profitable and positive
+    if (moneyRate > 50 && prevMoney < 0 && currentMoney > 0) return 'financial_success'
+    // Just went into debt
+    if (currentMoney < 0 && prevMoney >= 0) return 'financial_warning'
     return null
   }
 
   static getPriceEvent(perceivedValue: number): FeedEventType | null {
-    // Complaints when overpriced for quality (value < 0.8)
     if (perceivedValue < 0.8 && Math.random() < 0.002) return 'price_complaint'
-    // Praise when great value for quality (value > 1.3)
     if (perceivedValue > 1.3 && Math.random() < 0.002) return 'price_praise'
-    return null
-  }
-
-  static readonly GUEST_THRESHOLDS = [10, 25, 50, 100, 200, 500]
-
-  static checkGuestThreshold(currentGuests: number, previousGuests: number): number | null {
-    for (const threshold of this.GUEST_THRESHOLDS) {
-      if (currentGuests >= threshold && previousGuests < threshold) return threshold
-    }
     return null
   }
 }
