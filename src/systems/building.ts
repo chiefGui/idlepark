@@ -164,13 +164,12 @@ export class Building {
     requirements: [],
   }
 
-  // === DECOR ===
   static readonly TRASH_CAN: BuildingDef = {
     id: 'trash_can',
     name: 'Trash Can',
     emoji: '🗑️',
     description: 'Helps keep the park clean',
-    category: 'decor',
+    category: 'facilities',
     costs: [{ statId: 'money', amount: 20 }],
     effects: [
       { statId: 'cleanliness', perDay: 5 },
@@ -178,6 +177,7 @@ export class Building {
     requirements: [],
   }
 
+  // === DECOR ===
   static readonly FOUNTAIN: BuildingDef = {
     id: 'fountain',
     name: 'Fountain',
@@ -236,8 +236,8 @@ export class Building {
     Building.RESTROOM,
     Building.FIRST_AID,
     Building.INFO_BOOTH,
-    // Decor
     Building.TRASH_CAN,
+    // Decor
     Building.FOUNTAIN,
     Building.GARDEN,
     Building.BENCH,
