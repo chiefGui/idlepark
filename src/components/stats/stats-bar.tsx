@@ -20,6 +20,10 @@ export function StatsBar() {
   // Calculate guest arrival rate (not in rates.guests)
   const guestArrivalRate = Guest.calculateArrivalRate(state)
 
+  // Guest capacity
+  const guestCapacity = Guest.getCapacity(state)
+  const capacityPercent = (stats.guests / guestCapacity) * 100
+
   return (
     <>
       <div className="px-4 py-2 space-y-2">
@@ -69,13 +73,10 @@ export function StatsBar() {
             >
               <Users size={18} style={{ color: STAT_CONFIG.guests.color }} />
             </div>
-            <div className="flex flex-col min-w-0 text-left">
-              <span className="text-[10px] text-[var(--color-text-muted)] leading-none">
-                {STAT_CONFIG.guests.label}
-              </span>
-              <div className="flex items-baseline gap-1">
-                <span className="text-base font-bold leading-tight">
-                  {Format.guests(stats.guests)}
+            <div className="flex flex-col min-w-0 text-left flex-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-[var(--color-text-muted)] leading-none">
+                  {STAT_CONFIG.guests.label}
                 </span>
                 {guestArrivalRate > 0 && (
                   <span
@@ -85,6 +86,28 @@ export function StatsBar() {
                     {Format.rate(guestArrivalRate)}/day
                   </span>
                 )}
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-base font-bold leading-tight">
+                  {Format.guests(stats.guests)}
+                </span>
+                <span className="text-xs text-[var(--color-text-muted)]">
+                  / {guestCapacity}
+                </span>
+              </div>
+              {/* Capacity progress bar */}
+              <div className="mt-1 h-1 bg-[var(--color-border)] rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{
+                    width: `${Math.min(100, (stats.guests / guestCapacity) * 100)}%`,
+                    backgroundColor: capacityPercent >= 100
+                      ? 'var(--color-negative)'
+                      : capacityPercent >= 80
+                      ? 'var(--color-warning)'
+                      : STAT_CONFIG.guests.color,
+                  }}
+                />
               </div>
             </div>
           </motion.button>

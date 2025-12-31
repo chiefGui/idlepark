@@ -73,7 +73,29 @@ export class Guest {
     return GameTypes.getTotalGuests(state.guestBreakdown)
   }
 
+  /**
+   * Get current guest capacity.
+   * Base capacity + bonuses from lodging buildings (future).
+   */
+  static getCapacity(_state: GameState): number {
+    // For now, just return base capacity
+    // Later: add lodging building bonuses here
+    return GameTypes.BASE_GUEST_CAPACITY
+  }
+
+  /**
+   * Check if park is at capacity (no more arrivals allowed).
+   */
+  static isAtCapacity(state: GameState): boolean {
+    return this.getTotalGuests(state) >= this.getCapacity(state)
+  }
+
   static calculateArrivalRate(state: GameState): number {
+    // Hard cap: no arrivals when at capacity
+    if (this.isAtCapacity(state)) {
+      return 0
+    }
+
     const appealFactor = state.stats.appeal / this.APPEAL_BASELINE
     const valueFactor = this.getArrivalPenalty(state)
     return this.BASE_ARRIVAL_RATE * appealFactor * valueFactor
@@ -220,16 +242,22 @@ export class Guest {
 
   /**
    * Process new arrivals - all new guests start as neutral.
+   * Respects capacity limit.
    */
   static processArrivals(
     breakdown: GuestBreakdown,
     arrivalRate: number,
-    deltaDay: number
+    deltaDay: number,
+    capacity: number
   ): GuestBreakdown {
-    const newGuests = arrivalRate * deltaDay
+    const currentGuests = GameTypes.getTotalGuests(breakdown)
+    const availableSpace = Math.max(0, capacity - currentGuests)
+    const potentialArrivals = arrivalRate * deltaDay
+    const actualArrivals = Math.min(potentialArrivals, availableSpace)
+
     return {
       ...breakdown,
-      neutral: breakdown.neutral + newGuests,
+      neutral: breakdown.neutral + actualArrivals,
     }
   }
 

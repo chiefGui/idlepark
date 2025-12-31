@@ -198,6 +198,9 @@ export class GameTypes {
   static readonly MAX_TICKET_PRICE = 25
   static readonly MAX_FEED_ENTRIES = 10
 
+  // Guest Capacity
+  static readonly BASE_GUEST_CAPACITY = 30
+
   // Happenings
   static readonly FIRST_HAPPENING_DAY = 15
   static readonly HAPPENING_INTERVAL_MIN = 20

@@ -93,9 +93,15 @@ function getWarning(statId: StatId, state: GameState): string | null {
   if (statId === 'money' && state.stats.money < 0) {
     return "You're in debt! 7 days to recover or it's game over."
   }
-  if (statId === 'guests' && Math.floor(breakdown.unhappy) >= 1) {
-    const count = Math.floor(breakdown.unhappy)
-    return `${count} unhappy guest${count >= 2 ? 's' : ''} may leave at day's end.`
+  if (statId === 'guests') {
+    const capacity = Guest.getCapacity(state)
+    if (state.stats.guests >= capacity) {
+      return "Park is at capacity! No new guests can arrive. Build lodging to increase capacity."
+    }
+    if (Math.floor(breakdown.unhappy) >= 1) {
+      const count = Math.floor(breakdown.unhappy)
+      return `${count} unhappy guest${count >= 2 ? 's' : ''} may leave at day's end.`
+    }
   }
   if (statId === 'appeal' && state.stats.appeal < 40) {
     return "Low appeal means guests may become unhappy. Improve their experience!"
@@ -112,10 +118,16 @@ function getTip(statId: StatId, state: GameState): string | null {
   const unhappyRatio = state.stats.guests > 0 ? breakdown.unhappy / state.stats.guests : 0
 
   switch (statId) {
-    case 'guests':
+    case 'guests': {
+      const capacity = Guest.getCapacity(state)
+      const capacityPercent = (state.stats.guests / capacity) * 100
+      if (capacityPercent >= 80 && capacityPercent < 100) {
+        return 'Approaching capacity! Build lodging soon to accommodate more guests.'
+      }
       if (unhappyRatio > 0.3) return 'Too many unhappy guests! Improve entertainment, food, or comfort.'
       if (state.stats.appeal < 30) return 'Build more attractions to increase appeal and draw visitors.'
       break
+    }
     case 'entertainment':
       if (state.stats.entertainment < state.stats.guests * 0.5) {
         const rides = availableBuildings.filter((b) => b.category === 'rides' && Building.canAfford(b, state))
@@ -170,7 +182,37 @@ export function StatDetail({ statId }: StatDetailProps) {
 
       {/* Hero: Value + Rate (or Guest Breakdown for guests) */}
       {isGuestStat ? (
-        <div className="p-4 rounded-xl bg-[var(--color-bg)]">
+        <div className="p-4 rounded-xl bg-[var(--color-bg)] space-y-3">
+          {/* Capacity bar */}
+          {(() => {
+            const capacity = Guest.getCapacity(state)
+            const capacityPercent = Math.min(100, (stats.guests / capacity) * 100)
+            return (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-[var(--color-text-muted)]">Capacity</span>
+                  <span className="text-sm font-semibold">
+                    {Math.floor(stats.guests)} / {capacity}
+                  </span>
+                </div>
+                <div className="h-2 bg-[var(--color-border)] rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{
+                      width: `${capacityPercent}%`,
+                      backgroundColor: capacityPercent >= 100
+                        ? 'var(--color-negative)'
+                        : capacityPercent >= 80
+                        ? 'var(--color-warning)'
+                        : STAT_CONFIG.guests.color,
+                    }}
+                  />
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* Mood breakdown */}
           <div className="grid grid-cols-3 gap-2">
             <div className="flex flex-col items-center p-3 rounded-lg bg-[#22c55e]/10">
               <Smile size={20} className="text-[#22c55e] mb-1" />
@@ -189,7 +231,7 @@ export function StatDetail({ statId }: StatDetailProps) {
             </div>
           </div>
           {rate !== 0 && (
-            <div className="mt-3 pt-3 border-t border-[var(--color-border)] flex items-center justify-center gap-1 text-sm"
+            <div className="pt-3 border-t border-[var(--color-border)] flex items-center justify-center gap-1 text-sm"
               style={{ color: rate > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}>
               {rate > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
               <span>{Format.ratePerDay(rate)}</span>
