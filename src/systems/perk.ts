@@ -7,6 +7,16 @@ export type ExpansionPerkDef = PerkDef & {
 }
 
 export class Perk {
+  static readonly SPOTLESS_PARK: PerkDef = {
+    id: 'spotless_park',
+    name: 'Squeaky Clean Squad',
+    emoji: '🧼',
+    description: 'Assemble your elite cleaning crew',
+    costs: [{ statId: 'money', amount: 400 }],
+    effects: [],
+    requirements: [{ type: 'day', min: 5 }],
+  }
+
   // Park Expansion perks - these grant building slots
   static readonly EXTRA_SLOT_1: ExpansionPerkDef = {
     id: 'extra_slot_1',
@@ -72,6 +82,7 @@ export class Perk {
   ]
 
   static readonly ALL: PerkDef[] = [
+    Perk.SPOTLESS_PARK,
     Perk.EXTRA_SLOT_1,
     Perk.EXTRA_SLOT_2,
     Perk.EXTRA_SLOT_3,
