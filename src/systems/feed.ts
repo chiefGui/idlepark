@@ -657,9 +657,11 @@ export class Feed {
     { at: 100, event: 'capacity_reached' as const },
     { at: 80, event: 'capacity_warning' as const },
   ]
-  static readonly APPEAL_THRESHOLDS = [
-    { above: 85, event: 'appeal_high' as const },
-    { below: 40, event: 'appeal_low' as const },
+  static readonly APPEAL_THRESHOLDS: Array<
+    { type: 'above'; value: number; event: 'appeal_high' } | { type: 'below'; value: number; event: 'appeal_low' }
+  > = [
+    { type: 'above', value: 85, event: 'appeal_high' },
+    { type: 'below', value: 40, event: 'appeal_low' },
   ]
 
   static checkGuestThreshold(current: number, prev: number): number | null {
@@ -678,10 +680,10 @@ export class Feed {
 
   static checkAppealThreshold(current: number, prev: number): FeedEventType | null {
     for (const threshold of this.APPEAL_THRESHOLDS) {
-      if ('above' in threshold) {
-        if (current >= threshold.above && prev < threshold.above) return threshold.event
+      if (threshold.type === 'above') {
+        if (current >= threshold.value && prev < threshold.value) return threshold.event
       } else {
-        if (current <= threshold.below && prev > threshold.below) return threshold.event
+        if (current <= threshold.value && prev > threshold.value) return threshold.event
       }
     }
     return null
