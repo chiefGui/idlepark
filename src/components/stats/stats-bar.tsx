@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   DollarSign,
@@ -95,21 +95,9 @@ const DISPLAY_ORDER: StatId[] = [
 ]
 
 export function StatsBar() {
-  const currentDay = useGameStore((s) => s.currentDay)
   const stats = useGameStore((s) => s.stats)
   const rates = useGameStore((s) => s.rates)
   const [selectedStat, setSelectedStat] = useState<StatId | null>(null)
-
-  const dayInt = Math.floor(currentDay)
-
-  const displayStats = useMemo(() => {
-    return DISPLAY_ORDER.map((statId) => ({
-      statId,
-      value: stats[statId],
-      rate: rates[statId],
-    }))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dayInt])
 
   const selectedConfig = selectedStat ? STAT_CONFIG[selectedStat] : null
 
@@ -117,9 +105,11 @@ export function StatsBar() {
     <>
       <div className="overflow-x-auto scrollbar-hide">
         <div className="flex gap-2 px-4 py-3 min-w-max">
-          {displayStats.map(({ statId, value, rate }) => {
+          {DISPLAY_ORDER.map((statId) => {
             const config = STAT_CONFIG[statId]
             const Icon = config.icon
+            const value = stats[statId]
+            const rate = rates[statId]
             const showRate = ['money', 'guests'].includes(statId) && rate !== 0
 
             return (
