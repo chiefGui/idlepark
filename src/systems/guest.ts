@@ -38,9 +38,35 @@ export class Guest {
     return ticketPrice / basePrice
   }
 
-  static getArrivalPenalty(ticketPrice: number): number {
-    const priceMultiplier = this.getTicketPriceMultiplier(ticketPrice)
-    return Math.max(0.3, 2 - priceMultiplier)
+  /**
+   * Calculate perceived value - how fair is the price for this park's quality?
+   * Returns a ratio: >1 = good value, <1 = overpriced
+   */
+  static calculatePerceivedValue(state: GameState): number {
+    const basePrice = GameTypes.DEFAULT_TICKET_PRICE
+
+    // Park quality based on what guests experience (0-100 scale)
+    const entertainment = Math.min(100, state.stats.entertainment)
+    const cleanliness = Math.min(100, state.stats.cleanliness)
+    const appeal = Math.min(100, state.stats.appeal)
+    const parkQuality = (entertainment + cleanliness + appeal) / 3
+
+    // What price does this quality "deserve"?
+    // Quality 50 = base price is fair, quality 100 = 2x base price is fair
+    const fairPrice = basePrice * (parkQuality / 50)
+
+    // Avoid division by zero
+    if (state.ticketPrice <= 0) return 2
+
+    return fairPrice / state.ticketPrice
+  }
+
+  static getArrivalPenalty(state: GameState): number {
+    const perceivedValue = this.calculatePerceivedValue(state)
+
+    // Good value (>1) = more arrivals, bad value (<1) = fewer arrivals
+    // Clamp between 0.3 and 1.5
+    return Math.max(0.3, Math.min(1.5, perceivedValue))
   }
 
   static getTotalGuests(state: GameState): number {
@@ -49,8 +75,8 @@ export class Guest {
 
   static calculateArrivalRate(state: GameState): number {
     const appealFactor = state.stats.appeal / this.APPEAL_BASELINE
-    const arrivalPenalty = this.getArrivalPenalty(state.ticketPrice)
-    return this.BASE_ARRIVAL_RATE * appealFactor * arrivalPenalty
+    const valueFactor = this.getArrivalPenalty(state)
+    return this.BASE_ARRIVAL_RATE * appealFactor * valueFactor
   }
 
   static calculateIncomeWithEntertainment(
@@ -91,9 +117,18 @@ export class Guest {
       satisfaction += cleanBonus
     }
 
-    const priceMultiplier = this.getTicketPriceMultiplier(state.ticketPrice)
-    if (priceMultiplier > 1.5) {
-      satisfaction -= (priceMultiplier - 1.5) * 20
+    // Perceived value: is the price fair for what guests are getting?
+    const perceivedValue = this.calculatePerceivedValue(state)
+    if (perceivedValue < 1) {
+      // Overpriced for quality - guests feel ripped off
+      // At 0.5 value (2x overpriced): -25 satisfaction
+      const ripoffPenalty = (1 - perceivedValue) * 50
+      satisfaction -= ripoffPenalty
+    } else if (perceivedValue > 1.2) {
+      // Great value - guests feel they got a deal
+      // Cap bonus at +10
+      const valuebonus = Math.min(10, (perceivedValue - 1.2) * 15)
+      satisfaction += valuebonus
     }
 
     return Math.max(0, Math.min(100, satisfaction))

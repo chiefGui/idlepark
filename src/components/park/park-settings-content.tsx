@@ -6,12 +6,13 @@ import { Guest } from '../../systems/guest'
 import { Format } from '../../utils/format'
 
 export function ParkSettingsContent() {
-  const ticketPrice = useGameStore((s) => s.ticketPrice)
-  const guests = useGameStore((s) => s.stats.guests)
-  const setTicketPrice = useGameStore((s) => s.actions.setTicketPrice)
+  const state = useGameStore((s) => s)
+  const ticketPrice = state.ticketPrice
+  const guests = state.stats.guests
+  const setTicketPrice = state.actions.setTicketPrice
 
   const priceMultiplier = Guest.getTicketPriceMultiplier(ticketPrice)
-  const arrivalMultiplier = Guest.getArrivalPenalty(ticketPrice)
+  const arrivalMultiplier = Guest.getArrivalPenalty(state)
 
   const incomePerGuest = Guest.BASE_MONEY_PER_GUEST * priceMultiplier
   const potentialIncome = incomePerGuest * guests

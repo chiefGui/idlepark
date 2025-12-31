@@ -559,9 +559,11 @@ export class Feed {
     return null
   }
 
-  static getPriceEvent(ticketPrice: number): FeedEventType | null {
-    if (ticketPrice >= 20 && Math.random() < 0.001) return 'price_complaint'
-    if (ticketPrice <= 8 && Math.random() < 0.001) return 'price_praise'
+  static getPriceEvent(perceivedValue: number): FeedEventType | null {
+    // Complaints when overpriced for quality (value < 0.8)
+    if (perceivedValue < 0.8 && Math.random() < 0.002) return 'price_complaint'
+    // Praise when great value for quality (value > 1.3)
+    if (perceivedValue > 1.3 && Math.random() < 0.002) return 'price_praise'
     return null
   }
 
