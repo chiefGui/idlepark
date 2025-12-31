@@ -46,11 +46,12 @@ export function Header() {
             </span>
           </motion.div>
         ) : null}
-
-        <NotificationCenter />
       </div>
 
-      <DayProgress />
+      <div className="flex items-center gap-2">
+        <NotificationCenter />
+        <DayProgress />
+      </div>
     </header>
   )
 }
