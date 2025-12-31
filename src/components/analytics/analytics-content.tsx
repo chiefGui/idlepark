@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { TrendingUp, TrendingDown, Minus, Users, Smile, Meh, Frown } from 'lucide-react'
+import { TrendingUp, TrendingDown, Minus, Smile, Meh, Frown } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { Guest } from '../../systems/guest'
 import { Format } from '../../utils/format'
