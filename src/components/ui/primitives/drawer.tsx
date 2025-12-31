@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 export type DrawerStore = Ariakit.DialogStore
 
 export function useDrawerStore(props?: Ariakit.DialogStoreProps): DrawerStore {
-  return Ariakit.useDialogStore({ animated: true, ...props })
+  return Ariakit.useDialogStore(props)
 }
 
 export function useDrawerContext(): DrawerStore {
@@ -45,40 +45,39 @@ type DrawerContentProps = {
 
 export function DrawerContent({ children, className, side = 'left' }: DrawerContentProps) {
   const store = useDrawerContext()
-  const mounted = Ariakit.useStoreState(store, 'mounted')
-
-  const slideVariants = {
-    hidden: { x: side === 'left' ? '-100%' : '100%' },
-    visible: { x: 0 },
-  }
+  const open = store.useState('open')
 
   return (
     <AnimatePresence>
-      {mounted && (
-        <Ariakit.Dialog
-          store={store}
-          backdrop={
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 z-40"
-            />
-          }
-          render={
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              variants={slideVariants}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            />
-          }
-          className={`fixed inset-y-0 ${side === 'left' ? 'left-0' : 'right-0'} z-50 outline-none ${className ?? ''}`}
-          portal
-        >
-          {children}
-        </Ariakit.Dialog>
+      {open && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 z-40"
+            onClick={() => store.hide()}
+          />
+          <Ariakit.Dialog
+            store={store}
+            backdrop={false}
+            portal
+            unmountOnHide
+            modal={false}
+            autoFocusOnShow={false}
+            render={
+              <motion.div
+                initial={{ x: side === 'left' ? '-100%' : '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: side === 'left' ? '-100%' : '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              />
+            }
+            className={`fixed inset-y-0 ${side === 'left' ? 'left-0' : 'right-0'} z-50 outline-none ${className ?? ''}`}
+          >
+            {children}
+          </Ariakit.Dialog>
+        </>
       )}
     </AnimatePresence>
   )
