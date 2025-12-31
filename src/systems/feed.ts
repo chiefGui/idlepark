@@ -363,10 +363,11 @@ export class Feed {
   }
 
   // Check if we should generate an ambient tweet (random chance per tick)
+  // Very rare - roughly once every few minutes of gameplay
   static shouldGenerateAmbient(guestCount: number): boolean {
-    if (guestCount < 5) return false
-    // Higher chance with more guests, roughly 1% per tick with 50+ guests
-    const chance = Math.min(0.01, guestCount / 5000)
+    if (guestCount < 10) return false
+    // ~0.05% chance per tick, scales slightly with guests
+    const chance = Math.min(0.0005, guestCount / 200000)
     return Math.random() < chance
   }
 
@@ -388,11 +389,11 @@ export class Feed {
   // Determine price-based events
   static getPriceEvent(ticketPrice: number): FeedEventType | null {
     if (ticketPrice >= 20) {
-      // 5% chance to complain about high prices
-      if (Math.random() < 0.05) return 'price_complaint'
+      // 0.1% chance to complain about high prices
+      if (Math.random() < 0.001) return 'price_complaint'
     } else if (ticketPrice <= 8) {
-      // 5% chance to praise low prices
-      if (Math.random() < 0.05) return 'price_praise'
+      // 0.1% chance to praise low prices
+      if (Math.random() < 0.001) return 'price_praise'
     }
     return null
   }
