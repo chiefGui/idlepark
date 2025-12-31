@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { GameState, DailyRecord, FinancialStats } from '../engine/game-types'
+import type { GameState, DailyRecord, FinancialStats, FeedEntry } from '../engine/game-types'
 import { GameTypes } from '../engine/game-types'
 import { GameEvents } from '../engine/events'
 import { Effects } from '../engine/effects'
@@ -11,6 +11,7 @@ import { Guest } from '../systems/guest'
 import { Perk } from '../systems/perk'
 import { Milestone } from '../systems/milestone'
 import { Timeline } from '../systems/timeline'
+import { Feed } from '../systems/feed'
 
 const MAX_DAILY_RECORDS = 30
 
@@ -21,6 +22,8 @@ type GameActions = {
   purchasePerk: (perkId: string) => boolean
   unlockSlot: (slotIndex: number) => boolean
   setTicketPrice: (price: number) => void
+  addFeedEntry: (entry: FeedEntry) => void
+  markFeedRead: () => void
   reset: () => void
   calculateOfflineProgress: (lastTime: number) => void
 }
@@ -332,6 +335,20 @@ export const useGameStore = create<GameStoreState>()(
           })
         },
 
+        addFeedEntry: (entry: FeedEntry) => {
+          const state = get()
+          const feedEntries = Feed.addEntry(state.feedEntries, entry)
+          set({
+            feedEntries,
+            unreadFeedCount: state.unreadFeedCount + 1,
+          })
+          GameEvents.emit('feed:new', { entry })
+        },
+
+        markFeedRead: () => {
+          set({ unreadFeedCount: 0 })
+        },
+
         reset: () => {
           const initial = GameTypes.createInitialState()
           set({
@@ -375,6 +392,8 @@ export const useGameStore = create<GameStoreState>()(
         timeline: state.timeline,
         dailyRecords: state.dailyRecords,
         financials: state.financials,
+        feedEntries: state.feedEntries,
+        unreadFeedCount: state.unreadFeedCount,
         currentDay: state.currentDay,
         lastTickTime: state.lastTickTime,
         consecutiveNegativeDays: state.consecutiveNegativeDays,

@@ -1,15 +1,16 @@
 import { useState, createContext, useContext, useEffect, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronLeft, Trophy, Zap, BarChart3, RotateCcw, Settings, BookOpen } from 'lucide-react'
+import { X, ChevronLeft, Trophy, Zap, BarChart3, RotateCcw, Settings, BookOpen, MessageCircle } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { MilestonesContent } from '../milestones/milestones-content'
 import { PerksContent } from '../perks/perks-content'
 import { AnalyticsContent } from '../analytics/analytics-content'
 import { ParkSettingsContent } from '../park/park-settings-content'
 import { TimelineContent } from '../timeline/timeline-content'
+import { FeedContent } from '../feed/feed-content'
 import { Drawer, type DrawerStore } from './primitives'
 
-type DrawerScreen = 'menu' | 'milestones' | 'perks' | 'analytics' | 'park' | 'timeline'
+type DrawerScreen = 'menu' | 'milestones' | 'perks' | 'analytics' | 'park' | 'timeline' | 'feed'
 
 const DrawerStoreContext = createContext<DrawerStore | null>(null)
 
@@ -37,6 +38,7 @@ export function DrawerProvider({ children }: DrawerProviderProps) {
 }
 
 const MENU_ITEMS = [
+  { id: 'feed' as const, label: 'Feed', icon: MessageCircle, description: 'Guest chatter' },
   { id: 'park' as const, label: 'Park Settings', icon: Settings, description: 'Manage ticket prices' },
   { id: 'timeline' as const, label: 'Timeline', icon: BookOpen, description: "Your park's story" },
   { id: 'milestones' as const, label: 'Milestones', icon: Trophy, description: 'Track your achievements' },
@@ -48,6 +50,7 @@ function MenuDrawer() {
   const store = useDrawer()
   const [screen, setScreen] = useState<DrawerScreen>('menu')
   const reset = useGameStore((s) => s.actions.reset)
+  const unreadFeedCount = useGameStore((s) => s.unreadFeedCount)
   const open = store.useState('open')
 
   useEffect(() => {
@@ -102,6 +105,7 @@ function MenuDrawer() {
             >
               {MENU_ITEMS.map((item) => {
                 const Icon = item.icon
+                const showBadge = item.id === 'feed' && unreadFeedCount > 0
                 return (
                   <motion.button
                     key={item.id}
@@ -109,8 +113,13 @@ function MenuDrawer() {
                     onClick={() => setScreen(item.id)}
                     className="w-full flex items-center gap-4 p-4 rounded-xl bg-[var(--color-surface)] active:bg-[var(--color-surface-hover)] transition-colors text-left"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-[var(--color-accent)]/20 flex items-center justify-center">
+                    <div className="relative w-10 h-10 rounded-xl bg-[var(--color-accent)]/20 flex items-center justify-center">
                       <Icon size={20} className="text-[var(--color-accent)]" />
+                      {showBadge && (
+                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-accent)] text-white text-[10px] font-bold flex items-center justify-center">
+                          {unreadFeedCount > 9 ? '9+' : unreadFeedCount}
+                        </span>
+                      )}
                     </div>
                     <div className="flex-1">
                       <div className="font-medium">{item.label}</div>
@@ -129,6 +138,7 @@ function MenuDrawer() {
               exit={{ opacity: 0, x: 20 }}
               className="p-4"
             >
+              {screen === 'feed' && <FeedContent />}
               {screen === 'park' && <ParkSettingsContent />}
               {screen === 'timeline' && <TimelineContent />}
               {screen === 'milestones' && <MilestonesContent />}

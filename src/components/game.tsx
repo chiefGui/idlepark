@@ -1,11 +1,14 @@
 import { useGameLoop } from '../hooks/use-game-loop'
+import { useFeedEvents } from '../hooks/use-feed-events'
 import { DrawerProvider } from './ui/drawer'
 import { Header } from './header/header'
 import { StatsBar } from './stats/stats-bar'
 import { SlotsPanel } from './slots/slots-panel'
+import { FeedToast } from './feed/feed-toast'
 
 export function Game() {
   useGameLoop()
+  useFeedEvents()
 
   return (
     <DrawerProvider>
@@ -18,6 +21,8 @@ export function Game() {
             <SlotsPanel />
           </div>
         </main>
+
+        <FeedToast />
       </div>
     </DrawerProvider>
   )

@@ -63,6 +63,33 @@ export type TimelineEntry = {
   day: number
 }
 
+export type FeedEventType =
+  | 'building_built'
+  | 'building_demolished'
+  | 'milestone_achieved'
+  | 'perk_purchased'
+  | 'guest_threshold'
+  | 'satisfaction_high'
+  | 'satisfaction_low'
+  | 'price_complaint'
+  | 'price_praise'
+  | 'financial_success'
+  | 'financial_warning'
+  | 'ambient'
+
+export type FeedEntry = {
+  id: string
+  type: FeedEventType
+  handle: string
+  avatarSeed: string
+  message: string
+  day: number
+  timestamp: number
+  likes: number
+  retweets: number
+  replies: number
+}
+
 export type SlotState = {
   index: number
   buildingId: string | null
@@ -91,6 +118,8 @@ export type GameState = {
   timeline: TimelineEntry[]
   dailyRecords: DailyRecord[]
   financials: FinancialStats
+  feedEntries: FeedEntry[]
+  unreadFeedCount: number
   currentDay: number
   lastTickTime: number
   consecutiveNegativeDays: number
@@ -119,6 +148,7 @@ export class GameTypes {
   static readonly MIN_TICKET_PRICE = 5
   static readonly MAX_TICKET_PRICE = 25
   static readonly SLOT_UNLOCK_COSTS = [0, 0, 0, 100, 150, 200, 300, 500]
+  static readonly MAX_FEED_ENTRIES = 10
 
   static createInitialStats(): Record<StatId, number> {
     return {
@@ -159,6 +189,8 @@ export class GameTypes {
       timeline: [],
       dailyRecords: [],
       financials: this.createInitialFinancials(),
+      feedEntries: [],
+      unreadFeedCount: 0,
       currentDay: 1,
       lastTickTime: Date.now(),
       consecutiveNegativeDays: 0,
