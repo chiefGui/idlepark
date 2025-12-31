@@ -75,12 +75,12 @@ export class Guest {
 
   /**
    * Get current guest capacity.
-   * Base capacity + bonuses from lodging buildings (future).
+   * Initial capacity + bonuses from lodging buildings (future).
    */
   static getCapacity(_state: GameState): number {
-    // For now, just return base capacity
+    // For now, just return initial capacity
     // Later: add lodging building bonuses here
-    return GameTypes.BASE_GUEST_CAPACITY
+    return GameTypes.INITIAL_GUEST_CAPACITY
   }
 
   /**
