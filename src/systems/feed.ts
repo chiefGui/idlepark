@@ -654,45 +654,64 @@ export class Feed {
   // All tick-based events defined declaratively in one place
 
   static readonly TICK_EVENTS: TickEventConfig[] = [
-    // Guest milestones
+    // Guest milestones (no hysteresis needed - these are one-time achievements)
     { stat: 'guests', crossUp: 10, event: 'guest_threshold', context: { guestCount: 10 }, priority: true },
     { stat: 'guests', crossUp: 25, event: 'guest_threshold', context: { guestCount: 25 }, priority: true },
     { stat: 'guests', crossUp: 50, event: 'guest_threshold', context: { guestCount: 50 }, priority: true },
     { stat: 'guests', crossUp: 100, event: 'guest_threshold', context: { guestCount: 100 }, priority: true },
     { stat: 'guests', crossUp: 200, event: 'guest_threshold', context: { guestCount: 200 }, priority: true },
     { stat: 'guests', crossUp: 500, event: 'guest_threshold', context: { guestCount: 500 }, priority: true },
-    // Capacity
-    { stat: 'capacityPercent', crossUp: 100, event: 'capacity_reached', priority: true },
-    { stat: 'capacityPercent', crossUp: 80, event: 'capacity_warning', priority: true },
-    // Appeal
-    { stat: 'appeal', crossUp: 85, event: 'appeal_high', priority: true },
-    { stat: 'appeal', crossDown: 40, event: 'appeal_low', priority: true },
-    // Financial
-    { stat: 'money', crossDown: 0, event: 'financial_warning', priority: true },
-    { stat: 'money', crossUp: 0, event: 'financial_success', priority: true, extraCheck: (curr) => curr.moneyRate > 50 },
-    // Random chance events
+    // Capacity (with hysteresis to prevent spam)
+    { stat: 'capacityPercent', crossUp: 100, resetBelow: 90, event: 'capacity_reached', priority: true },
+    { stat: 'capacityPercent', crossUp: 80, resetBelow: 70, event: 'capacity_warning', priority: true },
+    // Appeal (with hysteresis)
+    { stat: 'appeal', crossUp: 85, resetBelow: 75, event: 'appeal_high', priority: true },
+    { stat: 'appeal', crossDown: 40, resetAbove: 50, event: 'appeal_low', priority: true },
+    // Financial (with hysteresis)
+    { stat: 'money', crossDown: 0, resetAbove: 500, event: 'financial_warning', priority: true },
+    { stat: 'money', crossUp: 0, resetBelow: -500, event: 'financial_success', priority: true, extraCheck: (curr) => curr.moneyRate > 50 },
+    // Random chance events (no hysteresis - controlled by chance)
     { stat: 'perceivedValue', below: 0.8, event: 'price_complaint', priority: false, chance: 0.002, includeTicketPrice: true },
     { stat: 'perceivedValue', above: 1.3, event: 'price_praise', priority: false, chance: 0.002, includeTicketPrice: true },
   ]
 
-  static checkTickEvents(current: TickStats, prev: TickStats): TriggeredEvent[] {
+  static checkTickEvents(current: TickStats, prev: TickStats, firedThresholds: Set<string>): TriggeredEvent[] {
     const events: TriggeredEvent[] = []
 
     for (const config of this.TICK_EVENTS) {
       const curr = current[config.stat]
       const pr = prev[config.stat]
+      const key = `${config.stat}:${config.event}`
 
       let triggered = false
+      let shouldReset = false
 
       // Threshold crossing checks
-      if ('crossUp' in config && curr >= config.crossUp && pr < config.crossUp) {
-        triggered = true
-      } else if ('crossDown' in config && curr <= config.crossDown && pr > config.crossDown) {
-        triggered = true
+      if ('crossUp' in config) {
+        if (curr >= config.crossUp && pr < config.crossUp && !firedThresholds.has(key)) {
+          triggered = true
+        }
+        // Reset if drops below reset threshold
+        if (config.resetBelow !== undefined && curr < config.resetBelow) {
+          shouldReset = true
+        }
+      } else if ('crossDown' in config) {
+        if (curr <= config.crossDown && pr > config.crossDown && !firedThresholds.has(key)) {
+          triggered = true
+        }
+        // Reset if rises above reset threshold
+        if (config.resetAbove !== undefined && curr > config.resetAbove) {
+          shouldReset = true
+        }
       } else if ('above' in config && curr > config.above && config.chance && Math.random() < config.chance) {
         triggered = true
       } else if ('below' in config && curr < config.below && config.chance && Math.random() < config.chance) {
         triggered = true
+      }
+
+      // Handle reset
+      if (shouldReset) {
+        firedThresholds.delete(key)
       }
 
       // Extra condition check
@@ -701,6 +720,12 @@ export class Feed {
       }
 
       if (triggered) {
+        // Mark as fired (for events with hysteresis)
+        const hasHysteresis = ('crossUp' in config && config.resetBelow !== undefined) ||
+                              ('crossDown' in config && config.resetAbove !== undefined)
+        if (hasHysteresis) {
+          firedThresholds.add(key)
+        }
         events.push({
           type: config.event,
           context: config.includeTicketPrice ? { ticketPrice: current.ticketPrice, ...config.context } : config.context,
@@ -744,8 +769,8 @@ type TickEventConfig = {
   chance?: number
   includeTicketPrice?: boolean
 } & (
-  | { crossUp: number }
-  | { crossDown: number }
+  | { crossUp: number; resetBelow?: number }
+  | { crossDown: number; resetAbove?: number }
   | { above: number; chance: number }
   | { below: number; chance: number }
 )
