@@ -85,7 +85,7 @@ export class Building {
     costs: [{ statId: 'money', amount: 120 }],
     effects: [
       { statId: 'money', perDay: -4 },
-      { statId: 'food', perDay: 10 },
+      { statId: 'food', perDay: 15 },
       { statId: 'satisfaction', perDay: 5 },
     ],
     requirements: [{ type: 'building', id: 'food_stand' }],
@@ -144,8 +144,9 @@ export class Building {
     costs: [{ statId: 'money', amount: 100 }],
     effects: [
       { statId: 'money', perDay: -4 },
-      { statId: 'comfort', perDay: 15 },
+      { statId: 'comfort', perDay: 20 },
       { statId: 'satisfaction', perDay: 3 },
+      { statId: 'cleanliness', perDay: 5 },
     ],
     requirements: [{ type: 'stat', statId: 'guests', min: 50 }],
   }
@@ -172,6 +173,7 @@ export class Building {
     category: 'facilities',
     costs: [{ statId: 'money', amount: 20 }],
     effects: [
+      { statId: 'money', perDay: -1 },
       { statId: 'cleanliness', perDay: 5 },
     ],
     requirements: [],
@@ -186,7 +188,7 @@ export class Building {
     costs: [{ statId: 'money', amount: 120 }],
     effects: [
       { statId: 'money', perDay: -3 },
-      { statId: 'cleanliness', perDay: 12 },
+      { statId: 'cleanliness', perDay: 15 },
     ],
     requirements: [{ type: 'perk', id: 'spotless_park' }],
   }
@@ -200,7 +202,7 @@ export class Building {
     costs: [{ statId: 'money', amount: 350 }],
     effects: [
       { statId: 'money', perDay: -8 },
-      { statId: 'cleanliness', perDay: 25 },
+      { statId: 'cleanliness', perDay: 30 },
       { statId: 'comfort', perDay: 5 },
     ],
     requirements: [{ type: 'perk', id: 'spotless_park' }],
@@ -215,7 +217,7 @@ export class Building {
     costs: [{ statId: 'money', amount: 800 }],
     effects: [
       { statId: 'money', perDay: -15 },
-      { statId: 'cleanliness', perDay: 40 },
+      { statId: 'cleanliness', perDay: 50 },
       { statId: 'appeal', perDay: 8 },
     ],
     requirements: [{ type: 'perk', id: 'spotless_park' }],
@@ -260,6 +262,7 @@ export class Building {
     category: 'decor',
     costs: [{ statId: 'money', amount: 25 }],
     effects: [
+      { statId: 'money', perDay: -1 },
       { statId: 'comfort', perDay: 8 },
     ],
     requirements: [],
