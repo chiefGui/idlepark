@@ -436,9 +436,10 @@ export const useGameStore = create<GameStoreState>()(
 
         setTicketPrice: (price: number) => {
           const state = get()
+          const maxPrice = Perk.getMaxTicketPrice(state)
           const clampedPrice = Math.max(
             GameTypes.MIN_TICKET_PRICE,
-            Math.min(GameTypes.MAX_TICKET_PRICE, price)
+            Math.min(maxPrice, price)
           )
           const newState = { ...state, ticketPrice: clampedPrice }
 

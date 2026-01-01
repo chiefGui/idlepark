@@ -2,6 +2,7 @@ import type { StatId, GameState, GuestBreakdown, GuestMood } from '../engine/gam
 import { GameTypes } from '../engine/game-types'
 import type { Modifier } from '../engine/modifiers'
 import { Building } from './building'
+import { Perk } from './perk'
 import { Service } from './service'
 
 export type GuestDemand = {
@@ -85,7 +86,9 @@ export class Guest {
     // Avoid division by zero
     if (state.ticketPrice <= 0) return 2
 
-    return fairPrice / state.ticketPrice
+    // Apply perceived value bonus from perks (e.g., Destination Park)
+    const bonus = 1 + Perk.getPerceivedValueBonus(state)
+    return (fairPrice / state.ticketPrice) * bonus
   }
 
   static getArrivalPenalty(state: GameState): number {
