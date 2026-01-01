@@ -3,7 +3,7 @@ import type { StatId } from '../engine/game-types'
 /**
  * Short labels for stats - used in compact displays like effect chips.
  */
-const STAT_LABELS: Record<StatId | 'capacity', string> = {
+const STAT_LABELS: Record<StatId | 'capacity' | 'income', string> = {
   money: '$',
   guests: 'guests',
   entertainment: 'fun',
@@ -13,6 +13,7 @@ const STAT_LABELS: Record<StatId | 'capacity', string> = {
   beauty: 'beauty',
   appeal: 'appeal',
   capacity: 'capacity',
+  income: '$/guest',
 }
 
 /**
@@ -107,7 +108,7 @@ export class Format {
   /**
    * Get short label for a stat ID.
    */
-  static statLabel(statId: StatId | 'capacity'): string {
+  static statLabel(statId: StatId | 'capacity' | 'income'): string {
     return STAT_LABELS[statId] ?? statId
   }
 
@@ -115,8 +116,16 @@ export class Format {
    * Format an effect value with sign and label.
    * e.g., "+5 fun", "-2 $", "+20 capacity"
    */
-  static effect(value: number, statId: StatId | 'capacity'): string {
+  static effect(value: number, statId: StatId | 'capacity' | 'income'): string {
     const sign = value >= 0 ? '+' : ''
     return `${sign}${value} ${Format.statLabel(statId)}`
+  }
+
+  /**
+   * Format shop income for display.
+   * e.g., "$0.15/guest"
+   */
+  static shopIncome(perGuest: number): string {
+    return `$${perGuest.toFixed(2)}/guest`
   }
 }
