@@ -171,6 +171,11 @@ export function StatDetail({ statId }: StatDetailProps) {
   const tip = getTip(statId, state)
 
   const isGuestStat = statId === 'guests'
+  const isAppealStat = statId === 'appeal'
+  const appealBreakdown = useMemo(
+    () => (isAppealStat ? Guest.getAppealBreakdown(state) : null),
+    [isAppealStat, state]
+  )
 
   return (
     <div className="space-y-3">
@@ -184,8 +189,57 @@ export function StatDetail({ statId }: StatDetailProps) {
         </div>
       )}
 
-      {/* Hero: Value + Rate (or Guest Breakdown for guests) */}
-      {isGuestStat ? (
+      {/* Appeal breakdown - special view */}
+      {isAppealStat && appealBreakdown && (
+        <div className="p-4 rounded-xl bg-[var(--color-bg)] space-y-3">
+          {/* Total appeal */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-[var(--color-text-muted)]">Total Appeal</span>
+            <span className="text-2xl font-bold">{Math.round(appealBreakdown.total)}</span>
+          </div>
+
+          {/* Appeal caps warning */}
+          {appealBreakdown.caps.length > 0 && (
+            <div className="p-2 rounded-lg bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20">
+              <div className="flex items-center gap-2 text-xs">
+                <AlertCircle size={14} className="text-[var(--color-warning)]" />
+                <span>
+                  {appealBreakdown.caps[0].reason} caps appeal at {appealBreakdown.caps[0].cap}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Component breakdown */}
+          <div className="space-y-2 pt-2 border-t border-[var(--color-border)]">
+            {appealBreakdown.components.map((comp, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="w-20 text-xs text-[var(--color-text-muted)]">{comp.label}</div>
+                <div className="flex-1 h-2 bg-[var(--color-border)] rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{
+                      width: `${Math.max(0, (comp.value / comp.max) * 100)}%`,
+                      backgroundColor:
+                        comp.value < 0 ? 'var(--color-negative)' : STAT_CONFIG.appeal.color,
+                    }}
+                  />
+                </div>
+                <div
+                  className="w-12 text-right text-xs font-medium"
+                  style={{ color: comp.value >= 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
+                >
+                  {comp.value >= 0 ? '+' : ''}
+                  {comp.value}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Hero: Value + Rate (or Guest Breakdown for guests, or Appeal breakdown) */}
+      {isAppealStat ? null : isGuestStat ? (
         <div className="p-4 rounded-xl bg-[var(--color-bg)] space-y-3">
           {/* Capacity bar */}
           {(() => {
@@ -255,8 +309,43 @@ export function StatDetail({ statId }: StatDetailProps) {
         </div>
       )}
 
-      {/* Sources */}
-      {sources.length > 0 && (
+      {/* Supply/demand for consumption stats */}
+      {['entertainment', 'food', 'comfort'].includes(statId) && stats.guests > 0 && (() => {
+        const supplyRatio = Guest.getSupplyRatio(statId as 'entertainment' | 'food' | 'comfort', state)
+        const supplyPercent = Math.min(150, supplyRatio * 100)
+        const demand = Guest.DEMANDS.find((d) => d.statId === statId)
+        const requiredSupply = demand ? stats.guests * demand.perGuest : 0
+        const statusColor = supplyRatio >= 1 ? 'var(--color-positive)' : supplyRatio >= 0.5 ? 'var(--color-warning)' : 'var(--color-negative)'
+        const statusLabel = supplyRatio >= 1 ? 'Meeting demand' : supplyRatio >= 0.5 ? 'Low supply' : 'Critical shortage'
+
+        return (
+          <div className="p-3 rounded-xl bg-[var(--color-bg)]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-[var(--color-text-muted)]">Guest demand</span>
+              <span className="text-xs font-medium" style={{ color: statusColor }}>{statusLabel}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-2 bg-[var(--color-border)] rounded-full overflow-hidden relative">
+                {/* 100% marker */}
+                <div className="absolute left-[66.67%] top-0 bottom-0 w-px bg-[var(--color-text-muted)]/30" />
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{
+                    width: `${Math.min(100, supplyPercent / 1.5)}%`,
+                    backgroundColor: statusColor,
+                  }}
+                />
+              </div>
+              <div className="text-xs text-[var(--color-text-muted)] w-20 text-right">
+                {Format.number(value)} / {Format.number(Math.ceil(requiredSupply))}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Sources - skip for Appeal since we show breakdown */}
+      {sources.length > 0 && !isAppealStat && (
         <div className="space-y-1">
           {sources.map((source, i) => (
             <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-[var(--color-bg)]">
@@ -277,7 +366,7 @@ export function StatDetail({ statId }: StatDetailProps) {
       )}
 
       {/* Empty state */}
-      {sources.length === 0 && !isGuestStat && (
+      {sources.length === 0 && !isGuestStat && !isAppealStat && (
         <div className="p-4 rounded-xl bg-[var(--color-bg)] text-center text-sm text-[var(--color-text-muted)]">
           Nothing affecting this stat yet
         </div>
