@@ -16,6 +16,9 @@ export type Modifier = {
   flat?: number      // +X per day (additive base)
   increased?: number // +X% (additive percentage)
   more?: number      // ×X (multiplicative)
+  // Metadata for UI display
+  label?: string     // Human-readable name (e.g., "Carousel", "Summer Festival")
+  emoji?: string     // Display emoji (e.g., "🎠", "🎪")
 }
 
 export type ComputedRates = Record<StatId, number>
@@ -163,4 +166,87 @@ export class Modifiers {
       final: flat * (1 + increased / 100) * more,
     }
   }
+
+  /**
+   * Get all sources affecting a stat with their contributions.
+   * Groups by label for UI display. Returns sorted by contribution (positive first, then by amount).
+   */
+  static getSourcesForStat(
+    modifiers: Modifier[],
+    stat: StatId
+  ): SourceContribution[] {
+    const relevant = modifiers.filter((m) => m.stat === stat)
+    const grouped = new Map<string, { emoji: string; flat: number; increased: number; more: number; count: number }>()
+
+    for (const mod of relevant) {
+      const key = mod.label ?? this.getDefaultLabel(mod.source)
+      const emoji = mod.emoji ?? this.getDefaultEmoji(mod.source)
+
+      const existing = grouped.get(key)
+      if (existing) {
+        existing.flat += mod.flat ?? 0
+        if (mod.increased) existing.increased += mod.increased
+        if (mod.more) existing.more *= mod.more
+        existing.count++
+      } else {
+        grouped.set(key, {
+          emoji,
+          flat: mod.flat ?? 0,
+          increased: mod.increased ?? 0,
+          more: mod.more ?? 1,
+          count: 1,
+        })
+      }
+    }
+
+    const sources: SourceContribution[] = []
+    for (const [label, data] of grouped) {
+      sources.push({
+        label,
+        emoji: data.emoji,
+        flat: data.flat,
+        increased: data.increased,
+        more: data.more,
+        count: data.count > 1 ? data.count : undefined,
+      })
+    }
+
+    // Sort: positive flat first, then by magnitude
+    return sources.sort((a, b) => {
+      if (a.flat >= 0 && b.flat < 0) return -1
+      if (a.flat < 0 && b.flat >= 0) return 1
+      return Math.abs(b.flat) - Math.abs(a.flat)
+    })
+  }
+
+  private static getDefaultLabel(source: ModifierSource): string {
+    switch (source.type) {
+      case 'building': return source.buildingId
+      case 'perk': return source.perkId
+      case 'guest': return 'Guests'
+      case 'happening': return source.happeningId
+      case 'service': return 'Service'
+      case 'marketing': return 'Marketing'
+    }
+  }
+
+  private static getDefaultEmoji(source: ModifierSource): string {
+    switch (source.type) {
+      case 'building': return '🏗️'
+      case 'perk': return '⚡'
+      case 'guest': return '👥'
+      case 'happening': return '📅'
+      case 'service': return '✨'
+      case 'marketing': return '📣'
+    }
+  }
+}
+
+export type SourceContribution = {
+  label: string
+  emoji: string
+  flat: number
+  increased: number
+  more: number
+  count?: number
 }

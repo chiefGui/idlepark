@@ -99,22 +99,29 @@ export class Service {
    * Applies income boost as percentage increase to guest income
    */
   static getModifiers(state: GameState): Modifier[] {
-    const boostPercent = this.getTotalIncomeBoostPercent(state)
-    if (boostPercent <= 0) return []
+    const modifiers: Modifier[] = []
 
-    // Calculate the bonus income from the percentage boost
-    const baseGuestIncome = Guest.calculateIncomeWithEntertainment(
-      state.stats.guests,
-      state.ticketPrice,
-      state.stats.entertainment
-    )
-    const bonusIncome = baseGuestIncome * (boostPercent / 100)
+    for (const service of this.getUnlocked(state)) {
+      // Calculate the bonus income from the percentage boost
+      const baseGuestIncome = Guest.calculateIncomeWithEntertainment(
+        state.stats.guests,
+        state.ticketPrice,
+        state.stats.entertainment
+      )
+      const bonusIncome = baseGuestIncome * (service.incomeBoostPercent / 100)
 
-    return [{
-      source: { type: 'service' as const },
-      stat: 'money',
-      flat: bonusIncome,
-    }]
+      if (bonusIncome > 0) {
+        modifiers.push({
+          source: { type: 'service' as const },
+          stat: 'money',
+          flat: bonusIncome,
+          label: service.name,
+          emoji: service.emoji,
+        })
+      }
+    }
+
+    return modifiers
   }
 
   // === MILESTONES ===

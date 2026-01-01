@@ -481,23 +481,33 @@ export class Guest {
     // Note: We don't add guest arrival modifier here anymore
     // Guest count is managed separately via guestBreakdown
     const modifiers: Modifier[] = [
-      { source, stat: 'money', flat: income },
+      { source, stat: 'money', flat: income, label: 'Ticket sales', emoji: '🎟️' },
     ]
 
+    // Demand labels for different consumption types
+    const demandLabels: Record<string, { label: string; emoji: string }> = {
+      entertainment: { label: 'Guest fun', emoji: '🎢' },
+      food: { label: 'Guest hunger', emoji: '🍽️' },
+      comfort: { label: 'Guest needs', emoji: '🛋️' },
+    }
+
     for (const demand of this.DEMANDS) {
+      const meta = demandLabels[demand.statId] ?? { label: 'Guest consumption', emoji: '👥' }
       modifiers.push({
         source,
         stat: demand.statId,
         flat: -totalGuests * demand.perGuest,
+        label: meta.label,
+        emoji: meta.emoji,
       })
     }
 
     const cleanlinessDecay = -totalGuests * 0.1
-    modifiers.push({ source, stat: 'cleanliness', flat: cleanlinessDecay })
+    modifiers.push({ source, stat: 'cleanliness', flat: cleanlinessDecay, label: 'Guest mess', emoji: '🗑️' })
 
     // Beauty decay - crowds cause wear and tear (slower than cleanliness)
     const beautyDecay = -totalGuests * 0.03
-    modifiers.push({ source, stat: 'beauty', flat: beautyDecay })
+    modifiers.push({ source, stat: 'beauty', flat: beautyDecay, label: 'Crowd wear', emoji: '👣' })
 
     return modifiers
   }

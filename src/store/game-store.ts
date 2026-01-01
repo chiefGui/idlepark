@@ -33,6 +33,7 @@ type GameActions = {
 
 type GameStoreState = GameState & {
   rates: ComputedRates
+  modifiers: Modifier[]
   actions: GameActions
 }
 
@@ -71,9 +72,10 @@ const collectModifiers = (state: GameState): Modifier[] => {
   return modifiers
 }
 
-const computeRates = (state: GameState): ComputedRates => {
+const computeRatesAndModifiers = (state: GameState): { rates: ComputedRates; modifiers: Modifier[] } => {
   const modifiers = collectModifiers(state)
-  return Modifiers.computeAllRates(modifiers)
+  const rates = Modifiers.computeAllRates(modifiers)
+  return { rates, modifiers }
 }
 
 const emptyRates = (): ComputedRates => ({
@@ -92,6 +94,7 @@ export const useGameStore = create<GameStoreState>()(
     (set, get) => ({
       ...GameTypes.createInitialState(),
       rates: emptyRates(),
+      modifiers: [],
 
       actions: {
         tick: (deltaDay: number) => {
@@ -268,6 +271,7 @@ export const useGameStore = create<GameStoreState>()(
             GameEvents.emit('marketing:ended', { campaignId: state.marketing?.activeCampaign?.campaignId })
           }
 
+          const computed = computeRatesAndModifiers({ ...updatedState, timeline, stats: finalStats, dailyRecords, financials, guestBreakdown, currentHappening, nextHappeningDay, lastHappeningType, marketing })
           set({
             stats: finalStats,
             guestBreakdown,
@@ -282,7 +286,8 @@ export const useGameStore = create<GameStoreState>()(
             nextHappeningDay,
             lastHappeningType,
             marketing,
-            rates: computeRates({ ...updatedState, timeline, stats: finalStats, dailyRecords, financials, guestBreakdown, currentHappening, nextHappeningDay, lastHappeningType, marketing }),
+            rates: computed.rates,
+            modifiers: computed.modifiers,
           })
 
           GameEvents.emit('tick', { deltaDay })
@@ -315,11 +320,13 @@ export const useGameStore = create<GameStoreState>()(
           }
           const newState = { ...state, stats: newStats, slots: newSlots, financials }
 
+          const computed = computeRatesAndModifiers(newState)
           set({
             stats: newStats,
             slots: newSlots,
             financials,
-            rates: computeRates(newState),
+            rates: computed.rates,
+            modifiers: computed.modifiers,
           })
 
           GameEvents.emit('building:built', { buildingId, slotIndex })
@@ -347,10 +354,12 @@ export const useGameStore = create<GameStoreState>()(
           const newSlots = Slot.demolish(state.slots, slotIndex)
           const newState = { ...state, stats: newStats, slots: newSlots }
 
+          const computed = computeRatesAndModifiers(newState)
           set({
             stats: newStats,
             slots: newSlots,
-            rates: computeRates(newState),
+            rates: computed.rates,
+            modifiers: computed.modifiers,
           })
 
           GameEvents.emit('building:demolished', { buildingId, slotIndex })
@@ -407,13 +416,15 @@ export const useGameStore = create<GameStoreState>()(
 
           const newState = { ...state, stats: newStats, ownedPerks: newOwnedPerks, slots: newSlots, services: newServices, financials }
 
+          const computed = computeRatesAndModifiers(newState)
           set({
             stats: newStats,
             ownedPerks: newOwnedPerks,
             slots: newSlots,
             services: newServices,
             financials,
-            rates: computeRates(newState),
+            rates: computed.rates,
+            modifiers: computed.modifiers,
           })
 
           GameEvents.emit('perk:purchased', { perkId })
@@ -431,12 +442,13 @@ export const useGameStore = create<GameStoreState>()(
           )
           const newState = { ...state, ticketPrice: clampedPrice }
 
+          const computed = computeRatesAndModifiers(newState)
           set({
             ticketPrice: clampedPrice,
-            rates: computeRates(newState),
+            rates: computed.rates,
+            modifiers: computed.modifiers,
           })
         },
-
 
         startCampaign: (campaignId: MarketingCampaignId) => {
           const state = get()
@@ -458,11 +470,13 @@ export const useGameStore = create<GameStoreState>()(
 
           const newState = { ...state, stats: newStats, marketing, financials }
 
+          const computed = computeRatesAndModifiers(newState)
           set({
             stats: newStats,
             marketing,
             financials,
-            rates: computeRates(newState),
+            rates: computed.rates,
+            modifiers: computed.modifiers,
           })
 
           GameEvents.emit('marketing:started', { campaignId })
@@ -489,6 +503,7 @@ export const useGameStore = create<GameStoreState>()(
           set({
             ...initial,
             rates: emptyRates(),
+            modifiers: [],
           })
           GameEvents.emit('game:reset', undefined)
         },
@@ -501,7 +516,7 @@ export const useGameStore = create<GameStoreState>()(
           if (daysElapsed <= 0) return
 
           const state = get()
-          const rates = computeRates(state)
+          const { rates } = computeRatesAndModifiers(state)
 
           const moneyRate = rates.money
           let daysToSimulate = daysElapsed
@@ -543,7 +558,9 @@ export const useGameStore = create<GameStoreState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          state.rates = computeRates(state)
+          const computed = computeRatesAndModifiers(state)
+          state.rates = computed.rates
+          state.modifiers = computed.modifiers
           state.actions.calculateOfflineProgress(state.lastTickTime)
           GameEvents.emit('game:loaded', undefined)
         }
