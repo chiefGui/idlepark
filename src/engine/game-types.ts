@@ -162,6 +162,8 @@ export type GuestBreakdown = {
 
 export type ServiceId = 'fast_pass'
 
+export type FastPassTier = 'budget' | 'standard' | 'premium' | 'vip'
+
 export type ServiceState = {
   serviceId: ServiceId
 }
@@ -196,6 +198,7 @@ export type GameState = {
   consecutiveNegativeDays: number
   gameOver: boolean
   ticketPrice: number
+  fastPassTier: FastPassTier
   // Happenings
   currentHappening: HappeningState
   nextHappeningDay: number
@@ -300,6 +303,7 @@ export class GameTypes {
       consecutiveNegativeDays: 0,
       gameOver: false as boolean,
       ticketPrice: this.DEFAULT_TICKET_PRICE,
+      fastPassTier: 'standard',
       // Happenings
       currentHappening: null,
       nextHappeningDay: this.FIRST_HAPPENING_DAY,

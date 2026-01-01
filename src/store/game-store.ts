@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { GameState, DailyRecord, FinancialStats, FeedEntry, MarketingCampaignId } from '../engine/game-types'
+import type { GameState, DailyRecord, FinancialStats, FeedEntry, MarketingCampaignId, FastPassTier } from '../engine/game-types'
 import { GameTypes } from '../engine/game-types'
 import { GameEvents } from '../engine/events'
 import { Effects } from '../engine/effects'
@@ -24,6 +24,7 @@ type GameActions = {
   demolishSlot: (slotIndex: number) => boolean
   purchasePerk: (perkId: string) => boolean
   setTicketPrice: (price: number) => void
+  setFastPassTier: (tier: FastPassTier) => void
   startCampaign: (campaignId: MarketingCampaignId) => boolean
   addFeedEntry: (entry: FeedEntry) => void
   markFeedRead: () => void
@@ -446,6 +447,18 @@ export const useGameStore = create<GameStoreState>()(
           const computed = computeRatesAndModifiers(newState)
           set({
             ticketPrice: clampedPrice,
+            rates: computed.rates,
+            modifiers: computed.modifiers,
+          })
+        },
+
+        setFastPassTier: (tier: FastPassTier) => {
+          const state = get()
+          const newState = { ...state, fastPassTier: tier }
+          const computed = computeRatesAndModifiers(newState)
+
+          set({
+            fastPassTier: tier,
             rates: computed.rates,
             modifiers: computed.modifiers,
           })

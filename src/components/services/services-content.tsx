@@ -119,15 +119,19 @@ export function ServicesContent({ onNavigate }: ServicesContentProps) {
   )
 }
 
-// Fast Pass info UI
+// Fast Pass info UI with tier selector
 export function FastPassContent() {
   const state = useGameStore((s) => s)
+  const setFastPassTier = state.actions.setFastPassTier
   const serviceDef = Service.FAST_PASS
-  const stats = Service.getStats(serviceDef)
+
+  const currentTier = Service.getCurrentFastPassTier(state)
+  const capacityBonus = Service.getTotalCapacityBonus(state)
+  const fastPassPrice = Service.getFastPassPrice(state)
 
   // Calculate current bonus income
   const baseIncome = state.rates.money
-  const bonusIncome = baseIncome * (stats.incomeBoostPercent / 100)
+  const bonusIncome = baseIncome * (currentTier.incomeBoostPercent / 100)
 
   return (
     <div className="space-y-4">
@@ -139,36 +143,84 @@ export function FastPassContent() {
         <div className="flex-1">
           <div className="text-lg font-medium">{serviceDef.name}</div>
           <div className="text-sm text-[var(--color-text-muted)]">
-            {serviceDef.description}
+            Set pricing to balance capacity vs income
           </div>
         </div>
       </div>
 
-      {/* Bonuses */}
+      {/* Tier Selector */}
+      <div className="space-y-2">
+        <div className="text-sm font-medium text-[var(--color-text-muted)]">Pricing Tier</div>
+        <div className="grid grid-cols-4 gap-2">
+          {Service.FAST_PASS_TIERS.map((tier) => {
+            const isSelected = tier.id === state.fastPassTier
+            const tierPrice = state.ticketPrice * (1 + tier.priceMultiplier)
+
+            return (
+              <motion.button
+                key={tier.id}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setFastPassTier(tier.id)}
+                className={`p-3 rounded-xl border-2 transition-all ${
+                  isSelected
+                    ? 'bg-amber-500/20 border-amber-500'
+                    : 'bg-[var(--color-surface)] border-[var(--color-border)] active:bg-[var(--color-surface-hover)]'
+                }`}
+              >
+                <div className={`text-sm font-bold mb-1 ${isSelected ? 'text-amber-400' : ''}`}>
+                  {tier.name}
+                </div>
+                <div className="text-xs text-[var(--color-text-muted)]">
+                  +{tier.capacityBoostPercent}% cap
+                </div>
+                <div className="text-xs text-[var(--color-text-muted)]">
+                  ${tierPrice.toFixed(0)}
+                </div>
+              </motion.button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Current Stats */}
       <div className="grid grid-cols-2 gap-3">
+        <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+          <div className="flex items-center gap-2 mb-2">
+            <Users size={16} className="text-amber-500" />
+            <span className="text-sm text-[var(--color-text-muted)]">Capacity Boost</span>
+          </div>
+          <div className="text-2xl font-bold text-amber-500">
+            +{currentTier.capacityBoostPercent}%
+          </div>
+          <div className="text-xs text-[var(--color-text-muted)] mt-1">
+            +{capacityBonus} guests currently
+          </div>
+        </div>
+
         <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign size={16} className="text-[var(--color-positive)]" />
             <span className="text-sm text-[var(--color-text-muted)]">Income Boost</span>
           </div>
           <div className="text-2xl font-bold text-[var(--color-positive)]">
-            +{stats.incomeBoostPercent}%
+            +{currentTier.incomeBoostPercent}%
           </div>
           <div className="text-xs text-[var(--color-text-muted)] mt-1">
-            +{Format.money(bonusIncome)}/day currently
+            +{Format.money(bonusIncome)}/day
           </div>
         </div>
+      </div>
 
-        <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-          <div className="flex items-center gap-2 mb-2">
-            <Users size={16} className="text-amber-500" />
-            <span className="text-sm text-[var(--color-text-muted)]">Capacity</span>
+      {/* Fast Pass Price */}
+      <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm text-[var(--color-text-muted)]">Fast Pass Price</div>
+            <div className="text-lg font-bold">${fastPassPrice.toFixed(2)}</div>
           </div>
-          <div className="text-2xl font-bold text-amber-500">
-            +{stats.capacityBonus}
-          </div>
-          <div className="text-xs text-[var(--color-text-muted)] mt-1">
-            extra guests
+          <div className="text-right">
+            <div className="text-sm text-[var(--color-text-muted)]">Ticket Price</div>
+            <div className="text-lg">${state.ticketPrice} <span className="text-amber-400">+{Math.round(currentTier.priceMultiplier * 100)}%</span></div>
           </div>
         </div>
       </div>
@@ -176,7 +228,7 @@ export function FastPassContent() {
       {/* Info */}
       <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
         <p className="text-xs text-amber-200/80">
-          Fast Pass is always active once unlocked. Bigger parks benefit more from the percentage boost!
+          Lower prices attract more guests (higher capacity). Higher prices mean fewer buyers but more income per guest. Capacity boost scales with your park size!
         </p>
       </div>
     </div>
