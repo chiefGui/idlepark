@@ -42,10 +42,10 @@ export function HappeningToast() {
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0, y: -50, scale: 0.9 }}
+          initial={{ opacity: 0, y: 50, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -20, scale: 0.95 }}
-          className="fixed top-4 left-4 right-4 z-50 max-w-sm mx-auto"
+          exit={{ opacity: 0, y: 20, scale: 0.95 }}
+          className="fixed bottom-20 left-4 right-4 z-50 max-w-sm mx-auto"
         >
           <div
             className="rounded-xl shadow-xl border overflow-hidden"
