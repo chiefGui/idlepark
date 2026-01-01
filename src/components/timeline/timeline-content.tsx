@@ -89,10 +89,13 @@ export function TimelineContent() {
                     <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
                       {flavor.description}
                     </p>
-                    <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-[var(--color-surface)] text-xs text-[var(--color-text-muted)]">
-                      <span>{milestone.emoji}</span>
-                      <span>{milestone.name}</span>
-                    </div>
+                    {/* Show badge only when custom flavor differs from milestone name */}
+                    {flavor.title !== milestone.name && (
+                      <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-[var(--color-surface)] text-xs text-[var(--color-text-muted)]">
+                        <span>{milestone.emoji}</span>
+                        <span>{milestone.name}</span>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )
