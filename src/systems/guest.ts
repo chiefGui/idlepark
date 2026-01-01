@@ -49,6 +49,9 @@ export class Guest {
   // Consequences for undersupply - when supply ratio falls below threshold,
   // appeal is capped. Multiple entries per stat = tiered consequences.
   static readonly SUPPLY_CONSEQUENCES: SupplyConsequence[] = [
+    // Entertainment is critical - theme parks need rides!
+    { statId: 'entertainment', threshold: 0.5, appealCap: 40 },  // Below 50% = cap at 40
+    { statId: 'entertainment', threshold: 0.25, appealCap: 20 }, // Below 25% = cap at 20 (crisis)
     { statId: 'food', threshold: 0.3, appealCap: 25 },
     { statId: 'comfort', threshold: 0.2, appealCap: 35 },
   ]
@@ -196,8 +199,12 @@ export class Guest {
   static calculateAppeal(state: GameState): number {
     if (state.stats.entertainment <= 0) return 0
 
+    // Variety multiplier - more unique rides = more effective entertainment
+    const varietyMultiplier = Building.getVarietyMultiplier(state)
+    const effectiveEntertainment = state.stats.entertainment * varietyMultiplier
+
     // Base from entertainment (max 40 points)
-    const entertainmentBase = Math.min(40, state.stats.entertainment / 2.5)
+    const entertainmentBase = Math.min(40, effectiveEntertainment / 2.5)
 
     // Supply/demand balance bonus (max 25 points)
     const supplyDemandScore = this.calculateSupplyDemandScore(state)
