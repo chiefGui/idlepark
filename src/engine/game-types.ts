@@ -8,6 +8,8 @@ export type StatId =
   | 'beauty'
   | 'appeal'
 
+export type Season = 'spring' | 'summer' | 'fall' | 'winter'
+
 export type BuildingCategory = 'rides' | 'food' | 'facilities' | 'decor' | 'lodging' | 'shops'
 
 export type Effect = {
@@ -88,12 +90,36 @@ export type FeedEventType =
 
 export type HappeningType = 'positive' | 'negative'
 
-export type HappeningModifier = {
+/** Stat modifier effect - modifies a game stat */
+export type StatEffect = {
+  type: 'stat'
   stat: StatId
   flat?: number
   increased?: number
   more?: number
 }
+
+/** Building cost modifier - affects cost to build */
+export type BuildingCostEffect = {
+  type: 'buildingCost'
+  category?: BuildingCategory  // If omitted, applies to all
+  multiplier: number           // 0.75 = 25% discount, 1.25 = 25% more expensive
+}
+
+/** Arrival rate modifier - affects guest arrival */
+export type ArrivalEffect = {
+  type: 'arrival'
+  multiplier: number  // 1.5 = +50% arrivals
+}
+
+/** Ticket income modifier - affects money from tickets */
+export type TicketIncomeEffect = {
+  type: 'ticketIncome'
+  multiplier: number  // 1.2 = +20% ticket income
+}
+
+/** Union of all happening effects */
+export type HappeningEffect = StatEffect | BuildingCostEffect | ArrivalEffect | TicketIncomeEffect
 
 export type HappeningDef = {
   id: string
@@ -101,7 +127,8 @@ export type HappeningDef = {
   emoji: string
   description: string
   type: HappeningType
-  modifiers: HappeningModifier[]
+  season?: Season | Season[]  // If set, only occurs in these seasons
+  effects: HappeningEffect[]
 }
 
 export type HappeningState = {

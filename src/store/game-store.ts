@@ -254,8 +254,9 @@ export const useGameStore = create<GameStoreState>()(
 
           // Check if a new happening should start
           if (!currentHappening && newDay >= nextHappeningDay) {
-            const nextHappening = Happening.selectNext(lastHappeningType)
-            currentHappening = Happening.start({ ...updatedState, currentDay: newDay }, nextHappening.id)
+            const stateForHappening = { ...updatedState, currentDay: newDay, lastHappeningType }
+            const nextHappening = Happening.selectNext(stateForHappening)
+            currentHappening = Happening.start(stateForHappening, nextHappening.id)
             timeline = [...timeline, {
               type: 'happening_started' as const,
               happeningId: nextHappening.id,
