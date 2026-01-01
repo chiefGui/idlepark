@@ -12,50 +12,102 @@ export type LoanPackageDef = {
   incomeMultiplier: number  // Loan = X days of income
   interestRate: number      // Interest rate (0.10 = 10%)
   duration: number          // Days to repay
+  unlockMilestone: string   // Milestone required to unlock
 }
 
 // === BANK CLASS ===
 
 export class Bank {
   // Minimum loan amount (floor for early game)
-  static readonly MIN_LOAN_AMOUNT = 500
+  static readonly MIN_LOAN_AMOUNT = 250
 
-  // Loan packages - amounts scale with daily income
+  // Loan packages - unlock progressively, scale with income
+  // Milestones: 50 → 100 → 200 → 400 → 700 → 1000
+  static readonly STARTER: LoanPackageDef = {
+    id: 'starter',
+    name: 'Starter Loan',
+    emoji: '🪙',
+    incomeMultiplier: 3,
+    interestRate: 0.05,
+    duration: 15,
+    unlockMilestone: 'guests_50',
+  }
+
   static readonly SMALL: LoanPackageDef = {
     id: 'small',
     name: 'Small Loan',
     emoji: '💵',
-    incomeMultiplier: 5,    // 5 days of income
+    incomeMultiplier: 7,
     interestRate: 0.10,
     duration: 20,
+    unlockMilestone: 'guests_100',
   }
 
   static readonly MEDIUM: LoanPackageDef = {
     id: 'medium',
     name: 'Medium Loan',
     emoji: '💰',
-    incomeMultiplier: 15,   // 15 days of income
+    incomeMultiplier: 15,
     interestRate: 0.15,
     duration: 30,
+    unlockMilestone: 'guests_200',
   }
 
   static readonly LARGE: LoanPackageDef = {
     id: 'large',
     name: 'Large Loan',
+    emoji: '💎',
+    incomeMultiplier: 25,
+    interestRate: 0.20,
+    duration: 40,
+    unlockMilestone: 'guests_400',
+  }
+
+  static readonly MAJOR: LoanPackageDef = {
+    id: 'major',
+    name: 'Major Loan',
     emoji: '🏦',
-    incomeMultiplier: 30,   // 30 days of income
+    incomeMultiplier: 40,
     interestRate: 0.25,
-    duration: 45,
+    duration: 50,
+    unlockMilestone: 'guests_700',
+  }
+
+  static readonly MEGA: LoanPackageDef = {
+    id: 'mega',
+    name: 'Mega Loan',
+    emoji: '👑',
+    incomeMultiplier: 60,
+    interestRate: 0.30,
+    duration: 60,
+    unlockMilestone: 'guests_1000',
   }
 
   static readonly ALL: LoanPackageDef[] = [
+    Bank.STARTER,
     Bank.SMALL,
     Bank.MEDIUM,
     Bank.LARGE,
+    Bank.MAJOR,
+    Bank.MEGA,
   ]
 
   static getById(id: BankLoanPackageId): LoanPackageDef | undefined {
     return this.ALL.find(p => p.id === id)
+  }
+
+  /**
+   * Check if a specific loan package is unlocked
+   */
+  static isPackageUnlocked(pkg: LoanPackageDef, state: GameState): boolean {
+    return Timeline.hasAchievedMilestone(pkg.unlockMilestone, state)
+  }
+
+  /**
+   * Get all unlocked loan packages
+   */
+  static getUnlockedPackages(state: GameState): LoanPackageDef[] {
+    return this.ALL.filter(pkg => this.isPackageUnlocked(pkg, state))
   }
 
   /**
@@ -136,9 +188,11 @@ export class Bank {
   /**
    * Check if can take a specific loan
    */
-  static canTakeLoan(_pkg: LoanPackageDef, state: GameState): { canBuy: boolean; reason?: string } {
-    if (!this.isUnlocked(state)) {
-      return { canBuy: false, reason: 'Reach 50 guests' }
+  static canTakeLoan(pkg: LoanPackageDef, state: GameState): { canBuy: boolean; reason?: string } {
+    if (!this.isPackageUnlocked(pkg, state)) {
+      // Extract guest count from milestone (e.g., 'guests_100' -> '100')
+      const guestCount = pkg.unlockMilestone.replace('guests_', '')
+      return { canBuy: false, reason: `${guestCount} guests` }
     }
     if (this.hasActiveLoan(state)) {
       return { canBuy: false, reason: 'Repay first' }

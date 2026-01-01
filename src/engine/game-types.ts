@@ -210,7 +210,7 @@ export type MarketingState = {
 
 // === BANK ===
 
-export type BankLoanPackageId = 'small' | 'medium' | 'large'
+export type BankLoanPackageId = 'starter' | 'small' | 'medium' | 'large' | 'major' | 'mega'
 
 export type BankLoanState = {
   packageId: BankLoanPackageId
