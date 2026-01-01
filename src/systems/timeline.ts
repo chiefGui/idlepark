@@ -62,12 +62,15 @@ const MILESTONE_FLAVOR: Record<string, FlavorText> = {
 export class Timeline {
   static getFlavorText(entry: TimelineEntry): FlavorText {
     if (entry.type === 'milestone') {
-      return (
-        MILESTONE_FLAVOR[entry.milestoneId] ?? {
-          title: 'A new achievement',
-          description: 'Another milestone in our park\'s story.',
-        }
-      )
+      // Use custom flavor text if defined, otherwise use milestone's own name/description
+      if (MILESTONE_FLAVOR[entry.milestoneId]) {
+        return MILESTONE_FLAVOR[entry.milestoneId]
+      }
+      const milestone = Milestone.getById(entry.milestoneId)
+      return {
+        title: milestone?.name ?? 'Achievement unlocked',
+        description: milestone?.description ?? '',
+      }
     } else {
       const event = entry.type === 'happening_started' ? 'started' : 'ended'
       return Happening.getFlavorText(entry.happeningId, event)
