@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion'
-import { Zap, Users, DollarSign, TrendingUp, Lock, ChevronLeft, Clock, Sparkles, Check } from 'lucide-react'
+import { Zap, Users, DollarSign, TrendingUp, Lock, ChevronLeft, Clock, Sparkles, Check, Landmark, Calendar, Percent } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { Service } from '../../systems/service'
 import { Marketing, type CampaignDef } from '../../systems/marketing'
+import { Bank, type LoanPackageDef } from '../../systems/bank'
 import { Perk } from '../../systems/perk'
 import { Format } from '../../utils/format'
 import { GameTypes } from '../../engine/game-types'
@@ -14,6 +15,9 @@ type ServicesContentProps = {
 
 export function ServicesContent({ onNavigate }: ServicesContentProps) {
   const state = useGameStore((s) => s)
+
+  // Bank unlock check
+  const isBankUnlocked = Bank.isUnlocked(state)
 
   // Service menu items - map service IDs to drawer screens
   const serviceItems = [
@@ -29,6 +33,42 @@ export function ServicesContent({ onNavigate }: ServicesContentProps) {
 
   return (
     <div className="space-y-2">
+      {/* Bank - first in the list */}
+      <motion.button
+        whileTap={isBankUnlocked ? { scale: 0.98 } : undefined}
+        onClick={() => isBankUnlocked && onNavigate('service_bank')}
+        disabled={!isBankUnlocked}
+        className={`w-full flex items-center gap-4 p-4 rounded-xl transition-colors text-left ${
+          isBankUnlocked
+            ? 'bg-[var(--color-surface)] active:bg-[var(--color-surface-hover)]'
+            : 'bg-[var(--color-surface)]/50 opacity-60 cursor-not-allowed'
+        }`}
+      >
+        <div className={`relative w-10 h-10 rounded-xl flex items-center justify-center ${
+          isBankUnlocked ? 'bg-emerald-500/20' : 'bg-[var(--color-text-muted)]/10'
+        }`}>
+          <span className={`text-xl ${!isBankUnlocked && 'grayscale'}`}>🏦</span>
+          {!isBankUnlocked && (
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[var(--color-surface)] flex items-center justify-center">
+              <Lock size={10} className="text-[var(--color-text-muted)]" />
+            </div>
+          )}
+        </div>
+        <div className="flex-1">
+          <div className="font-medium">Bank</div>
+          <div className="text-sm text-[var(--color-text-muted)]">
+            {isBankUnlocked ? 'Borrow money to grow your park' : 'Reach 50 guests to unlock'}
+          </div>
+        </div>
+        {isBankUnlocked ? (
+          <ChevronLeft size={20} className="rotate-180 text-[var(--color-text-muted)]" />
+        ) : (
+          <div className="text-xs text-[var(--color-warning)] bg-[var(--color-warning)]/10 px-2 py-1 rounded-full">
+            Locked
+          </div>
+        )}
+      </motion.button>
+
       {/* Regular services */}
       {serviceItems.map(({ service, screen }) => {
         const isUnlocked = Service.isUnlocked(service, state)
@@ -448,6 +488,199 @@ function CampaignCard({
           )}
         </div>
       </div>
+    </motion.div>
+  )
+}
+
+// Bank loans UI
+export function BankContent() {
+  const state = useGameStore((s) => s)
+  const takeLoan = state.actions.takeLoan
+
+  const activeLoan = state.bankLoan
+  const cooldownRemaining = Bank.getCooldownRemaining(state)
+  const isCooldownActive = cooldownRemaining > 0 && !activeLoan
+
+  // Calculate days remaining on active loan
+  const daysRemaining = activeLoan
+    ? Math.ceil(activeLoan.remainingAmount / activeLoan.dailyPayment)
+    : 0
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+          <Landmark size={24} className="text-emerald-500" />
+        </div>
+        <div className="flex-1">
+          <div className="text-lg font-medium">Bank</div>
+          <div className="text-sm text-[var(--color-text-muted)]">
+            Borrow money to grow your park
+          </div>
+        </div>
+      </div>
+
+      {/* Active Loan Banner */}
+      {activeLoan && (
+        <div className="p-4 rounded-xl bg-emerald-500/20 border border-emerald-500/30">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-emerald-500/30 flex items-center justify-center">
+              <span className="text-xl">{Bank.getById(activeLoan.packageId)?.emoji ?? '💰'}</span>
+            </div>
+            <div className="flex-1">
+              <div className="font-medium text-emerald-200">{Bank.getById(activeLoan.packageId)?.name ?? 'Active Loan'}</div>
+              <div className="text-sm text-emerald-300/70">Repaying daily</div>
+            </div>
+            <div className="text-right">
+              <div className="flex items-center gap-1 text-emerald-200">
+                <Clock size={14} />
+                <span className="font-bold">{daysRemaining}</span>
+              </div>
+              <div className="text-xs text-emerald-300/70">days left</div>
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="p-2 rounded-lg bg-emerald-500/20 text-center">
+              <div className="text-xs text-emerald-300/70">Remaining</div>
+              <div className="font-bold text-emerald-200">{Format.money(activeLoan.remainingAmount)}</div>
+            </div>
+            <div className="p-2 rounded-lg bg-emerald-500/20 text-center">
+              <div className="text-xs text-emerald-300/70">Daily Payment</div>
+              <div className="font-bold text-emerald-200">{Format.money(activeLoan.dailyPayment)}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cooldown Banner */}
+      {isCooldownActive && (
+        <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+          <div className="flex items-center gap-3">
+            <Clock size={20} className="text-[var(--color-text-muted)]" />
+            <div className="flex-1">
+              <div className="font-medium">Cooldown Active</div>
+              <div className="text-sm text-[var(--color-text-muted)]">
+                Wait {Math.ceil(cooldownRemaining)} more day{cooldownRemaining !== 1 ? 's' : ''} before taking another loan
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loan Package Cards */}
+      <div className="space-y-2">
+        {Bank.ALL.map((pkg) => (
+          <LoanPackageCard
+            key={pkg.id}
+            pkg={pkg}
+            state={state}
+            onTakeLoan={() => takeLoan(pkg.id)}
+          />
+        ))}
+      </div>
+
+      {/* Info */}
+      <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+        <p className="text-xs text-emerald-200/80">
+          Loans provide immediate cash but require daily repayment with interest.
+          Only one loan can be active at a time, with a {GameTypes.BANK_COOLDOWN_DAYS}-day cooldown between loans.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// Individual loan package card
+function LoanPackageCard({
+  pkg,
+  state,
+  onTakeLoan,
+}: {
+  pkg: LoanPackageDef
+  state: ReturnType<typeof useGameStore.getState>
+  onTakeLoan: () => void
+}) {
+  const { canBuy, reason } = Bank.canTakeLoan(pkg, state)
+  const isActive = state.bankLoan?.packageId === pkg.id
+  const totalRepayment = Bank.getTotalRepayment(pkg)
+  const dailyPayment = Bank.getDailyPayment(pkg)
+
+  return (
+    <motion.div
+      whileTap={canBuy ? { scale: 0.98 } : undefined}
+      className={`p-4 rounded-xl border transition-colors ${
+        isActive
+          ? 'bg-emerald-500/20 border-emerald-500/30'
+          : canBuy
+          ? 'bg-[var(--color-surface)] border-[var(--color-border)] active:bg-[var(--color-surface-hover)]'
+          : 'bg-[var(--color-surface)]/50 border-[var(--color-border)] opacity-60'
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+          isActive ? 'bg-emerald-500/30' : 'bg-[var(--color-accent)]/10'
+        }`}>
+          <span className="text-xl">{pkg.emoji}</span>
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{pkg.name}</span>
+            {isActive && (
+              <span className="text-xs bg-emerald-500/30 text-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Sparkles size={10} /> Active
+              </span>
+            )}
+          </div>
+          <div className="text-sm text-[var(--color-text-muted)]">
+            Borrow {Format.money(pkg.amount)} at {Math.round(pkg.interestRate * 100)}% interest
+          </div>
+          <div className="flex items-center gap-3 mt-2 text-xs">
+            <span className="flex items-center gap-1">
+              <Calendar size={12} className="text-[var(--color-text-muted)]" />
+              {pkg.duration} days
+            </span>
+            <span className="flex items-center gap-1 text-[var(--color-text-muted)]">
+              <Percent size={12} />
+              {Math.round(pkg.interestRate * 100)}%
+            </span>
+            <span className="flex items-center gap-1 text-amber-500">
+              <DollarSign size={12} />
+              {Format.money(dailyPayment)}/day
+            </span>
+          </div>
+        </div>
+        <div className="text-right">
+          {isActive ? (
+            <div className="flex items-center gap-1 text-emerald-200">
+              <Check size={16} />
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={onTakeLoan}
+                disabled={!canBuy}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  canBuy
+                    ? 'bg-emerald-500 text-white active:bg-emerald-600'
+                    : 'bg-[var(--color-text-muted)]/20 text-[var(--color-text-muted)] cursor-not-allowed'
+                }`}
+              >
+                {Format.money(pkg.amount)}
+              </button>
+              {!canBuy && reason && (
+                <div className="text-xs text-[var(--color-text-muted)] mt-1">{reason}</div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+      {/* Repayment info */}
+      {!isActive && (
+        <div className="mt-2 pt-2 border-t border-[var(--color-border)] text-xs text-[var(--color-text-muted)]">
+          Total repayment: {Format.money(totalRepayment)}
+        </div>
+      )}
     </motion.div>
   )
 }

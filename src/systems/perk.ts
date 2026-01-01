@@ -97,7 +97,7 @@ export class Perk {
     description: 'Unlocks Campground and Starlight Motel',
     costs: [{ statId: 'money', amount: 3000 }],
     effects: [],
-    requirements: [{ type: 'stat', statId: 'guests', min: 40 }],
+    requirements: [{ type: 'milestone', id: 'guests_40' }],
     lodgingTier: 1,
   }
 
@@ -137,7 +137,7 @@ export class Perk {
     description: 'Adjustable pricing: trade capacity for income',
     costs: [{ statId: 'money', amount: 2500 }],
     effects: [],
-    requirements: [{ type: 'stat', statId: 'guests', min: 30 }],
+    requirements: [{ type: 'milestone', id: 'guests_30' }],
     serviceId: 'fast_pass',
   }
 
@@ -153,7 +153,7 @@ export class Perk {
     description: 'Run marketing campaigns to attract more guests',
     costs: [{ statId: 'money', amount: 2500 }],
     effects: [],
-    requirements: [{ type: 'stat', statId: 'guests', min: 75 }],
+    requirements: [{ type: 'milestone', id: 'guests_75' }],
   }
 
   // Ride unlock perks
@@ -164,7 +164,7 @@ export class Perk {
     description: 'Unlocks Drop Tower, Pendulum Fury, and Rapids Run',
     costs: [{ statId: 'money', amount: 5000 }],
     effects: [],
-    requirements: [{ type: 'stat', statId: 'guests', min: 50 }],
+    requirements: [{ type: 'milestone', id: 'guests_50' }],
   }
 
   // Shop unlock perk
@@ -175,7 +175,7 @@ export class Perk {
     description: 'Unlocks Gift Shop, Carnival Games, Plush Stand, and Arcade',
     costs: [{ statId: 'money', amount: 2000 }],
     effects: [],
-    requirements: [{ type: 'stat', statId: 'guests', min: 75 }],
+    requirements: [{ type: 'milestone', id: 'guests_75' }],
   }
 
   // Premium pricing perk - unlocks higher ticket prices

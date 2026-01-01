@@ -181,6 +181,17 @@ export type MarketingState = {
   lastCampaignEndDay: number // For cooldown tracking
 }
 
+// === BANK ===
+
+export type BankLoanPackageId = 'small' | 'medium' | 'large'
+
+export type BankLoanState = {
+  packageId: BankLoanPackageId
+  remainingAmount: number  // Total amount still owed
+  dailyPayment: number     // Daily repayment amount
+  startDay: number         // When loan was taken
+} | null
+
 export type GameState = {
   stats: Record<StatId, number>
   slots: SlotState[]
@@ -199,6 +210,9 @@ export type GameState = {
   gameOver: boolean
   ticketPrice: number
   fastPassTier: FastPassTier
+  // Bank
+  bankLoan: BankLoanState
+  lastLoanRepaidDay: number  // For 90-day cooldown
   // Happenings
   currentHappening: HappeningState
   nextHappeningDay: number
@@ -238,6 +252,9 @@ export class GameTypes {
 
   // Marketing
   static readonly MARKETING_COOLDOWN_DAYS = 5
+
+  // Bank
+  static readonly BANK_COOLDOWN_DAYS = 90
 
   static createInitialStats(): Record<StatId, number> {
     return {
@@ -304,6 +321,9 @@ export class GameTypes {
       gameOver: false as boolean,
       ticketPrice: this.DEFAULT_TICKET_PRICE,
       fastPassTier: 'standard',
+      // Bank
+      bankLoan: null,
+      lastLoanRepaidDay: 0,
       // Happenings
       currentHappening: null,
       nextHappeningDay: this.FIRST_HAPPENING_DAY,
