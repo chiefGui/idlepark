@@ -539,15 +539,30 @@ export const useGameStore = create<GameStoreState>()(
           const moneyRate = rates.money
           let daysToSimulate = daysElapsed
 
+          // Cap offline progression to 60 days (~30 min real time)
+          // Keeps iteration count low for mobile performance
+          const MAX_OFFLINE_DAYS = 60
+          daysToSimulate = Math.min(daysToSimulate, MAX_OFFLINE_DAYS)
+
           if (moneyRate < 0 && state.stats.money > 0) {
             const daysUntilBankrupt =
               state.stats.money / Math.abs(moneyRate) +
               GameTypes.BANKRUPTCY_THRESHOLD_DAYS
 
-            daysToSimulate = Math.min(daysElapsed, daysUntilBankrupt)
+            daysToSimulate = Math.min(daysToSimulate, daysUntilBankrupt)
           }
 
-          get().actions.tick(daysToSimulate)
+          // Process day by day so happenings, daily records, etc. work correctly
+          const fullDays = Math.floor(daysToSimulate)
+          const remainder = daysToSimulate - fullDays
+
+          for (let i = 0; i < fullDays; i++) {
+            get().actions.tick(1)
+          }
+
+          if (remainder > 0) {
+            get().actions.tick(remainder)
+          }
         },
       },
     }),
