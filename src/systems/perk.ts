@@ -1,4 +1,4 @@
-import type { PerkDef, GameState } from '../engine/game-types'
+import type { PerkDef, GameState, ServiceId } from '../engine/game-types'
 import { Requirements } from '../engine/requirements'
 import type { Modifier } from '../engine/modifiers'
 
@@ -8,6 +8,10 @@ export type ExpansionPerkDef = PerkDef & {
 
 export type LodgingPerkDef = PerkDef & {
   lodgingTier: 1 | 2 | 3
+}
+
+export type ServicePerkDef = PerkDef & {
+  serviceId: ServiceId
 }
 
 export class Perk {
@@ -125,6 +129,22 @@ export class Perk {
     Perk.LODGING_3,
   ]
 
+  // Service perks - unlock park services
+  static readonly FAST_PASS_UNLOCK: ServicePerkDef = {
+    id: 'fast_pass_unlock',
+    name: 'Fast Pass',
+    emoji: '⚡',
+    description: 'Let guests skip queues for a premium',
+    costs: [{ statId: 'money', amount: 2500 }],
+    effects: [],
+    requirements: [{ type: 'stat', statId: 'guests', min: 30 }],
+    serviceId: 'fast_pass',
+  }
+
+  static readonly SERVICE_PERKS: ServicePerkDef[] = [
+    Perk.FAST_PASS_UNLOCK,
+  ]
+
   static readonly ALL: PerkDef[] = [
     Perk.SPOTLESS_PARK,
     Perk.EXTRA_SLOT_1,
@@ -135,6 +155,7 @@ export class Perk {
     Perk.LODGING_1,
     Perk.LODGING_2,
     Perk.LODGING_3,
+    Perk.FAST_PASS_UNLOCK,
   ]
 
   static getById(id: string): PerkDef | undefined {
@@ -180,6 +201,10 @@ export class Perk {
 
   static getNextLodgingPerk(state: GameState): LodgingPerkDef | null {
     return this.LODGING_PERKS.find(p => !state.ownedPerks.includes(p.id)) ?? null
+  }
+
+  static isServicePerk(perk: PerkDef): perk is ServicePerkDef {
+    return 'serviceId' in perk
   }
 
   static getModifiers(perkId: string): Modifier[] {

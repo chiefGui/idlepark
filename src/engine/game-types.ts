@@ -158,10 +158,24 @@ export type GuestBreakdown = {
   unhappy: number
 }
 
+// === SERVICES ===
+
+export type ServiceId = 'fast_pass'
+
+export type ServiceConfig = {
+  price: number
+}
+
+export type ServiceState = {
+  serviceId: ServiceId
+  config: ServiceConfig
+}
+
 export type GameState = {
   stats: Record<StatId, number>
   slots: SlotState[]
   ownedPerks: string[]
+  services: ServiceState[]
   timeline: TimelineEntry[]
   dailyRecords: DailyRecord[]
   financials: FinancialStats
@@ -254,6 +268,7 @@ export class GameTypes {
       stats: this.createInitialStats(),
       slots: this.createInitialSlots(),
       ownedPerks: [],
+      services: [],
       timeline: [],
       dailyRecords: [],
       financials: this.createInitialFinancials(),

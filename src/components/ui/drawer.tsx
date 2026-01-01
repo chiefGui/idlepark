@@ -1,16 +1,18 @@
 import { useState, createContext, useContext, useEffect, useCallback, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronLeft, Zap, BarChart3, RotateCcw, Building2, BookOpen, MessageCircle } from 'lucide-react'
+import { X, ChevronLeft, Zap, BarChart3, RotateCcw, Building2, BookOpen, MessageCircle, Sparkles } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { PerksContent } from '../perks/perks-content'
 import { AnalyticsContent } from '../analytics/analytics-content'
 import { ParkSettingsContent } from '../park/park-settings-content'
 import { TimelineContent } from '../timeline/timeline-content'
 import { FeedContent } from '../feed/feed-content'
+import { ServicesContent } from '../services/services-content'
 import { StatDetail } from '../stats/stat-detail'
 import { Drawer, type DrawerStore } from './primitives'
+import { Service } from '../../systems/service'
 
-export type DrawerScreen = 'menu' | 'milestones' | 'perks' | 'analytics' | 'park' | 'timeline' | 'feed' | 'guests' | 'cleanliness'
+export type DrawerScreen = 'menu' | 'milestones' | 'perks' | 'analytics' | 'park' | 'timeline' | 'feed' | 'services' | 'guests' | 'cleanliness'
 
 type DrawerContextValue = {
   store: DrawerStore
@@ -65,13 +67,27 @@ export function DrawerProvider({ children }: DrawerProviderProps) {
   )
 }
 
-const MENU_ITEMS = [
-  { id: 'park' as const, label: 'HQ', icon: Building2, description: 'Manage your park' },
-  { id: 'perks' as const, label: 'Perks', icon: Zap, description: 'Upgrade your park' },
-  { id: 'analytics' as const, label: 'Analytics', icon: BarChart3, description: 'View park statistics' },
-  { id: 'timeline' as const, label: 'Timeline', icon: BookOpen, description: "Your park's story" },
-  { id: 'feed' as const, label: 'Feed', icon: MessageCircle, description: 'Guest chatter' },
+type MenuItem = {
+  id: DrawerScreen
+  label: string
+  icon: typeof Building2
+  description: string
+}
+
+const BASE_MENU_ITEMS: MenuItem[] = [
+  { id: 'park', label: 'HQ', icon: Building2, description: 'Manage your park' },
+  { id: 'perks', label: 'Perks', icon: Zap, description: 'Upgrade your park' },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'View park statistics' },
+  { id: 'timeline', label: 'Timeline', icon: BookOpen, description: "Your park's story" },
+  { id: 'feed', label: 'Feed', icon: MessageCircle, description: 'Guest chatter' },
 ]
+
+const SERVICES_MENU_ITEM: MenuItem = {
+  id: 'services',
+  label: 'Services',
+  icon: Sparkles,
+  description: 'Premium guest services',
+}
 
 // Screen titles for non-menu screens
 const SCREEN_TITLES: Record<DrawerScreen, string> = {
@@ -82,6 +98,7 @@ const SCREEN_TITLES: Record<DrawerScreen, string> = {
   milestones: 'Milestones',
   timeline: 'Timeline',
   feed: 'Feed',
+  services: 'Services',
   guests: 'Guests',
   cleanliness: 'Clean',
 }
@@ -89,8 +106,15 @@ const SCREEN_TITLES: Record<DrawerScreen, string> = {
 function MenuDrawer() {
   const ctx = useContext(DrawerContext)!
   const { store, screen, setScreen } = ctx
-  const reset = useGameStore((s) => s.actions.reset)
-  const unreadFeedCount = useGameStore((s) => s.unreadFeedCount)
+  const state = useGameStore((s) => s)
+  const reset = state.actions.reset
+  const unreadFeedCount = state.unreadFeedCount
+  const hasServices = Service.hasAnyUnlocked(state)
+
+  // Build menu items dynamically based on unlocked features
+  const menuItems = hasServices
+    ? [...BASE_MENU_ITEMS.slice(0, 2), SERVICES_MENU_ITEM, ...BASE_MENU_ITEMS.slice(2)]
+    : BASE_MENU_ITEMS
 
   const handleBack = () => setScreen('menu')
 
@@ -101,7 +125,7 @@ function MenuDrawer() {
     }
   }
 
-  const currentMenuItem = MENU_ITEMS.find((item) => item.id === screen)
+  const currentMenuItem = menuItems.find((item) => item.id === screen)
   const title = currentMenuItem?.label ?? SCREEN_TITLES[screen] ?? 'Menu'
 
   return (
@@ -136,7 +160,7 @@ function MenuDrawer() {
               exit={{ opacity: 0, x: -20 }}
               className="p-4 space-y-2"
             >
-              {MENU_ITEMS.map((item) => {
+              {menuItems.map((item) => {
                 const Icon = item.icon
                 const showBadge = item.id === 'feed' && unreadFeedCount > 0
                 return (
@@ -176,6 +200,7 @@ function MenuDrawer() {
               {screen === 'timeline' && <TimelineContent />}
               {screen === 'perks' && <PerksContent />}
               {screen === 'analytics' && <AnalyticsContent />}
+              {screen === 'services' && <ServicesContent />}
               {screen === 'guests' && <StatDetail statId="guests" />}
               {screen === 'cleanliness' && <StatDetail statId="cleanliness" />}
             </motion.div>
