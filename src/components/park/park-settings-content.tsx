@@ -23,6 +23,12 @@ export function ParkSettingsContent() {
 
   const priceLevel = ticketPrice <= 8 ? 'low' : ticketPrice >= 18 ? 'high' : 'medium'
 
+  // Price fairness based on appeal
+  const fairPrice = Math.max(GameTypes.MIN_TICKET_PRICE, Math.min(GameTypes.MAX_TICKET_PRICE, Math.round(state.stats.appeal / 5)))
+  const priceDifference = ticketPrice - fairPrice
+  const fairnessLabel = Math.abs(priceDifference) <= 2 ? 'Fair' : priceDifference > 0 ? 'Overpriced' : 'Underpriced'
+  const fairnessColor = Math.abs(priceDifference) <= 2 ? 'var(--color-positive)' : 'var(--color-warning)'
+
   return (
     <div className="space-y-4">
       {/* Ticket Price Control */}
@@ -79,6 +85,27 @@ export function ParkSettingsContent() {
               {priceLevel === 'low' ? 'Budget' : priceLevel === 'high' ? 'Premium' : 'Standard'}
             </span>
             <span>${GameTypes.MAX_TICKET_PRICE}</span>
+          </div>
+        </div>
+
+        {/* Price Fairness Indicator */}
+        <div className="mt-4 pt-3 border-t border-[var(--color-border)]">
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-[var(--color-text-muted)]">
+              Based on your appeal ({Format.number(state.stats.appeal)})
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[var(--color-text-muted)]">Fair price: ${fairPrice}</span>
+              <span
+                className="text-xs font-medium px-2 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: `color-mix(in srgb, ${fairnessColor} 15%, transparent)`,
+                  color: fairnessColor
+                }}
+              >
+                {fairnessLabel}
+              </span>
+            </div>
           </div>
         </div>
       </div>

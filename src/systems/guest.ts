@@ -270,6 +270,87 @@ export class Guest {
   }
 
   /**
+   * Get breakdown of appeal components for UI display.
+   * Shows what's contributing to appeal and any active caps.
+   */
+  static getAppealBreakdown(state: GameState): {
+    components: { label: string; value: number; max: number }[]
+    caps: { reason: string; cap: number }[]
+    total: number
+  } {
+    const components: { label: string; value: number; max: number }[] = []
+    const caps: { reason: string; cap: number }[] = []
+
+    if (state.stats.entertainment <= 0) {
+      return { components: [{ label: 'Rides', value: 0, max: 40 }], caps: [], total: 0 }
+    }
+
+    // Entertainment (max 40)
+    const varietyMultiplier = Building.getVarietyMultiplier(state)
+    const effectiveEntertainment = state.stats.entertainment * varietyMultiplier
+    const entertainmentBase = Math.min(40, effectiveEntertainment / 2.5)
+    components.push({ label: 'Rides', value: Math.round(entertainmentBase), max: 40 })
+
+    // Beauty (max 15)
+    const beautyBonus = (state.stats.beauty / 100) * 15
+    components.push({ label: 'Beauty', value: Math.round(beautyBonus), max: 15 })
+
+    // Supply/demand (max 25)
+    const supplyDemandScore = this.calculateSupplyDemandScore(state)
+    const supplyDemandBonus = (supplyDemandScore / 100) * 25
+    components.push({ label: 'Guest Needs', value: Math.round(supplyDemandBonus), max: 25 })
+
+    // Cleanliness (-45 to +10)
+    const cleanliness = state.stats.cleanliness
+    let cleanlinessBonus = 0
+    if (cleanliness >= 50) {
+      cleanlinessBonus = ((cleanliness - 50) / 50) * 10
+    } else {
+      const dirtiness = (50 - cleanliness) / 50
+      cleanlinessBonus = -(dirtiness * dirtiness * 25 + dirtiness * 20)
+    }
+    components.push({ label: 'Cleanliness', value: Math.round(cleanlinessBonus), max: 10 })
+
+    // Price fairness (-10 to +10)
+    const perceivedValue = this.calculatePerceivedValue(state)
+    let priceBonus = 0
+    if (perceivedValue < 1) {
+      priceBonus = (perceivedValue - 1) * 20
+    } else if (perceivedValue > 1.2) {
+      priceBonus = Math.min(10, (perceivedValue - 1.2) * 15)
+    }
+    if (Math.round(priceBonus) !== 0) {
+      components.push({ label: 'Pricing', value: Math.round(priceBonus), max: 10 })
+    }
+
+    // Mood feedback (-10 to +5)
+    const totalGuests = this.getTotalGuests(state)
+    if (totalGuests > 0) {
+      const { happy, unhappy } = state.guestBreakdown
+      const happyRatio = happy / totalGuests
+      const unhappyRatio = unhappy / totalGuests
+      const moodBonus = happyRatio * this.HAPPY_APPEAL_BONUS + unhappyRatio * this.UNHAPPY_APPEAL_PENALTY
+      if (Math.round(moodBonus) !== 0) {
+        components.push({ label: 'Guest Mood', value: Math.round(moodBonus), max: 5 })
+      }
+    }
+
+    // Check for caps
+    const activeConsequences = this.getActiveConsequences(state)
+    for (const consequence of activeConsequences) {
+      const statLabel = consequence.statId === 'entertainment' ? 'rides' :
+                        consequence.statId === 'food' ? 'food' : 'comfort'
+      caps.push({ reason: `Low ${statLabel}`, cap: consequence.appealCap })
+    }
+    if (cleanliness < 20) {
+      caps.push({ reason: 'Filthy park', cap: 25 })
+    }
+
+    const total = state.stats.appeal
+    return { components, caps, total }
+  }
+
+  /**
    * Process tier transitions based on current appeal.
    * Returns new breakdown after transitions.
    */
