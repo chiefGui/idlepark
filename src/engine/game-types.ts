@@ -254,7 +254,7 @@ export class GameTypes {
   static readonly MARKETING_COOLDOWN_DAYS = 5
 
   // Bank
-  static readonly BANK_COOLDOWN_DAYS = 90
+  static readonly BANK_COOLDOWN_DAYS = 180
 
   static createInitialStats(): Record<StatId, number> {
     return {
