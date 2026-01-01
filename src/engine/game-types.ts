@@ -218,7 +218,7 @@ export class GameTypes {
       food: 0,
       comfort: 0,
       cleanliness: 100,
-      beauty: 25,
+      beauty: 0,
       appeal: 0,
     }
   }

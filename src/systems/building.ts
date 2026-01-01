@@ -35,7 +35,7 @@ export class Building {
       { statId: 'entertainment', perDay: 35 },
       { statId: 'appeal', perDay: 2 },
     ],
-    requirements: [{ type: 'day', min: 5 }],
+    requirements: [],
   }
 
   static readonly ROLLER_COASTER: BuildingDef = {
@@ -49,7 +49,7 @@ export class Building {
       { statId: 'money', perDay: -15 },
       { statId: 'entertainment', perDay: 80 },
     ],
-    requirements: [{ type: 'day', min: 10 }],
+    requirements: [],
   }
 
   static readonly BUMPER_CARS: BuildingDef = {
@@ -63,7 +63,7 @@ export class Building {
       { statId: 'money', perDay: -6 },
       { statId: 'entertainment', perDay: 30 },
     ],
-    requirements: [{ type: 'building', id: 'carousel' }],
+    requirements: [],
   }
 
   // === FOOD ===
@@ -93,7 +93,7 @@ export class Building {
       { statId: 'food', perDay: 15 },
       { statId: 'appeal', perDay: 5 },
     ],
-    requirements: [{ type: 'building', id: 'food_stand' }],
+    requirements: [],
   }
 
   static readonly PIZZA_PARLOR: BuildingDef = {
@@ -107,7 +107,7 @@ export class Building {
       { statId: 'money', perDay: -5 },
       { statId: 'food', perDay: 25 },
     ],
-    requirements: [{ type: 'day', min: 7 }],
+    requirements: [],
   }
 
   static readonly DRINK_STAND: BuildingDef = {
@@ -153,7 +153,7 @@ export class Building {
       { statId: 'appeal', perDay: 3 },
       { statId: 'cleanliness', perDay: 5 },
     ],
-    requirements: [{ type: 'stat', statId: 'guests', min: 50 }],
+    requirements: [],
   }
 
   static readonly INFO_BOOTH: BuildingDef = {
@@ -240,7 +240,7 @@ export class Building {
       { statId: 'money', perDay: -3 },
       { statId: 'beauty', perDay: 10 },
     ],
-    requirements: [{ type: 'day', min: 3 }],
+    requirements: [],
   }
 
   static readonly GARDEN: BuildingDef = {
