@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useGameStore } from '../../store/game-store'
-import { Calendar, type Season } from '../../utils/calendar'
+import { Calendar } from '../../utils/calendar'
+import type { Season } from '../../engine/game-types'
 import { useGyroscope } from '../../hooks/use-gyroscope'
 
 const PARTICLE_COUNT = 8
