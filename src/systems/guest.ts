@@ -2,6 +2,7 @@ import type { StatId, GameState, GuestBreakdown, GuestMood } from '../engine/gam
 import { GameTypes } from '../engine/game-types'
 import type { Modifier } from '../engine/modifiers'
 import { Building } from './building'
+import { Marketing } from './marketing'
 import { Perk } from './perk'
 import { Service } from './service'
 
@@ -156,7 +157,9 @@ export class Guest {
 
     const appealFactor = state.stats.appeal / this.APPEAL_BASELINE
     const valueFactor = this.getArrivalPenalty(state)
-    return this.BASE_ARRIVAL_RATE * appealFactor * valueFactor
+    const marketingBonus = 1 + Marketing.getArrivalBonus(state)
+
+    return this.BASE_ARRIVAL_RATE * appealFactor * valueFactor * marketingBonus
   }
 
   static calculateIncomeWithEntertainment(
