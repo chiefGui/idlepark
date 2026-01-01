@@ -526,8 +526,9 @@ export const useGameStore = create<GameStoreState>()(
           const moneyRate = rates.money
           let daysToSimulate = daysElapsed
 
-          // Cap offline progression to 365 days (~3 hours real time)
-          const MAX_OFFLINE_DAYS = 365
+          // Cap offline progression to 60 days (~30 min real time)
+          // Keeps iteration count low for mobile performance
+          const MAX_OFFLINE_DAYS = 60
           daysToSimulate = Math.min(daysToSimulate, MAX_OFFLINE_DAYS)
 
           if (moneyRate < 0 && state.stats.money > 0) {
