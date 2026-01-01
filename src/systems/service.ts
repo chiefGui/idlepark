@@ -1,6 +1,8 @@
-import type { ServiceId, GameState, MilestoneDef, FeedEventType } from '../engine/game-types'
+import type { ServiceId, GameState, MilestoneDef, FeedEventType, FastPassTier } from '../engine/game-types'
 import type { Modifier } from '../engine/modifiers'
 import { Guest } from './guest'
+import { Building } from './building'
+import { GameTypes } from '../engine/game-types'
 
 // === SERVICE TYPES ===
 
@@ -10,8 +12,14 @@ export type ServiceDef = {
   emoji: string
   description: string
   perkId: string // Perk required to unlock this service
-  incomeBoostPercent: number // % boost to guest income
-  capacityBonus: number // Flat capacity bonus when active
+}
+
+export type FastPassTierConfig = {
+  id: FastPassTier
+  name: string
+  capacityBoostPercent: number  // % boost to base + lodging capacity
+  incomeBoostPercent: number    // % boost to guest income
+  priceMultiplier: number       // Fast Pass costs ticket × (1 + this)
 }
 
 export type ServiceStats = {
@@ -22,15 +30,22 @@ export type ServiceStats = {
 // === SERVICE CLASS ===
 
 export class Service {
+  // Fast Pass tier configurations
+  // Trade-off: Lower price = more capacity, higher price = more income per guest
+  static readonly FAST_PASS_TIERS: FastPassTierConfig[] = [
+    { id: 'budget', name: 'Budget', capacityBoostPercent: 15, incomeBoostPercent: 8, priceMultiplier: 0.10 },
+    { id: 'standard', name: 'Standard', capacityBoostPercent: 10, incomeBoostPercent: 15, priceMultiplier: 0.25 },
+    { id: 'premium', name: 'Premium', capacityBoostPercent: 6, incomeBoostPercent: 25, priceMultiplier: 0.50 },
+    { id: 'vip', name: 'VIP', capacityBoostPercent: 3, incomeBoostPercent: 40, priceMultiplier: 1.00 },
+  ]
+
   // Fast Pass: Skip the lines, pay a premium
   static readonly FAST_PASS: ServiceDef = {
     id: 'fast_pass',
     name: 'Fast Pass',
     emoji: '⚡',
-    description: 'Boost guest income and park capacity',
+    description: 'Adjust pricing to balance guest capacity and income',
     perkId: 'fast_pass_unlock',
-    incomeBoostPercent: 25, // +25% guest income
-    capacityBonus: 50, // +50 capacity
   }
 
   static readonly ALL: ServiceDef[] = [
@@ -39,6 +54,36 @@ export class Service {
 
   static getById(id: ServiceId): ServiceDef | undefined {
     return this.ALL.find(s => s.id === id)
+  }
+
+  /**
+   * Get Fast Pass tier configuration by ID
+   */
+  static getFastPassTier(tierId: FastPassTier): FastPassTierConfig {
+    return this.FAST_PASS_TIERS.find(t => t.id === tierId) ?? this.FAST_PASS_TIERS[1] // Default to standard
+  }
+
+  /**
+   * Get the current Fast Pass tier config from game state
+   */
+  static getCurrentFastPassTier(state: GameState): FastPassTierConfig {
+    return this.getFastPassTier(state.fastPassTier)
+  }
+
+  /**
+   * Calculate Fast Pass price based on ticket price and tier
+   */
+  static getFastPassPrice(state: GameState): number {
+    if (!this.isFastPassUnlocked(state)) return 0
+    const tier = this.getCurrentFastPassTier(state)
+    return state.ticketPrice * (1 + tier.priceMultiplier)
+  }
+
+  /**
+   * Check if Fast Pass is unlocked
+   */
+  static isFastPassUnlocked(state: GameState): boolean {
+    return state.ownedPerks.includes(this.FAST_PASS.perkId)
   }
 
   /**
@@ -63,35 +108,26 @@ export class Service {
   }
 
   /**
-   * Get stats for a service (simple - just return the service's bonuses)
-   */
-  static getStats(service: ServiceDef): ServiceStats {
-    return {
-      incomeBoostPercent: service.incomeBoostPercent,
-      capacityBonus: service.capacityBonus,
-    }
-  }
-
-  /**
-   * Get total capacity bonus from all unlocked services
+   * Get capacity bonus from Fast Pass (percentage of base + lodging capacity)
    */
   static getTotalCapacityBonus(state: GameState): number {
-    let total = 0
-    for (const service of this.getUnlocked(state)) {
-      total += service.capacityBonus
-    }
-    return total
+    if (!this.isFastPassUnlocked(state)) return 0
+
+    const tier = this.getCurrentFastPassTier(state)
+    const baseCapacity = GameTypes.INITIAL_GUEST_CAPACITY
+    const lodgingBonus = Building.getTotalCapacityBonus(state)
+    const preServiceCapacity = baseCapacity + lodgingBonus
+
+    return Math.floor(preServiceCapacity * (tier.capacityBoostPercent / 100))
   }
 
   /**
-   * Get total income boost percent from all unlocked services
+   * Get total income boost percent from Fast Pass tier
    */
   static getTotalIncomeBoostPercent(state: GameState): number {
-    let total = 0
-    for (const service of this.getUnlocked(state)) {
-      total += service.incomeBoostPercent
-    }
-    return total
+    if (!this.isFastPassUnlocked(state)) return 0
+    const tier = this.getCurrentFastPassTier(state)
+    return tier.incomeBoostPercent
   }
 
   /**

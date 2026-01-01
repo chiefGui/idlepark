@@ -134,7 +134,7 @@ export class Perk {
     id: 'fast_pass_unlock',
     name: 'Fast Pass',
     emoji: '⚡',
-    description: '+50 guest capacity, +25% income. Priority queue access.',
+    description: 'Adjustable pricing: trade capacity for income',
     costs: [{ statId: 'money', amount: 2500 }],
     effects: [],
     requirements: [{ type: 'stat', statId: 'guests', min: 30 }],
