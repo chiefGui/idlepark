@@ -650,7 +650,7 @@ export class Building {
 
   /**
    * Get all displayable effects for a building.
-   * Includes stat effects + capacity bonus for lodging.
+   * Includes stat effects + capacity bonus for lodging + income for shops.
    * Returns unified format: { statId, value, isPositive }
    */
   static getDisplayEffects(building: BuildingDef): DisplayEffect[] {
@@ -666,6 +666,18 @@ export class Building {
         statId: 'capacity',
         value: building.capacityBonus,
         isPositive: true,
+      })
+    }
+
+    // Add income for shop buildings
+    if (this.isShop(building)) {
+      const maxIncome = building.incomePerGuest * building.guestCap
+      effects.push({
+        statId: 'income',
+        value: maxIncome,
+        isPositive: true,
+        perGuest: building.incomePerGuest,
+        guestCap: building.guestCap,
       })
     }
 
@@ -708,7 +720,9 @@ export class Building {
 }
 
 export type DisplayEffect = {
-  statId: StatId | 'capacity'
+  statId: StatId | 'capacity' | 'income'
   value: number
   isPositive: boolean
+  perGuest?: number // For shops: income per guest
+  guestCap?: number // For shops: guest cap
 }

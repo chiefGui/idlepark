@@ -175,7 +175,9 @@ function BuildingCard({ building, canAfford, onBuild }: BuildingCardProps) {
               ${!canAfford ? 'opacity-60' : ''}
             `}
           >
-            {Format.effect(effect.value, effect.statId)}
+            {effect.perGuest != null
+              ? Format.shopIncome(effect.perGuest)
+              : Format.effect(effect.value, effect.statId)}
           </span>
         ))}
         {displayEffects.length > 2 && (
