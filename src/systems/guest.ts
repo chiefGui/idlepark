@@ -411,6 +411,10 @@ export class Guest {
     const cleanlinessDecay = -totalGuests * 0.1
     modifiers.push({ source, stat: 'cleanliness', flat: cleanlinessDecay })
 
+    // Beauty decay - crowds cause wear and tear (slower than cleanliness)
+    const beautyDecay = -totalGuests * 0.03
+    modifiers.push({ source, stat: 'beauty', flat: beautyDecay })
+
     return modifiers
   }
 }

@@ -80,6 +80,10 @@ function getStatSources(statId: StatId, state: GameState, ticketPrice: number): 
     sources.push({ emoji: '👥', name: 'Guest mess', amount: -state.stats.guests * 0.1 })
   }
 
+  if (statId === 'beauty' && state.stats.guests > 0) {
+    sources.push({ emoji: '👥', name: 'Crowd wear & tear', amount: -state.stats.guests * 0.03 })
+  }
+
   return sources.sort((a, b) => {
     if (a.amount >= 0 && b.amount < 0) return -1
     if (a.amount < 0 && b.amount >= 0) return 1
@@ -124,14 +128,14 @@ function getTip(statId: StatId, state: GameState): string | null {
       if (capacityPercent >= 80 && capacityPercent < 100) {
         return 'Approaching capacity! Build lodging soon to accommodate more guests.'
       }
-      if (unhappyRatio > 0.3) return 'Too many unhappy guests! Improve entertainment, food, or comfort.'
+      if (unhappyRatio > 0.3) return 'Too many unhappy guests! Improve fun, food, or comfort.'
       if (state.stats.appeal < 30) return 'Build more attractions to increase appeal and draw visitors.'
       break
     }
     case 'entertainment':
       if (state.stats.entertainment < state.stats.guests * 0.5) {
         const rides = availableBuildings.filter((b) => b.category === 'rides' && Building.canAfford(b, state))
-        if (rides[0]) return `Build a ${rides[0].emoji} ${rides[0].name} for more entertainment.`
+        if (rides[0]) return `Build a ${rides[0].emoji} ${rides[0].name} for more fun.`
       }
       break
     case 'food':

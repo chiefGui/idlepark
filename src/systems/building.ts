@@ -282,9 +282,12 @@ export class Building {
     description: 'Rustic tent sites under the stars',
     category: 'lodging',
     costs: [{ statId: 'money', amount: 1000 }],
-    effects: [{ statId: 'money', perDay: -5 }],
+    effects: [
+      { statId: 'money', perDay: -5 },
+      { statId: 'comfort', perDay: 5 },
+    ],
     requirements: [{ type: 'perk', id: 'lodging_1' }],
-    capacityBonus: 20,
+    capacityBonus: 50,
     lodgingTier: 1,
   }
 
@@ -295,9 +298,12 @@ export class Building {
     description: 'Cozy roadside rooms with retro charm',
     category: 'lodging',
     costs: [{ statId: 'money', amount: 2000 }],
-    effects: [{ statId: 'money', perDay: -10 }],
+    effects: [
+      { statId: 'money', perDay: -10 },
+      { statId: 'entertainment', perDay: 8 },
+    ],
     requirements: [{ type: 'perk', id: 'lodging_1' }],
-    capacityBonus: 35,
+    capacityBonus: 75,
     lodgingTier: 1,
   }
 
@@ -312,9 +318,10 @@ export class Building {
     effects: [
       { statId: 'money', perDay: -20 },
       { statId: 'beauty', perDay: 3 },
+      { statId: 'comfort', perDay: 10 },
     ],
     requirements: [{ type: 'perk', id: 'lodging_2' }],
-    capacityBonus: 50,
+    capacityBonus: 100,
     lodgingTier: 2,
   }
 
@@ -322,15 +329,16 @@ export class Building {
     id: 'parkview_inn',
     name: 'Parkview Inn',
     emoji: '🏨',
-    description: 'Comfortable family hotel with park views',
+    description: 'Comfortable family hotel with on-site dining',
     category: 'lodging',
     costs: [{ statId: 'money', amount: 8000 }],
     effects: [
       { statId: 'money', perDay: -30 },
       { statId: 'beauty', perDay: 2 },
+      { statId: 'food', perDay: 12 },
     ],
     requirements: [{ type: 'perk', id: 'lodging_2' }],
-    capacityBonus: 75,
+    capacityBonus: 150,
     lodgingTier: 2,
   }
 
@@ -339,15 +347,16 @@ export class Building {
     id: 'lakeside_resort',
     name: 'Lakeside Resort',
     emoji: '🏖️',
-    description: 'Luxurious waterfront destination',
+    description: 'Luxurious waterfront with activities',
     category: 'lodging',
     costs: [{ statId: 'money', amount: 20000 }],
     effects: [
       { statId: 'money', perDay: -60 },
       { statId: 'beauty', perDay: 8 },
+      { statId: 'entertainment', perDay: 20 },
     ],
     requirements: [{ type: 'perk', id: 'lodging_3' }],
-    capacityBonus: 120,
+    capacityBonus: 250,
     lodgingTier: 3,
   }
 
@@ -355,15 +364,16 @@ export class Building {
     id: 'cloud_nine_suites',
     name: 'Cloud Nine Suites',
     emoji: '☁️',
-    description: 'Ultra-premium boutique hotel experience',
+    description: 'Ultra-premium spa and luxury amenities',
     category: 'lodging',
     costs: [{ statId: 'money', amount: 30000 }],
     effects: [
       { statId: 'money', perDay: -80 },
       { statId: 'beauty', perDay: 15 },
+      { statId: 'comfort', perDay: 25 },
     ],
     requirements: [{ type: 'perk', id: 'lodging_3' }],
-    capacityBonus: 100,
+    capacityBonus: 200,
     lodgingTier: 3,
   }
 
@@ -409,7 +419,7 @@ export class Building {
   ]
 
   static readonly CATEGORIES: { id: BuildingCategory; label: string; emoji: string; hint: string }[] = [
-    { id: 'rides', label: 'Rides', emoji: '🎢', hint: 'Entertainment' },
+    { id: 'rides', label: 'Rides', emoji: '🎢', hint: 'Fun' },
     { id: 'food', label: 'Food', emoji: '🍔', hint: 'Food & comfort' },
     { id: 'facilities', label: 'Facilities', emoji: '🚻', hint: 'Comfort & cleanliness' },
     { id: 'decor', label: 'Decor', emoji: '🌷', hint: 'Beauty & comfort' },
