@@ -178,6 +178,17 @@ export class Perk {
     requirements: [{ type: 'stat', statId: 'guests', min: 75 }],
   }
 
+  // Premium pricing perk - unlocks higher ticket prices
+  static readonly DESTINATION_PARK: PerkDef = {
+    id: 'destination_park',
+    name: 'Destination Park',
+    emoji: '🏰',
+    description: 'Your park becomes a renowned destination—guests expect premium prices',
+    costs: [{ statId: 'money', amount: 15000 }],
+    effects: [],
+    requirements: [{ type: 'day', min: 75 }],
+  }
+
   static readonly ALL: PerkDef[] = [
     Perk.SPOTLESS_PARK,
     Perk.EXTRA_SLOT_1,
@@ -192,6 +203,7 @@ export class Perk {
     Perk.MARKETING_OFFICE,
     Perk.THRILL_SEEKERS,
     Perk.SHOPS_1,
+    Perk.DESTINATION_PARK,
   ]
 
   static getById(id: string): PerkDef | undefined {
@@ -257,5 +269,16 @@ export class Perk {
       label: perk.name,
       emoji: perk.emoji,
     }))
+  }
+
+  // Premium pricing helpers
+  static getMaxTicketPrice(state: GameState): number {
+    if (state.ownedPerks.includes('destination_park')) return 50
+    return 25
+  }
+
+  static getPerceivedValueBonus(state: GameState): number {
+    if (state.ownedPerks.includes('destination_park')) return 0.5
+    return 0
   }
 }

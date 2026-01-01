@@ -3,6 +3,7 @@ import { Ticket, Users, DollarSign, TrendingUp, TrendingDown } from 'lucide-reac
 import { useGameStore } from '../../store/game-store'
 import { GameTypes } from '../../engine/game-types'
 import { Guest } from '../../systems/guest'
+import { Perk } from '../../systems/perk'
 import { Format } from '../../utils/format'
 
 export function ParkSettingsContent() {
@@ -23,8 +24,11 @@ export function ParkSettingsContent() {
 
   const priceLevel = ticketPrice <= 8 ? 'low' : ticketPrice >= 18 ? 'high' : 'medium'
 
+  // Dynamic max ticket price based on perks
+  const maxTicketPrice = Perk.getMaxTicketPrice(state)
+
   // Price fairness based on appeal
-  const fairPrice = Math.max(GameTypes.MIN_TICKET_PRICE, Math.min(GameTypes.MAX_TICKET_PRICE, Math.round(state.stats.appeal / 5)))
+  const fairPrice = Math.max(GameTypes.MIN_TICKET_PRICE, Math.min(maxTicketPrice, Math.round(state.stats.appeal / 5)))
   const priceDifference = ticketPrice - fairPrice
   const fairnessLabel = Math.abs(priceDifference) <= 2 ? 'Fair' : priceDifference > 0 ? 'Overpriced' : 'Underpriced'
   const fairnessColor = Math.abs(priceDifference) <= 2 ? 'var(--color-positive)' : 'var(--color-warning)'
@@ -51,7 +55,7 @@ export function ParkSettingsContent() {
           <input
             type="range"
             min={GameTypes.MIN_TICKET_PRICE}
-            max={GameTypes.MAX_TICKET_PRICE}
+            max={maxTicketPrice}
             value={ticketPrice}
             onChange={handleSliderChange}
             className="w-full h-2 rounded-full appearance-none cursor-pointer
@@ -84,7 +88,7 @@ export function ParkSettingsContent() {
             }`}>
               {priceLevel === 'low' ? 'Budget' : priceLevel === 'high' ? 'Premium' : 'Standard'}
             </span>
-            <span>${GameTypes.MAX_TICKET_PRICE}</span>
+            <span>${maxTicketPrice}</span>
           </div>
         </div>
 
