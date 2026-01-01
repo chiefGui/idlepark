@@ -183,14 +183,27 @@ export class Service {
    * Get modifiers for all active services (for rate calculation)
    */
   static getModifiers(state: GameState): Modifier[] {
-    const incomePerDay = this.getTotalIncomePerDay(state)
-    if (incomePerDay <= 0) return []
+    if (!state.services) return []
 
-    return [{
-      source: { type: 'service' as const },
-      stat: 'money',
-      flat: incomePerDay,
-    }]
+    const modifiers: Modifier[] = []
+
+    for (const serviceState of state.services) {
+      const service = this.getById(serviceState.serviceId)
+      if (service && this.isUnlocked(service, state)) {
+        const stats = this.calculateStats(service, serviceState.config, state)
+        if (stats.incomePerDay > 0) {
+          modifiers.push({
+            source: { type: 'service' as const },
+            stat: 'money',
+            flat: stats.incomePerDay,
+            label: service.name,
+            emoji: service.emoji,
+          })
+        }
+      }
+    }
+
+    return modifiers
   }
 
   // === MILESTONES ===

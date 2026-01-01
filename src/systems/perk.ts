@@ -242,6 +242,8 @@ export class Perk {
       stat: effect.statId,
       flat: effect.perDay || undefined,
       increased: effect.multiplier ? (effect.multiplier - 1) * 100 : undefined,
+      label: perk.name,
+      emoji: perk.emoji,
     }))
   }
 }

@@ -219,6 +219,8 @@ export class Happening {
       flat: mod.flat,
       increased: mod.increased,
       more: mod.more,
+      label: happening.name,
+      emoji: happening.emoji,
     }))
   }
 

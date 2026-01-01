@@ -529,6 +529,8 @@ export class Building {
       stat: effect.statId,
       flat: effect.perDay,
       increased: effect.multiplier ? (effect.multiplier - 1) * 100 : undefined,
+      label: building.name,
+      emoji: building.emoji,
     }))
   }
 

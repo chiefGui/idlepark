@@ -190,6 +190,8 @@ export class Marketing {
         source: { type: 'marketing' as const },
         stat: 'guests',
         increased: campaign.effects.guestArrivalBonus,
+        label: campaign.name,
+        emoji: campaign.emoji,
       })
     }
 
@@ -199,6 +201,8 @@ export class Marketing {
         source: { type: 'marketing' as const },
         stat: 'appeal',
         flat: campaign.effects.appealBonus,
+        label: campaign.name,
+        emoji: campaign.emoji,
       })
     }
 

@@ -1,94 +1,16 @@
 import { useMemo } from 'react'
 import { TrendingUp, TrendingDown, AlertCircle, Lightbulb, Smile, Meh, Frown } from 'lucide-react'
 import type { StatId, GameState } from '../../engine/game-types'
+import { Modifiers } from '../../engine/modifiers'
 import { useGameStore } from '../../store/game-store'
 import { Building } from '../../systems/building'
-import { Perk } from '../../systems/perk'
 import { Guest } from '../../systems/guest'
 import { Slot } from '../../systems/slot'
 import { Format } from '../../utils/format'
 import { STAT_CONFIG } from '../../constants/stats'
 
-type SourceContribution = {
-  emoji: string
-  name: string
-  amount: number
-  count?: number
-}
-
 type StatDetailProps = {
   statId: StatId
-}
-
-function getStatSources(statId: StatId, state: GameState, ticketPrice: number): SourceContribution[] {
-  const sources: SourceContribution[] = []
-  const buildingContributions = new Map<string, { amount: number; count: number }>()
-
-  for (const slot of Slot.getOccupied(state)) {
-    if (!slot.buildingId) continue
-    const building = Building.getById(slot.buildingId)
-    if (!building) continue
-
-    for (const effect of building.effects) {
-      if (effect.statId === statId) {
-        const existing = buildingContributions.get(slot.buildingId)
-        if (existing) {
-          existing.amount += effect.perDay
-          existing.count++
-        } else {
-          buildingContributions.set(slot.buildingId, { amount: effect.perDay, count: 1 })
-        }
-      }
-    }
-  }
-
-  for (const [buildingId, data] of buildingContributions) {
-    const building = Building.getById(buildingId)
-    if (building) {
-      sources.push({ emoji: building.emoji, name: building.name, amount: data.amount, count: data.count })
-    }
-  }
-
-  for (const perkId of state.ownedPerks) {
-    const perk = Perk.getById(perkId)
-    if (!perk) continue
-    for (const effect of perk.effects) {
-      if (effect.statId === statId && effect.perDay) {
-        sources.push({ emoji: perk.emoji, name: perk.name, amount: effect.perDay })
-      }
-    }
-  }
-
-  if (statId === 'money' && state.stats.guests > 0) {
-    const income = Guest.calculateIncomeWithEntertainment(state.stats.guests, ticketPrice, state.stats.entertainment)
-    if (income > 0) sources.push({ emoji: '🎟️', name: 'Ticket sales', amount: income })
-  }
-
-  if (statId === 'guests') {
-    const arrivalRate = Guest.calculateArrivalRate(state)
-    if (arrivalRate > 0) sources.push({ emoji: '🚶', name: 'New arrivals', amount: arrivalRate })
-  }
-
-  if (['entertainment', 'food', 'comfort'].includes(statId)) {
-    const demand = Guest.DEMANDS.find((d) => d.statId === statId)
-    if (demand && state.stats.guests > 0) {
-      sources.push({ emoji: '👥', name: 'Guest consumption', amount: -state.stats.guests * demand.perGuest })
-    }
-  }
-
-  if (statId === 'cleanliness' && state.stats.guests > 0) {
-    sources.push({ emoji: '👥', name: 'Guest mess', amount: -state.stats.guests * 0.1 })
-  }
-
-  if (statId === 'beauty' && state.stats.guests > 0) {
-    sources.push({ emoji: '👥', name: 'Crowd wear & tear', amount: -state.stats.guests * 0.03 })
-  }
-
-  return sources.sort((a, b) => {
-    if (a.amount >= 0 && b.amount < 0) return -1
-    if (a.amount < 0 && b.amount >= 0) return 1
-    return b.amount - a.amount
-  })
 }
 
 function getWarning(statId: StatId, state: GameState): string | null {
@@ -156,6 +78,7 @@ function getTip(statId: StatId, state: GameState): string | null {
 export function StatDetail({ statId }: StatDetailProps) {
   const stats = useGameStore((s) => s.stats)
   const rates = useGameStore((s) => s.rates)
+  const modifiers = useGameStore((s) => s.modifiers)
   const slots = useGameStore((s) => s.slots)
   const ownedPerks = useGameStore((s) => s.ownedPerks)
   const ticketPrice = useGameStore((s) => s.ticketPrice)
@@ -166,7 +89,27 @@ export function StatDetail({ statId }: StatDetailProps) {
   const rate = rates[statId]
   const state: GameState = { slots, ownedPerks, stats, ticketPrice, guestBreakdown } as GameState
 
-  const sources = useMemo(() => getStatSources(statId, state, ticketPrice), [statId, state, ticketPrice])
+  // Get sources from the unified modifier system
+  const sources = useMemo(() => {
+    const rawSources = Modifiers.getSourcesForStat(modifiers, statId)
+
+    // For guests stat, add arrival rate manually (since it's managed separately)
+    if (statId === 'guests') {
+      const arrivalRate = Guest.calculateArrivalRate(state)
+      if (arrivalRate > 0) {
+        rawSources.unshift({
+          label: 'New arrivals',
+          emoji: '🚶',
+          flat: arrivalRate,
+          increased: 0,
+          more: 1,
+        })
+      }
+    }
+
+    return rawSources
+  }, [modifiers, statId, state])
+
   const warning = getWarning(statId, state)
   const tip = getTip(statId, state)
 
@@ -347,21 +290,44 @@ export function StatDetail({ statId }: StatDetailProps) {
       {/* Sources - skip for Appeal since we show breakdown */}
       {sources.length > 0 && !isAppealStat && (
         <div className="space-y-1">
-          {sources.map((source, i) => (
-            <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-[var(--color-bg)]">
-              <div className="flex items-center gap-2">
-                <span className="text-base">{source.emoji}</span>
-                <span className="text-sm">{source.name}</span>
-                {source.count && source.count > 1 && (
-                  <span className="text-xs text-[var(--color-text-muted)]">×{source.count}</span>
-                )}
+          {sources.map((source, i) => {
+            // Show the primary contribution type
+            const hasFlat = source.flat !== 0
+            const hasIncreased = source.increased !== 0
+            const hasMore = source.more !== 1
+
+            return (
+              <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-[var(--color-bg)]">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">{source.emoji}</span>
+                  <span className="text-sm">{source.label}</span>
+                  {source.count && source.count > 1 && (
+                    <span className="text-xs text-[var(--color-text-muted)]">×{source.count}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {hasFlat && (
+                    <span className="text-sm font-medium"
+                      style={{ color: source.flat > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}>
+                      {Format.ratePerDay(source.flat)}
+                    </span>
+                  )}
+                  {hasIncreased && (
+                    <span className="text-sm font-medium"
+                      style={{ color: source.increased > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}>
+                      {source.increased > 0 ? '+' : ''}{source.increased.toFixed(0)}%
+                    </span>
+                  )}
+                  {hasMore && (
+                    <span className="text-sm font-medium"
+                      style={{ color: source.more > 1 ? 'var(--color-negative)' : 'var(--color-positive)' }}>
+                      ×{source.more.toFixed(2)}
+                    </span>
+                  )}
+                </div>
               </div>
-              <span className="text-sm font-medium"
-                style={{ color: source.amount > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}>
-                {Format.ratePerDay(source.amount)}
-              </span>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
