@@ -309,35 +309,42 @@ export function StatDetail({ statId }: StatDetailProps) {
         </div>
       )}
 
-      {/* Supply/demand for consumption stats */}
+      {/* Supply/demand for consumption stats - show production vs consumption rates */}
       {['entertainment', 'food', 'comfort'].includes(statId) && stats.guests > 0 && (() => {
-        const supplyRatio = Guest.getSupplyRatio(statId as 'entertainment' | 'food' | 'comfort', state)
-        const supplyPercent = Math.min(150, supplyRatio * 100)
         const demand = Guest.DEMANDS.find((d) => d.statId === statId)
-        const requiredSupply = demand ? stats.guests * demand.perGuest : 0
-        const statusColor = supplyRatio >= 1 ? 'var(--color-positive)' : supplyRatio >= 0.5 ? 'var(--color-warning)' : 'var(--color-negative)'
-        const statusLabel = supplyRatio >= 1 ? 'Meeting demand' : supplyRatio >= 0.5 ? 'Low supply' : 'Critical shortage'
+        const consumptionRate = demand ? stats.guests * demand.perGuest : 0
+
+        // Calculate production rate from sources (positive contributions only)
+        const productionRate = sources
+          .filter(s => s.amount > 0)
+          .reduce((sum, s) => sum + s.amount, 0)
+
+        const ratio = consumptionRate > 0 ? productionRate / consumptionRate : 1
+        const statusColor = ratio >= 1 ? 'var(--color-positive)' : ratio >= 0.5 ? 'var(--color-warning)' : 'var(--color-negative)'
+        const statusLabel = ratio >= 1 ? 'Sustainable' : ratio >= 0.5 ? 'Depleting' : 'Critical'
 
         return (
           <div className="p-3 rounded-xl bg-[var(--color-bg)]">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-[var(--color-text-muted)]">Guest demand</span>
+              <span className="text-xs text-[var(--color-text-muted)]">Supply vs Demand</span>
               <span className="text-xs font-medium" style={{ color: statusColor }}>{statusLabel}</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex-1 h-2 bg-[var(--color-border)] rounded-full overflow-hidden relative">
                 {/* 100% marker */}
-                <div className="absolute left-[66.67%] top-0 bottom-0 w-px bg-[var(--color-text-muted)]/30" />
+                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-[var(--color-text-muted)]/40" />
                 <div
                   className="h-full rounded-full transition-all duration-300"
                   style={{
-                    width: `${Math.min(100, supplyPercent / 1.5)}%`,
+                    width: `${Math.min(100, ratio * 50)}%`,
                     backgroundColor: statusColor,
                   }}
                 />
               </div>
-              <div className="text-xs text-[var(--color-text-muted)] w-20 text-right">
-                {Format.number(value)} / {Format.number(Math.ceil(requiredSupply))}
+              <div className="text-xs w-24 text-right">
+                <span style={{ color: 'var(--color-positive)' }}>+{Format.number(Math.round(productionRate))}</span>
+                <span className="text-[var(--color-text-muted)]"> / </span>
+                <span style={{ color: 'var(--color-negative)' }}>-{Format.number(Math.round(consumptionRate))}</span>
               </div>
             </div>
           </div>
