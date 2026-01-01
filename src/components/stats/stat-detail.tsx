@@ -178,6 +178,25 @@ export function StatDetail({ statId }: StatDetailProps) {
               </div>
             ))}
           </div>
+
+          {/* Active modifiers (happenings, marketing, etc.) */}
+          {sources.length > 0 && (
+            <div className="space-y-1 pt-2 border-t border-[var(--color-border)]">
+              <div className="text-xs text-[var(--color-text-muted)] mb-2">Active Effects</div>
+              {sources.map((source, i) => (
+                <div key={i} className="flex items-center justify-between py-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">{source.emoji}</span>
+                    <span className="text-xs">{source.label}</span>
+                  </div>
+                  <span className="text-xs font-medium"
+                    style={{ color: source.flat > 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}>
+                    {source.flat > 0 ? '+' : ''}{source.flat}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

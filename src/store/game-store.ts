@@ -70,11 +70,6 @@ const collectModifiers = (state: GameState): Modifier[] => {
   return modifiers
 }
 
-const computeRates = (state: GameState): ComputedRates => {
-  const modifiers = collectModifiers(state)
-  return Modifiers.computeAllRates(modifiers)
-}
-
 const computeRatesAndModifiers = (state: GameState): { rates: ComputedRates; modifiers: Modifier[] } => {
   const modifiers = collectModifiers(state)
   const rates = Modifiers.computeAllRates(modifiers)
@@ -546,7 +541,7 @@ export const useGameStore = create<GameStoreState>()(
           if (daysElapsed <= 0) return
 
           const state = get()
-          const rates = computeRates(state)
+          const { rates } = computeRatesAndModifiers(state)
 
           const moneyRate = rates.money
           let daysToSimulate = daysElapsed
