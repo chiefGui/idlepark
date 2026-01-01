@@ -150,6 +150,8 @@ export class Service {
       source: { type: 'service' as const },
       stat: 'money',
       flat: bonusIncome,
+      label: 'Fast Pass',
+      emoji: '⚡',
     }]
   }
 

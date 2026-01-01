@@ -185,11 +185,14 @@ export class Marketing {
     const modifiers: Modifier[] = []
 
     // Guest arrival bonus (applied as increased modifier on guests stat)
+    // Convert from decimal (0.3 = +30%) to percentage (30)
     if (campaign.effects.guestArrivalBonus > 0) {
       modifiers.push({
         source: { type: 'marketing' as const },
         stat: 'guests',
-        increased: campaign.effects.guestArrivalBonus,
+        increased: campaign.effects.guestArrivalBonus * 100,
+        label: campaign.name,
+        emoji: campaign.emoji,
       })
     }
 
@@ -199,6 +202,8 @@ export class Marketing {
         source: { type: 'marketing' as const },
         stat: 'appeal',
         flat: campaign.effects.appealBonus,
+        label: campaign.name,
+        emoji: campaign.emoji,
       })
     }
 
