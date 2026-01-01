@@ -145,13 +145,6 @@ function getTip(statId: StatId, state: GameState): string | null {
         return 'Add a 🗑️ Trash Can to help keep the park clean.'
       }
       break
-    case 'beauty':
-      if (state.stats.beauty < 50) {
-        const decor = availableBuildings.filter((b) => b.category === 'decor' && Building.canAfford(b, state))
-        if (decor[0]) return `Add a ${decor[0].emoji} ${decor[0].name} to beautify your park.`
-        return 'Build decorations to make your park more beautiful and boost appeal.'
-      }
-      break
   }
   return null
 }

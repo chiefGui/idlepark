@@ -74,6 +74,7 @@ export class Modifiers {
       'food',
       'comfort',
       'cleanliness',
+      'beauty',
       'appeal',
     ]
 
