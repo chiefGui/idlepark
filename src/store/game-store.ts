@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { GameState, DailyRecord, FinancialStats, FeedEntry, ServiceId, ServiceConfig } from '../engine/game-types'
+import type { GameState, DailyRecord, FinancialStats, FeedEntry, ServiceId, ServiceConfig, MarketingCampaignId } from '../engine/game-types'
 import { GameTypes } from '../engine/game-types'
 import { GameEvents } from '../engine/events'
 import { Effects } from '../engine/effects'
@@ -14,6 +14,7 @@ import { Timeline } from '../systems/timeline'
 import { Feed } from '../systems/feed'
 import { Happening } from '../systems/happening'
 import { Service } from '../systems/service'
+import { Marketing } from '../systems/marketing'
 
 const MAX_DAILY_RECORDS = 30
 
@@ -24,6 +25,7 @@ type GameActions = {
   purchasePerk: (perkId: string) => boolean
   setTicketPrice: (price: number) => void
   setServiceConfig: (serviceId: ServiceId, config: ServiceConfig) => void
+  startCampaign: (campaignId: MarketingCampaignId) => boolean
   addFeedEntry: (entry: FeedEntry) => void
   markFeedRead: () => void
   reset: () => void
@@ -60,6 +62,9 @@ const collectModifiers = (state: GameState): Modifier[] => {
   if (state.currentHappening) {
     modifiers.push(...Happening.getModifiers(state.currentHappening.happeningId))
   }
+
+  // Collect from active marketing campaign
+  modifiers.push(...Marketing.getModifiers(state))
 
   return modifiers
 }
@@ -254,6 +259,13 @@ export const useGameStore = create<GameStoreState>()(
             GameEvents.emit('happening:started', { happeningId: nextHappening.id })
           }
 
+          // Process marketing campaigns
+          let marketing = state.marketing
+          if (Marketing.shouldEndCampaign({ ...state, currentDay: newDay, marketing })) {
+            marketing = Marketing.endCampaign({ ...state, currentDay: newDay })
+            GameEvents.emit('marketing:ended', { campaignId: state.marketing?.activeCampaign?.campaignId })
+          }
+
           set({
             stats: finalStats,
             guestBreakdown,
@@ -267,7 +279,8 @@ export const useGameStore = create<GameStoreState>()(
             currentHappening,
             nextHappeningDay,
             lastHappeningType,
-            rates: computeRates({ ...updatedState, timeline, stats: finalStats, dailyRecords, financials, guestBreakdown, currentHappening, nextHappeningDay, lastHappeningType }),
+            marketing,
+            rates: computeRates({ ...updatedState, timeline, stats: finalStats, dailyRecords, financials, guestBreakdown, currentHappening, nextHappeningDay, lastHappeningType, marketing }),
           })
 
           GameEvents.emit('tick', { deltaDay })
@@ -447,6 +460,38 @@ export const useGameStore = create<GameStoreState>()(
           })
         },
 
+        startCampaign: (campaignId: MarketingCampaignId) => {
+          const state = get()
+          const campaign = Marketing.getById(campaignId)
+
+          if (!campaign) return false
+
+          const { canBuy } = Marketing.canPurchase(campaign, state)
+          if (!canBuy) return false
+
+          const newStats = { ...state.stats }
+          newStats.money -= campaign.cost
+
+          const marketing = Marketing.startCampaign(campaign, state)
+          const financials = {
+            ...state.financials,
+            totalInvested: state.financials.totalInvested + campaign.cost,
+          }
+
+          const newState = { ...state, stats: newStats, marketing, financials }
+
+          set({
+            stats: newStats,
+            marketing,
+            financials,
+            rates: computeRates(newState),
+          })
+
+          GameEvents.emit('marketing:started', { campaignId })
+          GameEvents.emit('money:changed', { amount: -campaign.cost, reason: 'marketing' })
+          return true
+        },
+
         addFeedEntry: (entry: FeedEntry) => {
           const state = get()
           const feedEntries = Feed.addEntry(state.feedEntries, entry)
@@ -502,6 +547,7 @@ export const useGameStore = create<GameStoreState>()(
         slots: state.slots,
         ownedPerks: state.ownedPerks,
         services: state.services,
+        marketing: state.marketing,
         timeline: state.timeline,
         dailyRecords: state.dailyRecords,
         financials: state.financials,

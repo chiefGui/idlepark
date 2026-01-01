@@ -8,6 +8,7 @@ export type ModifierSource =
   | { type: 'guest' }
   | { type: 'happening'; happeningId: string }
   | { type: 'service' }
+  | { type: 'marketing' }
 
 export type Modifier = {
   source: ModifierSource
@@ -34,6 +35,8 @@ function sourceEquals(a: ModifierSource, b: ModifierSource): boolean {
       return b.type === 'happening' && a.happeningId === b.happeningId
     case 'service':
       return b.type === 'service'
+    case 'marketing':
+      return b.type === 'marketing'
   }
 }
 
