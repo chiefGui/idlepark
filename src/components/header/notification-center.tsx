@@ -10,7 +10,7 @@ const ACTION_TO_SCREEN: Record<NotificationAction, DrawerScreen> = {
 }
 
 export function NotificationCenter() {
-  const popover = Ariakit.usePopoverStore()
+  const popover = Ariakit.usePopoverStore({ placement: 'bottom-start' })
   const isOpen = popover.useState('open')
   const state = useGameStore()
   const navigateTo = useDrawerNavigation()
@@ -53,7 +53,6 @@ export function NotificationCenter() {
           <Ariakit.Popover
             portal
             gutter={8}
-            placement="bottom-start"
             unmountOnHide
             render={
               <motion.div
@@ -61,9 +60,9 @@ export function NotificationCenter() {
                 animate={{ opacity: 1, x: 0, scale: 1 }}
                 exit={{ opacity: 0, x: -10, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
+                className="w-72 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] shadow-xl overflow-hidden z-50 outline-none"
               />
             }
-            className="w-72 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] shadow-xl overflow-hidden z-50 outline-none"
           >
             <div className="px-3 py-2 border-b border-[var(--color-border)]">
               <Ariakit.PopoverHeading className="text-sm font-semibold">
