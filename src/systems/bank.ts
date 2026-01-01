@@ -9,7 +9,8 @@ export type LoanPackageDef = {
   id: BankLoanPackageId
   name: string
   emoji: string
-  incomeMultiplier: number  // Loan = X days of income
+  minAmount: number         // Minimum loan amount for this tier
+  incomeMultiplier: number  // Loan = X days of income (if higher than min)
   interestRate: number      // Interest rate (0.10 = 10%)
   duration: number          // Days to repay
   unlockMilestone: string   // Milestone required to unlock
@@ -18,18 +19,17 @@ export type LoanPackageDef = {
 // === BANK CLASS ===
 
 export class Bank {
-  // Minimum loan amount (floor for early game)
-  static readonly MIN_LOAN_AMOUNT = 250
-
   // Loan packages - unlock progressively, scale with income
+  // Each tier has a minimum amount + income-based scaling
   // Milestones: 50 → 100 → 200 → 400 → 700 → 1000
   static readonly STARTER: LoanPackageDef = {
     id: 'starter',
     name: 'Starter Loan',
     emoji: '🪙',
-    incomeMultiplier: 3,
+    minAmount: 3000,
+    incomeMultiplier: 10,
     interestRate: 0.05,
-    duration: 15,
+    duration: 20,
     unlockMilestone: 'guests_50',
   }
 
@@ -37,9 +37,10 @@ export class Bank {
     id: 'small',
     name: 'Small Loan',
     emoji: '💵',
-    incomeMultiplier: 7,
-    interestRate: 0.10,
-    duration: 20,
+    minAmount: 8000,
+    incomeMultiplier: 15,
+    interestRate: 0.08,
+    duration: 25,
     unlockMilestone: 'guests_100',
   }
 
@@ -47,9 +48,10 @@ export class Bank {
     id: 'medium',
     name: 'Medium Loan',
     emoji: '💰',
-    incomeMultiplier: 15,
-    interestRate: 0.15,
-    duration: 30,
+    minAmount: 20000,
+    incomeMultiplier: 25,
+    interestRate: 0.12,
+    duration: 35,
     unlockMilestone: 'guests_200',
   }
 
@@ -57,9 +59,10 @@ export class Bank {
     id: 'large',
     name: 'Large Loan',
     emoji: '💎',
-    incomeMultiplier: 25,
-    interestRate: 0.20,
-    duration: 40,
+    minAmount: 50000,
+    incomeMultiplier: 35,
+    interestRate: 0.15,
+    duration: 45,
     unlockMilestone: 'guests_400',
   }
 
@@ -67,9 +70,10 @@ export class Bank {
     id: 'major',
     name: 'Major Loan',
     emoji: '🏦',
-    incomeMultiplier: 40,
-    interestRate: 0.25,
-    duration: 50,
+    minAmount: 100000,
+    incomeMultiplier: 50,
+    interestRate: 0.18,
+    duration: 55,
     unlockMilestone: 'guests_700',
   }
 
@@ -77,9 +81,10 @@ export class Bank {
     id: 'mega',
     name: 'Mega Loan',
     emoji: '👑',
-    incomeMultiplier: 60,
-    interestRate: 0.30,
-    duration: 60,
+    minAmount: 200000,
+    incomeMultiplier: 75,
+    interestRate: 0.22,
+    duration: 70,
     unlockMilestone: 'guests_1000',
   }
 
@@ -125,11 +130,12 @@ export class Bank {
 
   /**
    * Calculate loan amount based on current income
+   * Uses per-tier minimum or income-based amount (whichever is higher)
    */
   static getLoanAmount(pkg: LoanPackageDef, state: GameState): number {
     const dailyIncome = this.getDailyIncome(state)
-    const amount = dailyIncome * pkg.incomeMultiplier
-    return Math.max(this.MIN_LOAN_AMOUNT, Math.floor(amount))
+    const incomeBasedAmount = dailyIncome * pkg.incomeMultiplier
+    return Math.max(pkg.minAmount, Math.floor(incomeBasedAmount))
   }
 
   /**
