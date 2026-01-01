@@ -29,11 +29,11 @@ export class Building {
     emoji: '🎡',
     description: 'A scenic ride with great views',
     category: 'rides',
-    costs: [{ statId: 'money', amount: 200 }],
+    costs: [{ statId: 'money', amount: 350 }],
     effects: [
-      { statId: 'money', perDay: -8 },
-      { statId: 'entertainment', perDay: 35 },
-      { statId: 'appeal', perDay: 2 },
+      { statId: 'money', perDay: -12 },
+      { statId: 'entertainment', perDay: 45 },
+      { statId: 'appeal', perDay: 4 },
     ],
     requirements: [],
   }
@@ -64,6 +64,54 @@ export class Building {
       { statId: 'entertainment', perDay: 30 },
     ],
     requirements: [],
+  }
+
+  // === INTENSE RIDES ===
+  static readonly DROP_TOWER: BuildingDef = {
+    id: 'drop_tower',
+    name: 'Drop Tower',
+    emoji: '🗼',
+    description: 'The ground rushes up to meet you',
+    category: 'rides',
+    costs: [{ statId: 'money', amount: 3000 }],
+    effects: [
+      { statId: 'money', perDay: -25 },
+      { statId: 'entertainment', perDay: 100 },
+      { statId: 'comfort', perDay: -5 },
+      { statId: 'appeal', perDay: 5 },
+    ],
+    requirements: [{ type: 'perk', id: 'thrill_seekers' }],
+  }
+
+  static readonly PENDULUM_FURY: BuildingDef = {
+    id: 'pendulum_fury',
+    name: 'Pendulum Fury',
+    emoji: '🎡',
+    description: 'Swing to the edge of the sky',
+    category: 'rides',
+    costs: [{ statId: 'money', amount: 2500 }],
+    effects: [
+      { statId: 'money', perDay: -20 },
+      { statId: 'entertainment', perDay: 75 },
+      { statId: 'comfort', perDay: -8 },
+    ],
+    requirements: [{ type: 'perk', id: 'thrill_seekers' }],
+  }
+
+  static readonly RAPIDS_RUN: BuildingDef = {
+    id: 'rapids_run',
+    name: 'Rapids Run',
+    emoji: '🌊',
+    description: 'Hold on tight—you WILL get soaked',
+    category: 'rides',
+    costs: [{ statId: 'money', amount: 3500 }],
+    effects: [
+      { statId: 'money', perDay: -30 },
+      { statId: 'entertainment', perDay: 90 },
+      { statId: 'cleanliness', perDay: 10 },
+      { statId: 'comfort', perDay: 5 },
+    ],
+    requirements: [{ type: 'perk', id: 'thrill_seekers' }],
   }
 
   // === FOOD ===
@@ -392,6 +440,10 @@ export class Building {
     Building.FERRIS_WHEEL,
     Building.ROLLER_COASTER,
     Building.BUMPER_CARS,
+    // Intense Rides
+    Building.DROP_TOWER,
+    Building.PENDULUM_FURY,
+    Building.RAPIDS_RUN,
     // Food
     Building.FOOD_STAND,
     Building.ICE_CREAM,
