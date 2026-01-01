@@ -8,6 +8,7 @@ export type NotificationType =
   | 'capacity_full'
   | 'low_cleanliness'
   | 'unhappy_guests'
+  | 'need_rides'
 
 export type NotificationAction = 'perks'
 
@@ -22,6 +23,7 @@ export type Notification = {
 const CLEANLINESS_THRESHOLD = 35
 const UNHAPPY_GUEST_RATIO = 0.15 // 15% of guests
 const UNHAPPY_GUEST_MIN = 3 // At least 3 guests to show notification
+const ENTERTAINMENT_SUPPLY_THRESHOLD = 0.6 // Below 60% supply triggers warning
 
 export class Notifications {
   /**
@@ -57,6 +59,15 @@ export class Notifications {
       notifications.push({
         id: 'low_cleanliness',
         message: 'Park is getting dirty! Guests are unhappy.',
+      })
+    }
+
+    // Not enough entertainment (rides) for guests
+    const entertainmentRatio = Guest.getSupplyRatio('entertainment', state)
+    if (entertainmentRatio < ENTERTAINMENT_SUPPLY_THRESHOLD && state.stats.guests >= 10) {
+      notifications.push({
+        id: 'need_rides',
+        message: 'Guests are bored! Build more rides.',
       })
     }
 

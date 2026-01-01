@@ -512,6 +512,40 @@ export class Building {
 
     return effects
   }
+
+  /**
+   * Count unique ride types in the park.
+   * Returns { uniqueRides: number, totalRides: number }
+   */
+  static getRideStats(state: GameState): { uniqueRides: number; totalRides: number } {
+    const rideIds = new Set<string>()
+    let totalRides = 0
+
+    for (const slot of state.slots) {
+      if (slot.buildingId) {
+        const building = this.getById(slot.buildingId)
+        if (building?.category === 'rides') {
+          rideIds.add(slot.buildingId)
+          totalRides++
+        }
+      }
+    }
+
+    return { uniqueRides: rideIds.size, totalRides }
+  }
+
+  /**
+   * Calculate variety multiplier for entertainment.
+   * More unique rides = higher multiplier.
+   * 1 ride = 1.0x, 2 rides = 1.15x, 3 rides = 1.25x, 4 rides = 1.35x
+   */
+  static getVarietyMultiplier(state: GameState): number {
+    const { uniqueRides } = this.getRideStats(state)
+    if (uniqueRides <= 1) return 1.0
+    // Diminishing returns: each additional unique ride adds less
+    // 2 = 1.15, 3 = 1.25, 4 = 1.35, 5 = 1.43, etc.
+    return 1 + (Math.log2(uniqueRides) * 0.2)
+  }
 }
 
 export type DisplayEffect = {
