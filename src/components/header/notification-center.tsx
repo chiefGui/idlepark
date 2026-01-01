@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import * as Ariakit from '@ariakit/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, ChevronRight } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
@@ -10,42 +10,31 @@ const ACTION_TO_SCREEN: Record<NotificationAction, DrawerScreen> = {
 }
 
 export function NotificationCenter() {
-  const [isOpen, setIsOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const popover = Ariakit.usePopoverStore()
+  const isOpen = popover.useState('open')
   const state = useGameStore()
   const navigateTo = useDrawerNavigation()
 
   const notifications = Notifications.getActive(state)
   const count = notifications.length
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false)
-      }
-    }
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isOpen])
-
   const handleAction = (notification: Notification) => {
     if (notification.action) {
       const screen = ACTION_TO_SCREEN[notification.action]
       navigateTo(screen)
-      setIsOpen(false)
+      popover.hide()
     }
   }
 
   return (
-    <div ref={containerRef} className="relative">
-      <motion.button
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 hover:bg-[var(--color-surface-hover)] rounded-xl transition-colors"
+    <Ariakit.PopoverProvider store={popover}>
+      <Ariakit.PopoverDisclosure
+        render={
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            className="relative p-2 hover:bg-[var(--color-surface-hover)] rounded-xl transition-colors"
+          />
+        }
       >
         <Bell size={20} className={count > 0 ? 'text-[var(--color-warning)]' : 'text-[var(--color-text-muted)]'} />
         {count > 0 && (
@@ -57,19 +46,29 @@ export function NotificationCenter() {
             {count > 9 ? '9+' : count}
           </motion.span>
         )}
-      </motion.button>
+      </Ariakit.PopoverDisclosure>
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute top-full right-0 mt-2 w-72 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] shadow-xl overflow-hidden z-50"
+          <Ariakit.Popover
+            portal
+            gutter={8}
+            placement="bottom-start"
+            unmountOnHide
+            render={
+              <motion.div
+                initial={{ opacity: 0, x: -10, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: -10, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+              />
+            }
+            className="w-72 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] shadow-xl overflow-hidden z-50 outline-none"
           >
             <div className="px-3 py-2 border-b border-[var(--color-border)]">
-              <span className="text-sm font-semibold">Notifications</span>
+              <Ariakit.PopoverHeading className="text-sm font-semibold">
+                Notifications
+              </Ariakit.PopoverHeading>
             </div>
 
             <div className="max-h-80 overflow-auto">
@@ -101,9 +100,9 @@ export function NotificationCenter() {
                 ))
               )}
             </div>
-          </motion.div>
+          </Ariakit.Popover>
         )}
       </AnimatePresence>
-    </div>
+    </Ariakit.PopoverProvider>
   )
 }
