@@ -43,8 +43,8 @@ export class Guest {
 
   static readonly DEMANDS: GuestDemand[] = [
     { statId: 'entertainment', perGuest: 0.5 },
-    { statId: 'food', perGuest: 0.3 },
-    { statId: 'comfort', perGuest: 0.2 },
+    { statId: 'food', perGuest: 0.5 },      // Increased from 0.3 - guests eat a lot at theme parks!
+    { statId: 'comfort', perGuest: 0.3 },   // Increased from 0.2 - rest areas matter
   ]
 
   // Consequences for undersupply - when supply ratio falls below threshold,
@@ -53,8 +53,11 @@ export class Guest {
     // Entertainment is critical - theme parks need rides!
     { statId: 'entertainment', threshold: 0.5, appealCap: 40 },  // Below 50% = cap at 40
     { statId: 'entertainment', threshold: 0.25, appealCap: 20 }, // Below 25% = cap at 20 (crisis)
-    { statId: 'food', threshold: 0.3, appealCap: 25 },
-    { statId: 'comfort', threshold: 0.2, appealCap: 35 },
+    // Food is important - hungry guests are unhappy guests
+    { statId: 'food', threshold: 0.5, appealCap: 35 },           // Below 50% = cap at 35
+    { statId: 'food', threshold: 0.25, appealCap: 20 },          // Below 25% = cap at 20 (crisis)
+    // Comfort matters but less urgently
+    { statId: 'comfort', threshold: 0.4, appealCap: 40 },        // Below 40% = cap at 40
   ]
 
   static getTicketPriceMultiplier(ticketPrice: number): number {
