@@ -24,7 +24,7 @@ export function DayProgress() {
         {/* Date Info */}
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-medium">
-            {Calendar.getDayOfWeekShort(currentDay)}, {Calendar.formatShort(currentDay)}
+            {Calendar.getMonthFull(currentDay)} {calendar.dayOfMonth}
           </span>
           <span className="text-xs text-[var(--color-text-muted)]">
             {calendar.year}
