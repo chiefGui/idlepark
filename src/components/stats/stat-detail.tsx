@@ -80,6 +80,10 @@ function getStatSources(statId: StatId, state: GameState, ticketPrice: number): 
     sources.push({ emoji: '👥', name: 'Guest mess', amount: -state.stats.guests * 0.1 })
   }
 
+  if (statId === 'beauty' && state.stats.guests > 0) {
+    sources.push({ emoji: '👥', name: 'Crowd wear & tear', amount: -state.stats.guests * 0.03 })
+  }
+
   return sources.sort((a, b) => {
     if (a.amount >= 0 && b.amount < 0) return -1
     if (a.amount < 0 && b.amount >= 0) return 1
