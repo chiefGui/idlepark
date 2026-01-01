@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Zap, Users, DollarSign, Lock, ChevronLeft, Check } from 'lucide-react'
+import { Zap, Users, DollarSign, Lock, ChevronLeft } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { Service } from '../../systems/service'
 import { Marketing } from '../../systems/marketing'
@@ -319,27 +319,23 @@ export function MarketingContent() {
   const isCooldownActive = cooldownRemaining > 0 && !activeCampaign
 
   return (
-    <div className="space-y-3">
-      {/* Active Campaign or Cooldown Status */}
+    <div className="space-y-2">
+      {/* Status bar */}
       {activeCampaign && (
-        <div className="flex items-center justify-between p-3 rounded-lg bg-purple-500/20 border border-purple-500/30">
-          <div className="flex items-center gap-2">
-            <span>{activeCampaign.emoji}</span>
-            <span className="font-medium text-purple-200">{activeCampaign.name}</span>
-          </div>
-          <span className="text-sm text-purple-300">{Math.ceil(daysRemaining)}d left</span>
+        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-purple-500/20 text-sm">
+          <span className="text-purple-200">{activeCampaign.emoji} {activeCampaign.name} running</span>
+          <span className="text-purple-300">{Math.ceil(daysRemaining)} days left</span>
         </div>
       )}
-
       {isCooldownActive && (
-        <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-surface)] text-sm">
-          <span className="text-[var(--color-text-muted)]">Cooldown</span>
+        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[var(--color-surface)] text-sm text-[var(--color-text-muted)]">
+          <span>Cooldown active</span>
           <span>{Math.ceil(cooldownRemaining)} days</span>
         </div>
       )}
 
       {/* Campaign List */}
-      <div className="space-y-1">
+      <div className="space-y-2">
         {Marketing.ALL.map((campaign) => {
           const { canBuy, reason } = Marketing.canPurchase(campaign, state)
           const isActive = state.marketing?.activeCampaign?.campaignId === campaign.id
@@ -347,36 +343,31 @@ export function MarketingContent() {
           return (
             <div
               key={campaign.id}
-              className={`flex items-center gap-3 p-3 rounded-lg ${
-                isActive
-                  ? 'bg-purple-500/15'
-                  : 'bg-[var(--color-surface)]'
+              className={`p-3 rounded-xl ${
+                isActive ? 'bg-purple-500/15 ring-1 ring-purple-500/30' : 'bg-[var(--color-surface)]'
               }`}
             >
-              <span className="text-lg">{campaign.emoji}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium truncate">{campaign.name}</span>
-                  {isActive && <Check size={14} className="text-purple-400 shrink-0" />}
-                </div>
-                <div className="text-xs text-[var(--color-text-muted)]">
-                  {campaign.duration}d · +{Math.round(campaign.effects.guestArrivalBonus * 100)}% guests
-                  {campaign.effects.appealBonus > 0 && ` · +${campaign.effects.appealBonus} appeal`}
-                </div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-medium">{campaign.emoji} {campaign.name}</span>
+                {isActive ? (
+                  <span className="text-xs text-purple-400">Active</span>
+                ) : (
+                  <button
+                    onClick={() => startCampaign(campaign.id)}
+                    disabled={!canBuy}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                      canBuy
+                        ? 'bg-purple-500 text-white'
+                        : 'bg-[var(--color-text-muted)]/20 text-[var(--color-text-muted)]'
+                    }`}
+                  >
+                    {reason || Format.money(campaign.cost)}
+                  </button>
+                )}
               </div>
-              {!isActive && (
-                <button
-                  onClick={() => startCampaign(campaign.id)}
-                  disabled={!canBuy}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium shrink-0 ${
-                    canBuy
-                      ? 'bg-purple-500 text-white'
-                      : 'bg-[var(--color-text-muted)]/20 text-[var(--color-text-muted)]'
-                  }`}
-                >
-                  {reason || Format.money(campaign.cost)}
-                </button>
-              )}
+              <div className="text-sm text-[var(--color-text-muted)]">
+                +{Math.round(campaign.effects.guestArrivalBonus * 100)}% more guests for {campaign.duration} days
+              </div>
             </div>
           )
         })}
@@ -399,70 +390,62 @@ export function BankContent() {
     : 0
 
   return (
-    <div className="space-y-3">
-      {/* Active Loan or Cooldown Status */}
+    <div className="space-y-2">
+      {/* Status bar */}
       {activeLoan && (
-        <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/20 border border-emerald-500/30">
-          <div className="flex items-center gap-2">
-            <span>{Bank.getById(activeLoan.packageId)?.emoji ?? '💰'}</span>
-            <div>
-              <span className="font-medium text-emerald-200">{Bank.getById(activeLoan.packageId)?.name}</span>
-              <div className="text-xs text-emerald-300/70">{Format.money(activeLoan.dailyPayment)}/day</div>
-            </div>
+        <div className="px-3 py-2 rounded-lg bg-emerald-500/20 text-sm">
+          <div className="flex items-center justify-between text-emerald-200">
+            <span>Repaying {Bank.getById(activeLoan.packageId)?.name}</span>
+            <span>{daysRemaining} days left</span>
           </div>
-          <div className="text-right">
-            <div className="text-sm text-emerald-300">{daysRemaining}d left</div>
-            <div className="text-xs text-emerald-300/70">{Format.money(activeLoan.remainingAmount)}</div>
+          <div className="flex items-center justify-between text-emerald-300/70 text-xs mt-1">
+            <span>{Format.money(activeLoan.dailyPayment)} per day</span>
+            <span>{Format.money(activeLoan.remainingAmount)} remaining</span>
           </div>
         </div>
       )}
-
       {isCooldownActive && (
-        <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-surface)] text-sm">
-          <span className="text-[var(--color-text-muted)]">Cooldown</span>
+        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[var(--color-surface)] text-sm text-[var(--color-text-muted)]">
+          <span>Cooldown active</span>
           <span>{Math.ceil(cooldownRemaining)} days</span>
         </div>
       )}
 
       {/* Loan List */}
-      <div className="space-y-1">
+      <div className="space-y-2">
         {Bank.ALL.map((pkg) => {
           const { canBuy, reason } = Bank.canTakeLoan(pkg, state)
           const isActive = state.bankLoan?.packageId === pkg.id
-          const dailyPayment = Bank.getDailyPayment(pkg)
+          const totalRepayment = Bank.getTotalRepayment(pkg)
 
           return (
             <div
               key={pkg.id}
-              className={`flex items-center gap-3 p-3 rounded-lg ${
-                isActive
-                  ? 'bg-emerald-500/15'
-                  : 'bg-[var(--color-surface)]'
+              className={`p-3 rounded-xl ${
+                isActive ? 'bg-emerald-500/15 ring-1 ring-emerald-500/30' : 'bg-[var(--color-surface)]'
               }`}
             >
-              <span className="text-lg">{pkg.emoji}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium truncate">{pkg.name}</span>
-                  {isActive && <Check size={14} className="text-emerald-400 shrink-0" />}
-                </div>
-                <div className="text-xs text-[var(--color-text-muted)]">
-                  {pkg.duration}d · {Math.round(pkg.interestRate * 100)}% · {Format.money(dailyPayment)}/day
-                </div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-medium">{pkg.emoji} Borrow {Format.money(pkg.amount)}</span>
+                {isActive ? (
+                  <span className="text-xs text-emerald-400">Active</span>
+                ) : (
+                  <button
+                    onClick={() => takeLoan(pkg.id)}
+                    disabled={!canBuy}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                      canBuy
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-[var(--color-text-muted)]/20 text-[var(--color-text-muted)]'
+                    }`}
+                  >
+                    {reason || 'Borrow'}
+                  </button>
+                )}
               </div>
-              {!isActive && (
-                <button
-                  onClick={() => takeLoan(pkg.id)}
-                  disabled={!canBuy}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium shrink-0 ${
-                    canBuy
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-[var(--color-text-muted)]/20 text-[var(--color-text-muted)]'
-                  }`}
-                >
-                  {reason || Format.money(pkg.amount)}
-                </button>
-              )}
+              <div className="text-sm text-[var(--color-text-muted)]">
+                Pay back {Format.money(totalRepayment)} over {pkg.duration} days
+              </div>
             </div>
           )
         })}
