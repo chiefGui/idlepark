@@ -211,8 +211,8 @@ export const useGameStore = create<GameStoreState>()(
 
           const finalStats = newStats
 
-          // Update financials
-          const financials: FinancialStats = {
+          // Update financials (mutable - loan repayment will update later)
+          let financials: FinancialStats = {
             ...state.financials,
             totalEarned: state.financials.totalEarned + guestIncome + serviceBoost,
             totalUpkeepPaid: state.financials.totalUpkeepPaid + buildingUpkeep,
@@ -285,6 +285,11 @@ export const useGameStore = create<GameStoreState>()(
             const loanPackageId = bankLoan.packageId
             const repaymentResult = Bank.processDailyRepayment({ ...state, bankLoan })
             finalStats.money -= repaymentResult.amountPaid
+            // Track loan repayments in financials
+            financials = {
+              ...financials,
+              totalLoanRepaid: financials.totalLoanRepaid + repaymentResult.amountPaid,
+            }
             if (repaymentResult.newState.bankLoan !== undefined) {
               bankLoan = repaymentResult.newState.bankLoan
             }
@@ -542,12 +547,19 @@ export const useGameStore = create<GameStoreState>()(
             startDay: state.currentDay,
           }
 
-          const newState = { ...state, stats: newStats, bankLoan }
+          const financials = {
+            ...state.financials,
+            totalBorrowed: state.financials.totalBorrowed + loanAmount,
+            peakMoney: Math.max(state.financials.peakMoney, newStats.money),
+          }
+
+          const newState = { ...state, stats: newStats, bankLoan, financials }
 
           const computed = computeRatesAndModifiers(newState)
           set({
             stats: newStats,
             bankLoan,
+            financials,
             rates: computed.rates,
             modifiers: computed.modifiers,
           })
