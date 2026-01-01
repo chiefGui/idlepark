@@ -83,17 +83,17 @@ export class Building {
     requirements: [{ type: 'perk', id: 'thrill_seekers' }],
   }
 
-  static readonly HAUNTED_MANOR: BuildingDef = {
-    id: 'haunted_manor',
-    name: 'Haunted Manor',
-    emoji: '👻',
-    description: 'Screams echo through cobwebbed halls',
+  static readonly PENDULUM_FURY: BuildingDef = {
+    id: 'pendulum_fury',
+    name: 'Pendulum Fury',
+    emoji: '🎡',
+    description: 'Swing to the edge of the sky',
     category: 'rides',
     costs: [{ statId: 'money', amount: 2500 }],
     effects: [
       { statId: 'money', perDay: -20 },
-      { statId: 'entertainment', perDay: 70 },
-      { statId: 'beauty', perDay: 15 },
+      { statId: 'entertainment', perDay: 75 },
+      { statId: 'comfort', perDay: -8 },
     ],
     requirements: [{ type: 'perk', id: 'thrill_seekers' }],
   }
@@ -442,7 +442,7 @@ export class Building {
     Building.BUMPER_CARS,
     // Intense Rides
     Building.DROP_TOWER,
-    Building.HAUNTED_MANOR,
+    Building.PENDULUM_FURY,
     Building.RAPIDS_RUN,
     // Food
     Building.FOOD_STAND,
