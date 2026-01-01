@@ -2,6 +2,7 @@ import type { StatId, GameState, GuestBreakdown, GuestMood } from '../engine/gam
 import { GameTypes } from '../engine/game-types'
 import type { Modifier } from '../engine/modifiers'
 import { Building } from './building'
+import { Happening } from './happening'
 import { Marketing } from './marketing'
 import { Perk } from './perk'
 import { Service } from './service'
@@ -158,8 +159,9 @@ export class Guest {
     const appealFactor = state.stats.appeal / this.APPEAL_BASELINE
     const valueFactor = this.getArrivalPenalty(state)
     const marketingBonus = 1 + Marketing.getArrivalBonus(state)
+    const happeningMultiplier = Happening.getArrivalMultiplier(state)
 
-    return this.BASE_ARRIVAL_RATE * appealFactor * valueFactor * marketingBonus
+    return this.BASE_ARRIVAL_RATE * appealFactor * valueFactor * marketingBonus * happeningMultiplier
   }
 
   static calculateIncomeWithEntertainment(
@@ -476,11 +478,13 @@ export class Guest {
 
   static getModifiers(state: GameState): Modifier[] {
     const totalGuests = this.getTotalGuests(state)
-    const income = this.calculateIncomeWithEntertainment(
+    const baseIncome = this.calculateIncomeWithEntertainment(
       totalGuests,
       state.ticketPrice,
       state.stats.entertainment
     )
+    // Apply happening ticket income multiplier
+    const income = baseIncome * Happening.getTicketIncomeMultiplier(state)
 
     const source = { type: 'guest' as const }
 

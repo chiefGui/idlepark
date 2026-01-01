@@ -3,7 +3,7 @@
  * The park opens on January 1st, 2026 - Day 1 = Jan 1, 2026.
  */
 
-export type Season = 'spring' | 'summer' | 'fall' | 'winter'
+import type { Season } from '../engine/game-types'
 
 export type CalendarDate = {
   /** Game day (1-indexed) */
