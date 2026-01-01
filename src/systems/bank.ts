@@ -1,6 +1,7 @@
 import type { GameState, BankLoanPackageId } from '../engine/game-types'
 import { GameTypes } from '../engine/game-types'
 import { Timeline } from './timeline'
+import { Guest } from './guest'
 
 // === BANK TYPES ===
 
@@ -8,20 +9,23 @@ export type LoanPackageDef = {
   id: BankLoanPackageId
   name: string
   emoji: string
-  amount: number        // Loan amount
-  interestRate: number  // Interest rate (0.10 = 10%)
-  duration: number      // Days to repay
+  incomeMultiplier: number  // Loan = X days of income
+  interestRate: number      // Interest rate (0.10 = 10%)
+  duration: number          // Days to repay
 }
 
 // === BANK CLASS ===
 
 export class Bank {
-  // Loan packages
+  // Minimum loan amount (floor for early game)
+  static readonly MIN_LOAN_AMOUNT = 500
+
+  // Loan packages - amounts scale with daily income
   static readonly SMALL: LoanPackageDef = {
     id: 'small',
     name: 'Small Loan',
     emoji: '💵',
-    amount: 1000,
+    incomeMultiplier: 5,    // 5 days of income
     interestRate: 0.10,
     duration: 20,
   }
@@ -30,7 +34,7 @@ export class Bank {
     id: 'medium',
     name: 'Medium Loan',
     emoji: '💰',
-    amount: 5000,
+    incomeMultiplier: 15,   // 15 days of income
     interestRate: 0.15,
     duration: 30,
   }
@@ -39,9 +43,9 @@ export class Bank {
     id: 'large',
     name: 'Large Loan',
     emoji: '🏦',
-    amount: 15000,
+    incomeMultiplier: 30,   // 30 days of income
     interestRate: 0.25,
-    duration: 40,
+    duration: 45,
   }
 
   static readonly ALL: LoanPackageDef[] = [
@@ -55,17 +59,40 @@ export class Bank {
   }
 
   /**
+   * Get estimated daily income for loan calculation
+   */
+  static getDailyIncome(state: GameState): number {
+    const guests = GameTypes.getTotalGuests(state.guestBreakdown)
+    const baseIncome = Guest.calculateIncomeWithEntertainment(
+      guests,
+      state.ticketPrice,
+      state.stats.entertainment
+    )
+    return Math.max(baseIncome, 50) // Floor of $50/day for calculations
+  }
+
+  /**
+   * Calculate loan amount based on current income
+   */
+  static getLoanAmount(pkg: LoanPackageDef, state: GameState): number {
+    const dailyIncome = this.getDailyIncome(state)
+    const amount = dailyIncome * pkg.incomeMultiplier
+    return Math.max(this.MIN_LOAN_AMOUNT, Math.floor(amount))
+  }
+
+  /**
    * Calculate total repayment amount (principal + interest)
    */
-  static getTotalRepayment(pkg: LoanPackageDef): number {
-    return pkg.amount * (1 + pkg.interestRate)
+  static getTotalRepayment(pkg: LoanPackageDef, state: GameState): number {
+    const amount = this.getLoanAmount(pkg, state)
+    return Math.floor(amount * (1 + pkg.interestRate))
   }
 
   /**
    * Calculate daily payment
    */
-  static getDailyPayment(pkg: LoanPackageDef): number {
-    return this.getTotalRepayment(pkg) / pkg.duration
+  static getDailyPayment(pkg: LoanPackageDef, state: GameState): number {
+    return Math.ceil(this.getTotalRepayment(pkg, state) / pkg.duration)
   }
 
   /**
@@ -87,9 +114,7 @@ export class Bank {
    */
   static getLoanDaysRemaining(state: GameState): number {
     if (!state.bankLoan) return 0
-    const daysElapsed = state.currentDay - state.bankLoan.startDay
-    const totalDays = Math.ceil(state.bankLoan.remainingAmount / state.bankLoan.dailyPayment)
-    return Math.max(0, totalDays - daysElapsed)
+    return Math.ceil(state.bankLoan.remainingAmount / state.bankLoan.dailyPayment)
   }
 
   /**
@@ -113,21 +138,20 @@ export class Bank {
    */
   static canTakeLoan(_pkg: LoanPackageDef, state: GameState): { canBuy: boolean; reason?: string } {
     if (!this.isUnlocked(state)) {
-      return { canBuy: false, reason: 'Reach 50 guests to unlock' }
+      return { canBuy: false, reason: 'Reach 50 guests' }
     }
     if (this.hasActiveLoan(state)) {
-      return { canBuy: false, reason: 'Repay current loan first' }
+      return { canBuy: false, reason: 'Repay first' }
     }
     if (this.isOnCooldown(state)) {
       const days = this.getCooldownRemaining(state)
-      return { canBuy: false, reason: `${Math.ceil(days)} day cooldown` }
+      return { canBuy: false, reason: `${Math.ceil(days)}d cooldown` }
     }
     return { canBuy: true }
   }
 
   /**
    * Process daily loan repayment
-   * Returns the amount deducted from money
    */
   static processDailyRepayment(state: GameState): { newState: Partial<GameState>; amountPaid: number } {
     if (!state.bankLoan) {
@@ -138,7 +162,6 @@ export class Bank {
     const newRemaining = state.bankLoan.remainingAmount - payment
 
     if (newRemaining <= 0) {
-      // Loan fully repaid
       return {
         newState: {
           bankLoan: null,
@@ -148,7 +171,6 @@ export class Bank {
       }
     }
 
-    // Continue paying
     return {
       newState: {
         bankLoan: {

@@ -416,7 +416,8 @@ export function BankContent() {
         {Bank.ALL.map((pkg) => {
           const { canBuy, reason } = Bank.canTakeLoan(pkg, state)
           const isActive = state.bankLoan?.packageId === pkg.id
-          const totalRepayment = Bank.getTotalRepayment(pkg)
+          const loanAmount = Bank.getLoanAmount(pkg, state)
+          const totalRepayment = Bank.getTotalRepayment(pkg, state)
 
           return (
             <div
@@ -426,7 +427,7 @@ export function BankContent() {
               }`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="font-medium">{pkg.emoji} Borrow {Format.money(pkg.amount)}</span>
+                <span className="font-medium">{pkg.emoji} Borrow {Format.money(loanAmount)}</span>
                 {isActive ? (
                   <span className="text-xs text-emerald-400">Active</span>
                 ) : (

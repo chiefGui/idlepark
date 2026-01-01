@@ -531,13 +531,14 @@ export const useGameStore = create<GameStoreState>()(
           const { canBuy } = Bank.canTakeLoan(pkg, state)
           if (!canBuy) return false
 
+          const loanAmount = Bank.getLoanAmount(pkg, state)
           const newStats = { ...state.stats }
-          newStats.money += pkg.amount
+          newStats.money += loanAmount
 
           const bankLoan = {
             packageId,
-            remainingAmount: Bank.getTotalRepayment(pkg),
-            dailyPayment: Bank.getDailyPayment(pkg),
+            remainingAmount: Bank.getTotalRepayment(pkg, state),
+            dailyPayment: Bank.getDailyPayment(pkg, state),
             startDay: state.currentDay,
           }
 
@@ -551,8 +552,8 @@ export const useGameStore = create<GameStoreState>()(
             modifiers: computed.modifiers,
           })
 
-          GameEvents.emit('bank:loan_taken', { packageId, amount: pkg.amount })
-          GameEvents.emit('money:changed', { amount: pkg.amount, reason: 'loan' })
+          GameEvents.emit('bank:loan_taken', { packageId, amount: loanAmount })
+          GameEvents.emit('money:changed', { amount: loanAmount, reason: 'loan' })
           return true
         },
 
