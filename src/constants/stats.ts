@@ -5,6 +5,7 @@ import {
   UtensilsCrossed,
   Sofa,
   Sparkle,
+  Flower2,
   Star,
 } from 'lucide-react'
 import type { StatId } from '../engine/game-types'
@@ -58,19 +59,26 @@ export const STAT_CONFIG: Record<StatId, StatConfig> = {
     color: '#22d3ee',
     format: Format.percent,
   },
+  beauty: {
+    icon: Flower2,
+    label: 'Beauty',
+    color: '#ec4899',
+    format: Format.percent,
+  },
   appeal: {
     icon: Star,
     label: 'Appeal',
     color: '#fbbf24',
-    format: Format.percent,
+    format: Format.number,
   },
 }
 
-/** Stats shown in the compact secondary bar */
+/** Stats shown in the compact secondary bar (ordered by importance) */
 export const SECONDARY_STATS: StatId[] = [
-  'appeal',
-  'entertainment',
+  'appeal',       // outcome metric
+  'entertainment', // consumption stats
   'food',
   'comfort',
-  'cleanliness',
+  'cleanliness',  // condition stats
+  'beauty',
 ]

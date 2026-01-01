@@ -76,6 +76,7 @@ const emptyRates = (): ComputedRates => ({
   food: 0,
   comfort: 0,
   cleanliness: 0,
+  beauty: 0,
   appeal: 0,
 })
 

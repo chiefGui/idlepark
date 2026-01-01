@@ -5,6 +5,7 @@ export type StatId =
   | 'food'
   | 'comfort'
   | 'cleanliness'
+  | 'beauty'
   | 'appeal'
 
 export type BuildingCategory = 'rides' | 'food' | 'facilities' | 'decor' | 'lodging'
@@ -200,6 +201,7 @@ export class GameTypes {
     'food',
     'comfort',
     'cleanliness',
+    'beauty',
     'appeal',
   ]
 
@@ -230,6 +232,7 @@ export class GameTypes {
       food: 0,
       comfort: 0,
       cleanliness: 100,
+      beauty: 0,
       appeal: 0,
     }
   }
