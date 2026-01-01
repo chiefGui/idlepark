@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { GameState, DailyRecord, FinancialStats, FeedEntry, MarketingCampaignId, FastPassTier } from '../engine/game-types'
+import type { GameState, DailyRecord, FinancialStats, FeedEntry, MarketingCampaignId, FastPassTier, BankLoanPackageId } from '../engine/game-types'
 import { GameTypes } from '../engine/game-types'
 import { GameEvents } from '../engine/events'
 import { Effects } from '../engine/effects'
@@ -15,6 +15,7 @@ import { Feed } from '../systems/feed'
 import { Happening } from '../systems/happening'
 import { Service } from '../systems/service'
 import { Marketing } from '../systems/marketing'
+import { Bank } from '../systems/bank'
 import { Season } from '../systems/season'
 
 const MAX_DAILY_RECORDS = 30
@@ -27,6 +28,7 @@ type GameActions = {
   setTicketPrice: (price: number) => void
   setFastPassTier: (tier: FastPassTier) => void
   startCampaign: (campaignId: MarketingCampaignId) => boolean
+  takeLoan: (packageId: BankLoanPackageId) => boolean
   addFeedEntry: (entry: FeedEntry) => void
   markFeedRead: () => void
   reset: () => void
@@ -277,7 +279,23 @@ export const useGameStore = create<GameStoreState>()(
             GameEvents.emit('marketing:ended', { campaignId: state.marketing?.activeCampaign?.campaignId })
           }
 
-          const computed = computeRatesAndModifiers({ ...updatedState, timeline, stats: finalStats, dailyRecords, financials, guestBreakdown, currentHappening, nextHappeningDay, lastHappeningType, marketing })
+          // Process bank loan repayment at day boundary
+          let bankLoan = state.bankLoan
+          let lastLoanRepaidDay = state.lastLoanRepaidDay
+          if (crossedDayBoundary && bankLoan) {
+            const loanPackageId = bankLoan.packageId
+            const repaymentResult = Bank.processDailyRepayment({ ...state, bankLoan })
+            finalStats.money -= repaymentResult.amountPaid
+            if (repaymentResult.newState.bankLoan !== undefined) {
+              bankLoan = repaymentResult.newState.bankLoan
+            }
+            if (repaymentResult.newState.lastLoanRepaidDay !== undefined) {
+              lastLoanRepaidDay = repaymentResult.newState.lastLoanRepaidDay
+              GameEvents.emit('bank:loan_repaid', { packageId: loanPackageId })
+            }
+          }
+
+          const computed = computeRatesAndModifiers({ ...updatedState, timeline, stats: finalStats, dailyRecords, financials, guestBreakdown, currentHappening, nextHappeningDay, lastHappeningType, marketing, bankLoan, lastLoanRepaidDay })
           set({
             stats: finalStats,
             guestBreakdown,
@@ -292,6 +310,8 @@ export const useGameStore = create<GameStoreState>()(
             nextHappeningDay,
             lastHappeningType,
             marketing,
+            bankLoan,
+            lastLoanRepaidDay,
             rates: computed.rates,
             modifiers: computed.modifiers,
           })
@@ -503,6 +523,40 @@ export const useGameStore = create<GameStoreState>()(
           return true
         },
 
+        takeLoan: (packageId: BankLoanPackageId) => {
+          const state = get()
+          const pkg = Bank.getById(packageId)
+
+          if (!pkg) return false
+
+          const { canBuy } = Bank.canTakeLoan(pkg, state)
+          if (!canBuy) return false
+
+          const newStats = { ...state.stats }
+          newStats.money += pkg.amount
+
+          const bankLoan = {
+            packageId,
+            remainingAmount: Bank.getTotalRepayment(pkg),
+            dailyPayment: Bank.getDailyPayment(pkg),
+            startDay: state.currentDay,
+          }
+
+          const newState = { ...state, stats: newStats, bankLoan }
+
+          const computed = computeRatesAndModifiers(newState)
+          set({
+            stats: newStats,
+            bankLoan,
+            rates: computed.rates,
+            modifiers: computed.modifiers,
+          })
+
+          GameEvents.emit('bank:loan_taken', { packageId, amount: pkg.amount })
+          GameEvents.emit('money:changed', { amount: pkg.amount, reason: 'loan' })
+          return true
+        },
+
         addFeedEntry: (entry: FeedEntry) => {
           const state = get()
           const feedEntries = Feed.addEntry(state.feedEntries, entry)
@@ -586,6 +640,9 @@ export const useGameStore = create<GameStoreState>()(
         consecutiveNegativeDays: state.consecutiveNegativeDays,
         gameOver: state.gameOver,
         ticketPrice: state.ticketPrice,
+        fastPassTier: state.fastPassTier,
+        bankLoan: state.bankLoan,
+        lastLoanRepaidDay: state.lastLoanRepaidDay,
         currentHappening: state.currentHappening,
         nextHappeningDay: state.nextHappeningDay,
         lastHappeningType: state.lastHappeningType,

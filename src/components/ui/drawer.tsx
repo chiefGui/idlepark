@@ -7,11 +7,11 @@ import { AnalyticsContent } from '../analytics/analytics-content'
 import { ParkSettingsContent } from '../park/park-settings-content'
 import { TimelineContent } from '../timeline/timeline-content'
 import { FeedContent } from '../feed/feed-content'
-import { ServicesContent, FastPassContent, MarketingContent } from '../services/services-content'
+import { ServicesContent, FastPassContent, MarketingContent, BankContent } from '../services/services-content'
 import { StatDetail } from '../stats/stat-detail'
 import { Drawer, type DrawerStore } from './primitives'
 
-export type DrawerScreen = 'menu' | 'milestones' | 'perks' | 'analytics' | 'park' | 'timeline' | 'feed' | 'services' | 'service_fast_pass' | 'service_marketing' | 'guests' | 'cleanliness'
+export type DrawerScreen = 'menu' | 'milestones' | 'perks' | 'analytics' | 'park' | 'timeline' | 'feed' | 'services' | 'service_bank' | 'service_fast_pass' | 'service_marketing' | 'guests' | 'cleanliness'
 
 type DrawerContextValue = {
   store: DrawerStore
@@ -92,6 +92,7 @@ const SCREEN_TITLES: Record<DrawerScreen, string> = {
   timeline: 'Timeline',
   feed: 'Feed',
   services: 'Services',
+  service_bank: 'Bank',
   service_fast_pass: 'Fast Pass',
   service_marketing: 'Marketing',
   guests: 'Guests',
@@ -197,6 +198,7 @@ function MenuDrawer() {
               {screen === 'perks' && <PerksContent />}
               {screen === 'analytics' && <AnalyticsContent />}
               {screen === 'services' && <ServicesContent onNavigate={setScreen} />}
+              {screen === 'service_bank' && <BankContent />}
               {screen === 'service_fast_pass' && <FastPassContent />}
               {screen === 'service_marketing' && <MarketingContent />}
               {screen === 'guests' && <StatDetail statId="guests" />}

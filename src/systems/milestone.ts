@@ -21,12 +21,36 @@ export class Milestone {
     condition: { type: 'stat', statId: 'guests', min: 10 },
   }
 
+  static readonly GUESTS_30: MilestoneDef = {
+    id: 'guests_30',
+    name: 'Building Momentum',
+    emoji: '📈',
+    description: 'Have 30 guests in your park',
+    condition: { type: 'stat', statId: 'guests', min: 30 },
+  }
+
+  static readonly GUESTS_40: MilestoneDef = {
+    id: 'guests_40',
+    name: 'Growing Crowd',
+    emoji: '👨‍👩‍👧‍👦',
+    description: 'Have 40 guests in your park',
+    condition: { type: 'stat', statId: 'guests', min: 40 },
+  }
+
   static readonly GUESTS_50: MilestoneDef = {
     id: 'guests_50',
     name: 'Crowd Pleaser',
     emoji: '🎊',
     description: 'Have 50 guests in your park',
     condition: { type: 'stat', statId: 'guests', min: 50 },
+  }
+
+  static readonly GUESTS_75: MilestoneDef = {
+    id: 'guests_75',
+    name: 'Thriving Park',
+    emoji: '🎯',
+    description: 'Have 75 guests in your park',
+    condition: { type: 'stat', statId: 'guests', min: 75 },
   }
 
   static readonly GUESTS_100: MilestoneDef = {
@@ -122,7 +146,10 @@ export class Milestone {
   static readonly ALL: MilestoneDef[] = [
     Milestone.FIRST_BUILDING,
     Milestone.GUESTS_10,
+    Milestone.GUESTS_30,
+    Milestone.GUESTS_40,
     Milestone.GUESTS_50,
+    Milestone.GUESTS_75,
     Milestone.GUESTS_100,
     Milestone.GUESTS_200,
     Milestone.GUESTS_300,

@@ -1,7 +1,7 @@
 import mitt from 'mitt'
-import type { FeedEntry } from './game-types'
+import type { FeedEntry, BankLoanPackageId } from './game-types'
 
-export type MoneyPopupReason = 'building' | 'perk' | 'milestone' | 'demolish' | 'marketing'
+export type MoneyPopupReason = 'building' | 'perk' | 'milestone' | 'demolish' | 'marketing' | 'loan'
 
 export type GameEventMap = {
   'tick': { deltaDay: number }
@@ -20,6 +20,8 @@ export type GameEventMap = {
   'happening:ended': { happeningId: string }
   'marketing:started': { campaignId: string }
   'marketing:ended': { campaignId: string | undefined }
+  'bank:loan_taken': { packageId: BankLoanPackageId; amount: number }
+  'bank:loan_repaid': { packageId: BankLoanPackageId }
   'money:changed': { amount: number; reason: MoneyPopupReason }
 }
 
