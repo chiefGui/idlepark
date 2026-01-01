@@ -168,9 +168,9 @@ export class Perk {
   }
 
   // Shop unlock perk
-  static readonly RETAIL_LICENSE: PerkDef = {
-    id: 'retail_license',
-    name: 'Retail License',
+  static readonly SHOPS_1: PerkDef = {
+    id: 'shops_1',
+    name: 'Shops I',
     emoji: '🛍️',
     description: 'Open shops that earn based on guest traffic',
     costs: [{ statId: 'money', amount: 2000 }],
@@ -191,7 +191,7 @@ export class Perk {
     Perk.FAST_PASS_UNLOCK,
     Perk.MARKETING_OFFICE,
     Perk.THRILL_SEEKERS,
-    Perk.RETAIL_LICENSE,
+    Perk.SHOPS_1,
   ]
 
   static getById(id: string): PerkDef | undefined {

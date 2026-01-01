@@ -1,4 +1,4 @@
-import type { ServiceId, ServiceConfig, ServiceState, GameState, MilestoneDef, FeedEventType } from '../engine/game-types'
+import type { ServiceId, GameState, MilestoneDef, FeedEventType } from '../engine/game-types'
 import type { Modifier } from '../engine/modifiers'
 import { Guest } from './guest'
 
@@ -10,18 +10,12 @@ export type ServiceDef = {
   emoji: string
   description: string
   perkId: string // Perk required to unlock this service
-  minPrice: number
-  maxPrice: number
-  defaultPrice: number
-  // How service stats scale with price/adoption
-  baseAdoption: number // Base adoption rate at default price (0-1)
-  capacityPerAdopter: number // Extra capacity per adopting guest
+  incomeBoostPercent: number // % boost to guest income
+  capacityBonus: number // Flat capacity bonus when active
 }
 
 export type ServiceStats = {
-  adoptionRate: number // 0-1, what % of guests adopt
-  adopters: number // Actual number of adopters
-  incomePerDay: number // Revenue from service
+  incomeBoostPercent: number // % boost to guest income
   capacityBonus: number // Extra guest capacity provided
 }
 
@@ -33,13 +27,10 @@ export class Service {
     id: 'fast_pass',
     name: 'Fast Pass',
     emoji: '⚡',
-    description: 'Let guests skip queues for a fee',
+    description: 'Boost guest income and park capacity',
     perkId: 'fast_pass_unlock',
-    minPrice: 5,
-    maxPrice: 25,
-    defaultPrice: 10,
-    baseAdoption: 0.3, // 30% at default price
-    capacityPerAdopter: 0.5, // Each adopter adds 0.5 effective capacity
+    incomeBoostPercent: 25, // +25% guest income
+    capacityBonus: 50, // +50 capacity
   }
 
   static readonly ALL: ServiceDef[] = [
@@ -72,124 +63,57 @@ export class Service {
   }
 
   /**
-   * Get default config for a service
+   * Get stats for a service (simple - just return the service's bonuses)
    */
-  static getDefaultConfig(service: ServiceDef): ServiceConfig {
+  static getStats(service: ServiceDef): ServiceStats {
     return {
-      price: service.defaultPrice,
+      incomeBoostPercent: service.incomeBoostPercent,
+      capacityBonus: service.capacityBonus,
     }
   }
 
   /**
-   * Calculate adoption rate based on price and park appeal
-   * Higher prices = lower adoption
-   * Higher appeal = higher adoption (guests trust the park more)
-   */
-  static calculateAdoptionRate(
-    service: ServiceDef,
-    config: ServiceConfig,
-    state: GameState
-  ): number {
-    // Price effect: linear scaling from 1.5x at min price to 0.5x at max price
-    const priceRange = service.maxPrice - service.minPrice
-    const pricePosition = (config.price - service.minPrice) / priceRange
-    const priceEffect = 1.5 - pricePosition // 1.5 at min, 0.5 at max
-
-    // Appeal effect: scales from 0.5 at 0 appeal to 1.5 at 100 appeal
-    const appeal = state.stats.appeal
-    const appealEffect = 0.5 + (appeal / 100)
-
-    const adoption = service.baseAdoption * priceEffect * appealEffect
-
-    return Math.max(0, Math.min(1, adoption))
-  }
-
-  /**
-   * Calculate all stats for a service
-   */
-  static calculateStats(
-    service: ServiceDef,
-    config: ServiceConfig,
-    state: GameState
-  ): ServiceStats {
-    const adoptionRate = this.calculateAdoptionRate(service, config, state)
-    const totalGuests = Guest.getTotalGuests(state)
-    const adopters = Math.floor(totalGuests * adoptionRate)
-    const incomePerDay = adopters * config.price
-    const capacityBonus = Math.floor(adopters * service.capacityPerAdopter)
-
-    return {
-      adoptionRate,
-      adopters,
-      incomePerDay,
-      capacityBonus,
-    }
-  }
-
-  /**
-   * Get total capacity bonus from all active services
+   * Get total capacity bonus from all unlocked services
    */
   static getTotalCapacityBonus(state: GameState): number {
-    if (!state.services) return 0
-
     let total = 0
-    for (const serviceState of state.services) {
-      const service = this.getById(serviceState.serviceId)
-      if (service && this.isUnlocked(service, state)) {
-        const stats = this.calculateStats(service, serviceState.config, state)
-        total += stats.capacityBonus
-      }
+    for (const service of this.getUnlocked(state)) {
+      total += service.capacityBonus
     }
     return total
   }
 
   /**
-   * Get total income per day from all active services
+   * Get total income boost percent from all unlocked services
    */
-  static getTotalIncomePerDay(state: GameState): number {
-    if (!state.services) return 0
-
+  static getTotalIncomeBoostPercent(state: GameState): number {
     let total = 0
-    for (const serviceState of state.services) {
-      const service = this.getById(serviceState.serviceId)
-      if (service && this.isUnlocked(service, state)) {
-        const stats = this.calculateStats(service, serviceState.config, state)
-        total += stats.incomePerDay
-      }
+    for (const service of this.getUnlocked(state)) {
+      total += service.incomeBoostPercent
     }
     return total
-  }
-
-  /**
-   * Get service state by ID, or create default if not exists
-   */
-  static getServiceState(
-    serviceId: ServiceId,
-    state: GameState
-  ): ServiceState | null {
-    const service = this.getById(serviceId)
-    if (!service || !this.isUnlocked(service, state)) return null
-
-    const existing = state.services?.find(s => s.serviceId === serviceId)
-    if (existing) return existing
-
-    return {
-      serviceId,
-      config: this.getDefaultConfig(service),
-    }
   }
 
   /**
    * Get modifiers for all active services (for rate calculation)
+   * Applies income boost as percentage increase to guest income
    */
   static getModifiers(state: GameState): Modifier[] {
-    const incomePerDay = this.getTotalIncomePerDay(state)
-    if (incomePerDay <= 0) return []
+    const boostPercent = this.getTotalIncomeBoostPercent(state)
+    if (boostPercent <= 0) return []
+
+    // Calculate the bonus income from the percentage boost
+    const baseGuestIncome = Guest.calculateIncomeWithEntertainment(
+      state.stats.guests,
+      state.ticketPrice,
+      state.stats.entertainment
+    )
+    const bonusIncome = baseGuestIncome * (boostPercent / 100)
 
     return [{
       source: { type: 'service' as const },
       stat: 'money',
-      flat: incomePerDay,
+      flat: bonusIncome,
     }]
   }
 

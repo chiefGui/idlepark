@@ -162,13 +162,8 @@ export type GuestBreakdown = {
 
 export type ServiceId = 'fast_pass'
 
-export type ServiceConfig = {
-  price: number
-}
-
 export type ServiceState = {
   serviceId: ServiceId
-  config: ServiceConfig
 }
 
 // === MARKETING ===

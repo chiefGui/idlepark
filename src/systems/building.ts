@@ -448,7 +448,7 @@ export class Building {
     category: 'shops',
     costs: [{ statId: 'money', amount: 500 }],
     effects: [{ statId: 'money', perDay: -8 }],
-    requirements: [{ type: 'perk', id: 'retail_license' }],
+    requirements: [{ type: 'perk', id: 'shops_1' }],
     incomePerGuest: 0.15,
     guestCap: 150,
   }
@@ -461,7 +461,7 @@ export class Building {
     category: 'shops',
     costs: [{ statId: 'money', amount: 400 }],
     effects: [{ statId: 'money', perDay: -5 }],
-    requirements: [{ type: 'perk', id: 'retail_license' }],
+    requirements: [{ type: 'perk', id: 'shops_1' }],
     incomePerGuest: 0.20,
     guestCap: 100,
   }
@@ -474,7 +474,7 @@ export class Building {
     category: 'shops',
     costs: [{ statId: 'money', amount: 300 }],
     effects: [{ statId: 'money', perDay: -4 }],
-    requirements: [{ type: 'perk', id: 'retail_license' }],
+    requirements: [{ type: 'perk', id: 'shops_1' }],
     incomePerGuest: 0.10,
     guestCap: 200,
   }
@@ -487,7 +487,7 @@ export class Building {
     category: 'shops',
     costs: [{ statId: 'money', amount: 800 }],
     effects: [{ statId: 'money', perDay: -12 }],
-    requirements: [{ type: 'perk', id: 'retail_license' }],
+    requirements: [{ type: 'perk', id: 'shops_1' }],
     incomePerGuest: 0.25,
     guestCap: 80,
   }
