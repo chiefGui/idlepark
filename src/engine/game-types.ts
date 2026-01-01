@@ -171,11 +171,25 @@ export type ServiceState = {
   config: ServiceConfig
 }
 
+// === MARKETING ===
+
+export type MarketingCampaignId = 'flyers' | 'social' | 'tv'
+
+export type MarketingState = {
+  activeCampaign: {
+    campaignId: MarketingCampaignId
+    startDay: number
+    endDay: number
+  } | null
+  lastCampaignEndDay: number // For cooldown tracking
+}
+
 export type GameState = {
   stats: Record<StatId, number>
   slots: SlotState[]
   ownedPerks: string[]
   services: ServiceState[]
+  marketing: MarketingState
   timeline: TimelineEntry[]
   dailyRecords: DailyRecord[]
   financials: FinancialStats
@@ -224,6 +238,9 @@ export class GameTypes {
   static readonly HAPPENING_INTERVAL_MAX = 30
   static readonly HAPPENING_DURATION = 5
 
+  // Marketing
+  static readonly MARKETING_COOLDOWN_DAYS = 5
+
   static createInitialStats(): Record<StatId, number> {
     return {
       money: this.STARTING_MONEY,
@@ -263,12 +280,20 @@ export class GameTypes {
     return breakdown.happy + breakdown.neutral + breakdown.unhappy
   }
 
+  static createInitialMarketing(): MarketingState {
+    return {
+      activeCampaign: null,
+      lastCampaignEndDay: 0,
+    }
+  }
+
   static createInitialState(): GameState {
     return {
       stats: this.createInitialStats(),
       slots: this.createInitialSlots(),
       ownedPerks: [],
       services: [],
+      marketing: this.createInitialMarketing(),
       timeline: [],
       dailyRecords: [],
       financials: this.createInitialFinancials(),

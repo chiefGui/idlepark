@@ -145,6 +145,17 @@ export class Perk {
     Perk.FAST_PASS_UNLOCK,
   ]
 
+  // Marketing perk - unlocks marketing campaigns
+  static readonly MARKETING_OFFICE: PerkDef = {
+    id: 'marketing_office',
+    name: 'Marketing Office',
+    emoji: '📣',
+    description: 'Run marketing campaigns to attract more guests',
+    costs: [{ statId: 'money', amount: 2500 }],
+    effects: [],
+    requirements: [{ type: 'stat', statId: 'guests', min: 75 }],
+  }
+
   // Ride unlock perks
   static readonly THRILL_SEEKERS: PerkDef = {
     id: 'thrill_seekers',
@@ -167,6 +178,7 @@ export class Perk {
     Perk.LODGING_2,
     Perk.LODGING_3,
     Perk.FAST_PASS_UNLOCK,
+    Perk.MARKETING_OFFICE,
     Perk.THRILL_SEEKERS,
   ]
 
