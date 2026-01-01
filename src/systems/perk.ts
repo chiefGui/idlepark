@@ -145,6 +145,17 @@ export class Perk {
     Perk.FAST_PASS_UNLOCK,
   ]
 
+  // Ride unlock perks
+  static readonly THRILL_SEEKERS: PerkDef = {
+    id: 'thrill_seekers',
+    name: 'Thrill Seekers',
+    emoji: '🎢',
+    description: 'Unlock intense rides for adrenaline junkies',
+    costs: [{ statId: 'money', amount: 5000 }],
+    effects: [],
+    requirements: [{ type: 'stat', statId: 'guests', min: 50 }],
+  }
+
   static readonly ALL: PerkDef[] = [
     Perk.SPOTLESS_PARK,
     Perk.EXTRA_SLOT_1,
@@ -156,6 +167,7 @@ export class Perk {
     Perk.LODGING_2,
     Perk.LODGING_3,
     Perk.FAST_PASS_UNLOCK,
+    Perk.THRILL_SEEKERS,
   ]
 
   static getById(id: string): PerkDef | undefined {

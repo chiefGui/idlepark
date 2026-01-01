@@ -66,6 +66,54 @@ export class Building {
     requirements: [],
   }
 
+  // === INTENSE RIDES ===
+  static readonly DROP_TOWER: BuildingDef = {
+    id: 'drop_tower',
+    name: 'Drop Tower',
+    emoji: '🗼',
+    description: 'The ground rushes up to meet you',
+    category: 'rides',
+    costs: [{ statId: 'money', amount: 3000 }],
+    effects: [
+      { statId: 'money', perDay: -25 },
+      { statId: 'entertainment', perDay: 100 },
+      { statId: 'comfort', perDay: -5 },
+      { statId: 'appeal', perDay: 5 },
+    ],
+    requirements: [{ type: 'perk', id: 'thrill_seekers' }],
+  }
+
+  static readonly HAUNTED_MANOR: BuildingDef = {
+    id: 'haunted_manor',
+    name: 'Haunted Manor',
+    emoji: '👻',
+    description: 'Screams echo through cobwebbed halls',
+    category: 'rides',
+    costs: [{ statId: 'money', amount: 2500 }],
+    effects: [
+      { statId: 'money', perDay: -20 },
+      { statId: 'entertainment', perDay: 70 },
+      { statId: 'beauty', perDay: 15 },
+    ],
+    requirements: [{ type: 'perk', id: 'thrill_seekers' }],
+  }
+
+  static readonly RAPIDS_RUN: BuildingDef = {
+    id: 'rapids_run',
+    name: 'Rapids Run',
+    emoji: '🌊',
+    description: 'Hold on tight—you WILL get soaked',
+    category: 'rides',
+    costs: [{ statId: 'money', amount: 3500 }],
+    effects: [
+      { statId: 'money', perDay: -30 },
+      { statId: 'entertainment', perDay: 90 },
+      { statId: 'cleanliness', perDay: 10 },
+      { statId: 'comfort', perDay: 5 },
+    ],
+    requirements: [{ type: 'perk', id: 'thrill_seekers' }],
+  }
+
   // === FOOD ===
   static readonly FOOD_STAND: BuildingDef = {
     id: 'food_stand',
@@ -392,6 +440,10 @@ export class Building {
     Building.FERRIS_WHEEL,
     Building.ROLLER_COASTER,
     Building.BUMPER_CARS,
+    // Intense Rides
+    Building.DROP_TOWER,
+    Building.HAUNTED_MANOR,
+    Building.RAPIDS_RUN,
     // Food
     Building.FOOD_STAND,
     Building.ICE_CREAM,
