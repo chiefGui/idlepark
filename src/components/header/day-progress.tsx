@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../../store/game-store'
 import { Calendar } from '../../utils/calendar'
+import { Season } from '../../systems/season'
 
 export function DayProgress() {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -93,6 +94,9 @@ export function DayProgress() {
                 </div>
               </div>
 
+              {/* Season Effects */}
+              <SeasonEffects currentDay={currentDay} />
+
               {/* Day Progress */}
               <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
                 <div className="flex justify-between text-xs text-[var(--color-text-muted)] mb-1">
@@ -112,5 +116,47 @@ export function DayProgress() {
         )}
       </AnimatePresence>
     </>
+  )
+}
+
+const STAT_LABELS: Record<string, string> = {
+  money: 'income',
+  guests: 'guests',
+  entertainment: 'entertainment',
+  food: 'food',
+  comfort: 'comfort',
+  cleanliness: 'cleanliness',
+  beauty: 'beauty',
+  appeal: 'appeal',
+}
+
+function SeasonEffects({ currentDay }: { currentDay: number }) {
+  const { buff, penalty } = Season.getEffects(currentDay)
+
+  const formatEffect = (increased: number, stat: string) => {
+    const sign = increased > 0 ? '+' : ''
+    return `${sign}${increased}% ${STAT_LABELS[stat] ?? stat}`
+  }
+
+  return (
+    <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
+      <div className="text-[var(--color-text-muted)] text-xs mb-2">Season Effects</div>
+      <div className="flex flex-col gap-1 text-sm">
+        <div className="flex items-center gap-2">
+          <span className="text-green-500">↑</span>
+          <span>{buff.label}</span>
+          <span className="text-green-500 ml-auto font-medium">
+            {formatEffect(buff.increased, buff.stat)}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-red-400">↓</span>
+          <span>{penalty.label}</span>
+          <span className="text-red-400 ml-auto font-medium">
+            {formatEffect(penalty.increased, penalty.stat)}
+          </span>
+        </div>
+      </div>
+    </div>
   )
 }

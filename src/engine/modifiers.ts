@@ -9,6 +9,7 @@ export type ModifierSource =
   | { type: 'happening'; happeningId: string }
   | { type: 'service' }
   | { type: 'marketing' }
+  | { type: 'season' }
 
 export type Modifier = {
   source: ModifierSource
@@ -40,6 +41,8 @@ function sourceEquals(a: ModifierSource, b: ModifierSource): boolean {
       return b.type === 'service'
     case 'marketing':
       return b.type === 'marketing'
+    case 'season':
+      return b.type === 'season'
   }
 }
 
@@ -227,6 +230,7 @@ export class Modifiers {
       case 'happening': return source.happeningId
       case 'service': return 'Service'
       case 'marketing': return 'Marketing'
+      case 'season': return 'Season'
     }
   }
 
@@ -238,6 +242,7 @@ export class Modifiers {
       case 'happening': return '📅'
       case 'service': return '✨'
       case 'marketing': return '📣'
+      case 'season': return '🌍'
     }
   }
 }
