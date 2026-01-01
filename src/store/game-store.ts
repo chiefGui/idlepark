@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { GameState, DailyRecord, FinancialStats, FeedEntry } from '../engine/game-types'
+import type { GameState, DailyRecord, FinancialStats, FeedEntry, ServiceId, ServiceConfig } from '../engine/game-types'
 import { GameTypes } from '../engine/game-types'
 import { GameEvents } from '../engine/events'
 import { Effects } from '../engine/effects'
@@ -13,6 +13,7 @@ import { Milestone } from '../systems/milestone'
 import { Timeline } from '../systems/timeline'
 import { Feed } from '../systems/feed'
 import { Happening } from '../systems/happening'
+import { Service } from '../systems/service'
 
 const MAX_DAILY_RECORDS = 30
 
@@ -22,6 +23,7 @@ type GameActions = {
   demolishSlot: (slotIndex: number) => boolean
   purchasePerk: (perkId: string) => boolean
   setTicketPrice: (price: number) => void
+  setServiceConfig: (serviceId: ServiceId, config: ServiceConfig) => void
   addFeedEntry: (entry: FeedEntry) => void
   markFeedRead: () => void
   reset: () => void
@@ -50,6 +52,9 @@ const collectModifiers = (state: GameState): Modifier[] => {
 
   // Collect from guests (dynamic, depends on current state)
   modifiers.push(...Guest.getModifiers(state))
+
+  // Collect from services (dynamic, depends on current state)
+  modifiers.push(...Service.getModifiers(state))
 
   // Collect from active happening
   if (state.currentHappening) {
@@ -118,6 +123,9 @@ export const useGameStore = create<GameStoreState>()(
             state.ticketPrice,
             state.stats.entertainment
           ) * deltaDay
+
+          // Calculate service income
+          const serviceIncome = Service.getTotalIncomePerDay(state) * deltaDay
 
           const buildingUpkeep = state.slots.reduce((total, slot) => {
             if (slot.buildingId) {
@@ -188,7 +196,7 @@ export const useGameStore = create<GameStoreState>()(
           // Update financials
           const financials: FinancialStats = {
             ...state.financials,
-            totalEarned: state.financials.totalEarned + guestIncome,
+            totalEarned: state.financials.totalEarned + guestIncome + serviceIncome,
             totalUpkeepPaid: state.financials.totalUpkeepPaid + buildingUpkeep,
             peakMoney: Math.max(state.financials.peakMoney, finalStats.money),
             peakGuests: Math.max(state.financials.peakGuests, totalGuests),
@@ -200,7 +208,7 @@ export const useGameStore = create<GameStoreState>()(
           if (crossedDayBoundary) {
             const dayRecord: DailyRecord = {
               day: prevDayInt,
-              moneyEarned: guestIncome - buildingUpkeep,
+              moneyEarned: guestIncome + serviceIncome - buildingUpkeep,
               peakGuests: Math.max(GameTypes.getTotalGuests(state.guestBreakdown), totalGuests),
               peakAppeal: Math.max(state.stats.appeal, finalStats.appeal),
             }
@@ -370,12 +378,25 @@ export const useGameStore = create<GameStoreState>()(
             }
           }
 
-          const newState = { ...state, stats: newStats, ownedPerks: newOwnedPerks, slots: newSlots, financials }
+          // If this is a service perk, initialize the service
+          let newServices = state.services
+          if (Perk.isServicePerk(perk)) {
+            const serviceDef = Service.getById(perk.serviceId)
+            if (serviceDef) {
+              newServices = [...state.services, {
+                serviceId: perk.serviceId,
+                config: Service.getDefaultConfig(serviceDef),
+              }]
+            }
+          }
+
+          const newState = { ...state, stats: newStats, ownedPerks: newOwnedPerks, slots: newSlots, services: newServices, financials }
 
           set({
             stats: newStats,
             ownedPerks: newOwnedPerks,
             slots: newSlots,
+            services: newServices,
             financials,
             rates: computeRates(newState),
           })
@@ -397,6 +418,30 @@ export const useGameStore = create<GameStoreState>()(
 
           set({
             ticketPrice: clampedPrice,
+            rates: computeRates(newState),
+          })
+        },
+
+        setServiceConfig: (serviceId: ServiceId, config: ServiceConfig) => {
+          const state = get()
+          const serviceIndex = state.services.findIndex(s => s.serviceId === serviceId)
+          if (serviceIndex === -1) return
+
+          const service = Service.getById(serviceId)
+          if (!service) return
+
+          // Clamp price to valid range
+          const clampedConfig: ServiceConfig = {
+            price: Math.max(service.minPrice, Math.min(service.maxPrice, config.price)),
+          }
+
+          const newServices = [...state.services]
+          newServices[serviceIndex] = { serviceId, config: clampedConfig }
+
+          const newState = { ...state, services: newServices }
+
+          set({
+            services: newServices,
             rates: computeRates(newState),
           })
         },
@@ -455,6 +500,7 @@ export const useGameStore = create<GameStoreState>()(
         stats: state.stats,
         slots: state.slots,
         ownedPerks: state.ownedPerks,
+        services: state.services,
         timeline: state.timeline,
         dailyRecords: state.dailyRecords,
         financials: state.financials,

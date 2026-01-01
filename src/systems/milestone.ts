@@ -2,6 +2,7 @@ import type { MilestoneDef, GameState } from '../engine/game-types'
 import { Requirements } from '../engine/requirements'
 import { Timeline } from './timeline'
 import type { ComputedRates } from '../engine/modifiers'
+import { Service } from './service'
 
 export class Milestone {
   static readonly FIRST_BUILDING: MilestoneDef = {
@@ -114,6 +115,8 @@ export class Milestone {
     Milestone.MONEY_1000,
     Milestone.FIRST_LODGING,
     Milestone.RESORT_MOGUL,
+    // Service milestones
+    ...Object.values(Service.MILESTONES),
   ]
 
   static getById(id: string): MilestoneDef | undefined {

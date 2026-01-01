@@ -2,6 +2,7 @@ import type { StatId, GameState, GuestBreakdown, GuestMood } from '../engine/gam
 import { GameTypes } from '../engine/game-types'
 import type { Modifier } from '../engine/modifiers'
 import { Building } from './building'
+import { Service } from './service'
 
 export type GuestDemand = {
   statId: StatId
@@ -95,12 +96,13 @@ export class Guest {
 
   /**
    * Get current guest capacity.
-   * Initial capacity + bonuses from lodging buildings.
+   * Initial capacity + bonuses from lodging buildings + service bonuses.
    */
   static getCapacity(state: GameState): number {
     const baseCapacity = GameTypes.INITIAL_GUEST_CAPACITY
     const lodgingBonus = Building.getTotalCapacityBonus(state)
-    return baseCapacity + lodgingBonus
+    const serviceBonus = Service.getTotalCapacityBonus(state)
+    return baseCapacity + lodgingBonus + serviceBonus
   }
 
   /**
