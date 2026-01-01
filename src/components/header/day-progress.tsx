@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useGameStore } from '../../store/game-store'
+import { Calendar } from '../../utils/calendar'
 
 export function DayProgress() {
   const currentDay = useGameStore((s) => s.currentDay)
@@ -8,6 +9,8 @@ export function DayProgress() {
   const radius = 14
   const circumference = 2 * Math.PI * radius
   const strokeDashoffset = circumference * (1 - progress)
+
+  const calendar = Calendar.fromDay(currentDay)
 
   return (
     <div className="flex items-center gap-2">
@@ -37,10 +40,17 @@ export function DayProgress() {
           />
         </svg>
         <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold">
-          {Math.floor(currentDay)}
+          {calendar.dayOfMonth}
         </span>
       </div>
-      <span className="text-sm font-medium text-[var(--color-text-muted)]">Day</span>
+      <div className="flex flex-col">
+        <span className="text-sm font-medium leading-tight">
+          {Calendar.getMonthShort(currentDay)}
+        </span>
+        <span className="text-[10px] text-[var(--color-text-muted)] leading-tight">
+          {calendar.year}
+        </span>
+      </div>
     </div>
   )
 }
