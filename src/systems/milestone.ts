@@ -118,12 +118,36 @@ export class Milestone {
     condition: { type: 'stat', statId: 'guests', min: 300 },
   }
 
+  static readonly GUESTS_400: MilestoneDef = {
+    id: 'guests_400',
+    name: 'Crowd Favorite',
+    emoji: '🎭',
+    description: 'Have 400 guests in your park',
+    condition: { type: 'stat', statId: 'guests', min: 400 },
+  }
+
   static readonly GUESTS_500: MilestoneDef = {
     id: 'guests_500',
     name: 'Legendary Park',
     emoji: '👑',
     description: 'Have 500 guests in your park',
     condition: { type: 'stat', statId: 'guests', min: 500 },
+  }
+
+  static readonly GUESTS_700: MilestoneDef = {
+    id: 'guests_700',
+    name: 'Theme Park Empire',
+    emoji: '🏛️',
+    description: 'Have 700 guests in your park',
+    condition: { type: 'stat', statId: 'guests', min: 700 },
+  }
+
+  static readonly GUESTS_1000: MilestoneDef = {
+    id: 'guests_1000',
+    name: 'World Famous',
+    emoji: '🌍',
+    description: 'Have 1000 guests in your park',
+    condition: { type: 'stat', statId: 'guests', min: 1000 },
   }
 
   static readonly RESORT_MOGUL: MilestoneDef = {
@@ -162,7 +186,10 @@ export class Milestone {
     Milestone.GUESTS_150,
     Milestone.GUESTS_200,
     Milestone.GUESTS_300,
+    Milestone.GUESTS_400,
     Milestone.GUESTS_500,
+    Milestone.GUESTS_700,
+    Milestone.GUESTS_1000,
     Milestone.DAY_10,
     Milestone.DAY_30,
     Milestone.MONEY_1000,

@@ -22,6 +22,7 @@ export class Bank {
   static readonly MIN_LOAN_AMOUNT = 250
 
   // Loan packages - unlock progressively, scale with income
+  // Milestones: 50 → 100 → 200 → 400 → 700 → 1000
   static readonly STARTER: LoanPackageDef = {
     id: 'starter',
     name: 'Starter Loan',
@@ -29,7 +30,7 @@ export class Bank {
     incomeMultiplier: 3,
     interestRate: 0.05,
     duration: 15,
-    unlockMilestone: 'guests_50',  // Bank unlock
+    unlockMilestone: 'guests_50',
   }
 
   static readonly SMALL: LoanPackageDef = {
@@ -39,7 +40,7 @@ export class Bank {
     incomeMultiplier: 7,
     interestRate: 0.10,
     duration: 20,
-    unlockMilestone: 'guests_75',
+    unlockMilestone: 'guests_100',
   }
 
   static readonly MEDIUM: LoanPackageDef = {
@@ -49,7 +50,7 @@ export class Bank {
     incomeMultiplier: 15,
     interestRate: 0.15,
     duration: 30,
-    unlockMilestone: 'guests_100',
+    unlockMilestone: 'guests_200',
   }
 
   static readonly LARGE: LoanPackageDef = {
@@ -59,7 +60,7 @@ export class Bank {
     incomeMultiplier: 25,
     interestRate: 0.20,
     duration: 40,
-    unlockMilestone: 'guests_150',
+    unlockMilestone: 'guests_400',
   }
 
   static readonly MAJOR: LoanPackageDef = {
@@ -69,7 +70,7 @@ export class Bank {
     incomeMultiplier: 40,
     interestRate: 0.25,
     duration: 50,
-    unlockMilestone: 'guests_200',
+    unlockMilestone: 'guests_700',
   }
 
   static readonly MEGA: LoanPackageDef = {
@@ -79,7 +80,7 @@ export class Bank {
     incomeMultiplier: 60,
     interestRate: 0.30,
     duration: 60,
-    unlockMilestone: 'guests_300',
+    unlockMilestone: 'guests_1000',
   }
 
   static readonly ALL: LoanPackageDef[] = [
