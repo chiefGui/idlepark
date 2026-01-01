@@ -62,7 +62,7 @@ export const STAT_CONFIG: Record<StatId, StatConfig> = {
     icon: Star,
     label: 'Appeal',
     color: '#fbbf24',
-    format: Format.percent,
+    format: Format.number,
   },
 }
 

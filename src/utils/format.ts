@@ -111,11 +111,14 @@ export class Format {
   }
 
   /**
-   * Format an effect value with sign and label.
-   * e.g., "+5 fun", "-2 $", "+20 capacity"
+   * Format an effect value with sign, label, and /day suffix for continuous effects.
+   * e.g., "+5 fun/day", "-2 $/day", "+20 capacity" (capacity is permanent, no /day)
    */
   static effect(value: number, statId: StatId | 'capacity'): string {
     const sign = value >= 0 ? '+' : ''
-    return `${sign}${value} ${Format.statLabel(statId)}`
+    const label = Format.statLabel(statId)
+    // Capacity is a permanent bonus, not per-day
+    const suffix = statId === 'capacity' ? '' : '/day'
+    return `${sign}${value} ${label}${suffix}`
   }
 }
