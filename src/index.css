@@ -58,13 +58,59 @@ body {
   display: none;
 }
 
+/* Seasonal Atmosphere */
+.seasonal-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 1s ease-out;
+}
+
+.seasonal-bg-winter {
+  background: radial-gradient(
+    ellipse 120% 80% at 20% 100%,
+    rgba(99, 102, 241, 0.12) 0%,
+    rgba(99, 102, 241, 0.04) 40%,
+    transparent 70%
+  );
+}
+
+.seasonal-bg-spring {
+  background: radial-gradient(
+    ellipse 120% 80% at 80% 100%,
+    rgba(236, 72, 153, 0.1) 0%,
+    rgba(167, 139, 250, 0.05) 40%,
+    transparent 70%
+  );
+}
+
+.seasonal-bg-summer {
+  background: radial-gradient(
+    ellipse 100% 60% at 50% 100%,
+    rgba(251, 146, 60, 0.08) 0%,
+    rgba(250, 204, 21, 0.03) 40%,
+    transparent 60%
+  );
+}
+
+.seasonal-bg-fall {
+  background: radial-gradient(
+    ellipse 120% 80% at 30% 100%,
+    rgba(234, 88, 12, 0.1) 0%,
+    rgba(180, 83, 9, 0.04) 40%,
+    transparent 70%
+  );
+}
+
 /* Seasonal Particles */
 .seasonal-particles {
   position: fixed;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: 0;
+  z-index: 1;
+  transition: transform 0.15s ease-out;
 }
 
 .seasonal-particle {
