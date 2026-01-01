@@ -84,7 +84,7 @@ export function PerksContent() {
                         {perk.description}
                       </div>
                       <div className="text-xs text-[var(--color-warning)]">
-                        Unlock: {unmetReqs.map((r) => Requirements.formatRequirement(r)).join(', ')}
+                        Requires {unmetReqs.map((r) => Requirements.formatRequirement(r)).join(', ')}
                       </div>
                     </div>
                   </div>
