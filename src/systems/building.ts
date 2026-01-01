@@ -284,7 +284,7 @@ export class Building {
     costs: [{ statId: 'money', amount: 1000 }],
     effects: [{ statId: 'money', perDay: -5 }],
     requirements: [{ type: 'perk', id: 'lodging_1' }],
-    capacityBonus: 20,
+    capacityBonus: 50,
     lodgingTier: 1,
   }
 
@@ -297,7 +297,7 @@ export class Building {
     costs: [{ statId: 'money', amount: 2000 }],
     effects: [{ statId: 'money', perDay: -10 }],
     requirements: [{ type: 'perk', id: 'lodging_1' }],
-    capacityBonus: 35,
+    capacityBonus: 75,
     lodgingTier: 1,
   }
 
@@ -314,7 +314,7 @@ export class Building {
       { statId: 'beauty', perDay: 3 },
     ],
     requirements: [{ type: 'perk', id: 'lodging_2' }],
-    capacityBonus: 50,
+    capacityBonus: 100,
     lodgingTier: 2,
   }
 
@@ -330,7 +330,7 @@ export class Building {
       { statId: 'beauty', perDay: 2 },
     ],
     requirements: [{ type: 'perk', id: 'lodging_2' }],
-    capacityBonus: 75,
+    capacityBonus: 150,
     lodgingTier: 2,
   }
 
@@ -347,7 +347,7 @@ export class Building {
       { statId: 'beauty', perDay: 8 },
     ],
     requirements: [{ type: 'perk', id: 'lodging_3' }],
-    capacityBonus: 120,
+    capacityBonus: 250,
     lodgingTier: 3,
   }
 
@@ -363,7 +363,7 @@ export class Building {
       { statId: 'beauty', perDay: 15 },
     ],
     requirements: [{ type: 'perk', id: 'lodging_3' }],
-    capacityBonus: 100,
+    capacityBonus: 200,
     lodgingTier: 3,
   }
 
