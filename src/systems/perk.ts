@@ -167,6 +167,17 @@ export class Perk {
     requirements: [{ type: 'stat', statId: 'guests', min: 50 }],
   }
 
+  // Shop unlock perk
+  static readonly SHOPS_1: PerkDef = {
+    id: 'shops_1',
+    name: 'Shops I',
+    emoji: '🛍️',
+    description: 'Open shops that earn based on guest traffic',
+    costs: [{ statId: 'money', amount: 2000 }],
+    effects: [],
+    requirements: [{ type: 'stat', statId: 'guests', min: 75 }],
+  }
+
   static readonly ALL: PerkDef[] = [
     Perk.SPOTLESS_PARK,
     Perk.EXTRA_SLOT_1,
@@ -180,6 +191,7 @@ export class Perk {
     Perk.FAST_PASS_UNLOCK,
     Perk.MARKETING_OFFICE,
     Perk.THRILL_SEEKERS,
+    Perk.SHOPS_1,
   ]
 
   static getById(id: string): PerkDef | undefined {

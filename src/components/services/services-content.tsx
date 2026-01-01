@@ -119,24 +119,15 @@ export function ServicesContent({ onNavigate }: ServicesContentProps) {
   )
 }
 
-// Fast Pass configuration UI
+// Fast Pass info UI
 export function FastPassContent() {
   const state = useGameStore((s) => s)
-  const setServiceConfig = state.actions.setServiceConfig
-
   const serviceDef = Service.FAST_PASS
-  const serviceState = state.services.find(s => s.serviceId === 'fast_pass')
-  const config = serviceState?.config ?? Service.getDefaultConfig(serviceDef)
+  const stats = Service.getStats(serviceDef)
 
-  const stats = Service.calculateStats(serviceDef, config, state)
-  const totalGuests = state.stats.guests
-
-  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setServiceConfig('fast_pass', { price: Number(e.target.value) })
-  }
-
-  const priceLevel = config.price <= serviceDef.minPrice + 5 ? 'low' :
-                     config.price >= serviceDef.maxPrice - 5 ? 'high' : 'medium'
+  // Calculate current bonus income
+  const baseIncome = state.rates.money
+  const bonusIncome = baseIncome * (stats.incomeBoostPercent / 100)
 
   return (
     <div className="space-y-4">
@@ -153,98 +144,39 @@ export function FastPassContent() {
         </div>
       </div>
 
-      {/* Price Slider */}
-      <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-        <div className="flex justify-between items-center mb-3">
-          <span className="text-sm font-medium">Price per guest</span>
-          <span className="text-2xl font-bold">${config.price}</span>
-        </div>
-        <input
-          type="range"
-          min={serviceDef.minPrice}
-          max={serviceDef.maxPrice}
-          value={config.price}
-          onChange={handlePriceChange}
-          className="w-full h-2 rounded-full appearance-none cursor-pointer
-            bg-gradient-to-r from-[var(--color-positive)] via-amber-500 to-[var(--color-negative)]
-            [&::-webkit-slider-thumb]:appearance-none
-            [&::-webkit-slider-thumb]:w-6
-            [&::-webkit-slider-thumb]:h-6
-            [&::-webkit-slider-thumb]:rounded-full
-            [&::-webkit-slider-thumb]:bg-white
-            [&::-webkit-slider-thumb]:shadow-lg
-            [&::-webkit-slider-thumb]:border-2
-            [&::-webkit-slider-thumb]:border-[var(--color-border)]
-            [&::-webkit-slider-thumb]:transition-transform
-            [&::-webkit-slider-thumb]:active:scale-110
-            [&::-moz-range-thumb]:w-6
-            [&::-moz-range-thumb]:h-6
-            [&::-moz-range-thumb]:rounded-full
-            [&::-moz-range-thumb]:bg-white
-            [&::-moz-range-thumb]:shadow-lg
-            [&::-moz-range-thumb]:border-2
-            [&::-moz-range-thumb]:border-[var(--color-border)]
-          "
-        />
-        <div className="flex justify-between text-xs text-[var(--color-text-muted)] mt-2">
-          <span>${serviceDef.minPrice}</span>
-          <span className={`font-medium ${
-            priceLevel === 'low' ? 'text-[var(--color-positive)]' :
-            priceLevel === 'high' ? 'text-[var(--color-negative)]' :
-            'text-amber-500'
-          }`}>
-            {priceLevel === 'low' ? 'Budget' : priceLevel === 'high' ? 'Premium' : 'Standard'}
-          </span>
-          <span>${serviceDef.maxPrice}</span>
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-          <div className="flex items-center gap-1.5 mb-1">
-            <Users size={14} className="text-[var(--color-accent)]" />
-            <span className="text-xs text-[var(--color-text-muted)]">Adoption</span>
+      {/* Bonuses */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+          <div className="flex items-center gap-2 mb-2">
+            <DollarSign size={16} className="text-[var(--color-positive)]" />
+            <span className="text-sm text-[var(--color-text-muted)]">Income Boost</span>
           </div>
-          <div className="text-lg font-bold">
-            {Format.percent(stats.adoptionRate * 100)}
+          <div className="text-2xl font-bold text-[var(--color-positive)]">
+            +{stats.incomeBoostPercent}%
           </div>
-          <div className="text-xs text-[var(--color-text-muted)]">
-            {stats.adopters} of {Math.floor(totalGuests)}
+          <div className="text-xs text-[var(--color-text-muted)] mt-1">
+            +{Format.money(bonusIncome)}/day currently
           </div>
         </div>
 
-        <div className="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-          <div className="flex items-center gap-1.5 mb-1">
-            <DollarSign size={14} className="text-[var(--color-positive)]" />
-            <span className="text-xs text-[var(--color-text-muted)]">Income</span>
+        <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+          <div className="flex items-center gap-2 mb-2">
+            <Users size={16} className="text-amber-500" />
+            <span className="text-sm text-[var(--color-text-muted)]">Capacity</span>
           </div>
-          <div className="text-lg font-bold text-[var(--color-positive)]">
-            {Format.money(stats.incomePerDay)}
-          </div>
-          <div className="text-xs text-[var(--color-text-muted)]">per day</div>
-        </div>
-
-        <div className="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-          <div className="flex items-center gap-1.5 mb-1">
-            <TrendingUp size={14} className="text-amber-500" />
-            <span className="text-xs text-[var(--color-text-muted)]">Capacity</span>
-          </div>
-          <div className="text-lg font-bold text-amber-500">
+          <div className="text-2xl font-bold text-amber-500">
             +{stats.capacityBonus}
           </div>
-          <div className="text-xs text-[var(--color-text-muted)]">extra slots</div>
+          <div className="text-xs text-[var(--color-text-muted)] mt-1">
+            extra guests
+          </div>
         </div>
       </div>
 
-      {/* Tip */}
+      {/* Info */}
       <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
         <p className="text-xs text-amber-200/80">
-          {priceLevel === 'low'
-            ? 'Low prices attract more adopters but generate less revenue per guest.'
-            : priceLevel === 'high'
-            ? 'Premium prices maximize revenue from VIPs but fewer guests will adopt.'
-            : 'Balanced pricing for steady adoption and reliable income.'}
+          Fast Pass is always active once unlocked. Bigger parks benefit more from the percentage boost!
         </p>
       </div>
     </div>

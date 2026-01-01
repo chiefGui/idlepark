@@ -8,7 +8,7 @@ export type StatId =
   | 'beauty'
   | 'appeal'
 
-export type BuildingCategory = 'rides' | 'food' | 'facilities' | 'decor' | 'lodging'
+export type BuildingCategory = 'rides' | 'food' | 'facilities' | 'decor' | 'lodging' | 'shops'
 
 export type Effect = {
   statId: StatId
@@ -162,13 +162,8 @@ export type GuestBreakdown = {
 
 export type ServiceId = 'fast_pass'
 
-export type ServiceConfig = {
-  price: number
-}
-
 export type ServiceState = {
   serviceId: ServiceId
-  config: ServiceConfig
 }
 
 // === MARKETING ===

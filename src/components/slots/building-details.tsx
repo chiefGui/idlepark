@@ -71,7 +71,9 @@ export function BuildingDetails({ building, onClose, onDemolish }: BuildingDetai
                             : 'bg-[var(--color-negative)]/20 text-[var(--color-negative)]'
                         }`}
                       >
-                        {Format.effect(effect.value, effect.statId)}
+                        {effect.perGuest != null
+                          ? Format.shopIncome(effect.perGuest)
+                          : Format.effect(effect.value, effect.statId)}
                       </span>
                     ))}
                   </div>

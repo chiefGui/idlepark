@@ -7,6 +7,11 @@ export type LodgingBuildingDef = BuildingDef & {
   lodgingTier: 1 | 2 | 3
 }
 
+export type ShopBuildingDef = BuildingDef & {
+  incomePerGuest: number
+  guestCap: number
+}
+
 export class Building {
   // === RIDES ===
   static readonly CAROUSEL: BuildingDef = {
@@ -434,6 +439,66 @@ export class Building {
     Building.CLOUD_NINE_SUITES,
   ]
 
+  // === SHOPS ===
+  static readonly GIFT_SHOP: ShopBuildingDef = {
+    id: 'gift_shop',
+    name: 'Gift Shop',
+    emoji: '🎁',
+    description: 'Everyone wants a souvenir',
+    category: 'shops',
+    costs: [{ statId: 'money', amount: 500 }],
+    effects: [{ statId: 'money', perDay: -8 }],
+    requirements: [{ type: 'perk', id: 'shops_1' }],
+    incomePerGuest: 0.15,
+    guestCap: 150,
+  }
+
+  static readonly CARNIVAL_GAMES: ShopBuildingDef = {
+    id: 'carnival_games',
+    name: 'Carnival Games',
+    emoji: '🎪',
+    description: 'Step right up and win a prize!',
+    category: 'shops',
+    costs: [{ statId: 'money', amount: 400 }],
+    effects: [{ statId: 'money', perDay: -5 }],
+    requirements: [{ type: 'perk', id: 'shops_1' }],
+    incomePerGuest: 0.20,
+    guestCap: 100,
+  }
+
+  static readonly PLUSH_STAND: ShopBuildingDef = {
+    id: 'plush_stand',
+    name: 'Plush Stand',
+    emoji: '🧸',
+    description: 'Cuddly memories to take home',
+    category: 'shops',
+    costs: [{ statId: 'money', amount: 300 }],
+    effects: [{ statId: 'money', perDay: -4 }],
+    requirements: [{ type: 'perk', id: 'shops_1' }],
+    incomePerGuest: 0.10,
+    guestCap: 200,
+  }
+
+  static readonly ARCADE: ShopBuildingDef = {
+    id: 'arcade',
+    name: 'Arcade',
+    emoji: '🕹️',
+    description: 'Just one more game...',
+    category: 'shops',
+    costs: [{ statId: 'money', amount: 800 }],
+    effects: [{ statId: 'money', perDay: -12 }],
+    requirements: [{ type: 'perk', id: 'shops_1' }],
+    incomePerGuest: 0.25,
+    guestCap: 80,
+  }
+
+  static readonly SHOP_BUILDINGS: ShopBuildingDef[] = [
+    Building.GIFT_SHOP,
+    Building.CARNIVAL_GAMES,
+    Building.PLUSH_STAND,
+    Building.ARCADE,
+  ]
+
   static readonly ALL: BuildingDef[] = [
     // Rides
     Building.CAROUSEL,
@@ -468,6 +533,11 @@ export class Building {
     Building.PARKVIEW_INN,
     Building.LAKESIDE_RESORT,
     Building.CLOUD_NINE_SUITES,
+    // Shops
+    Building.GIFT_SHOP,
+    Building.CARNIVAL_GAMES,
+    Building.PLUSH_STAND,
+    Building.ARCADE,
   ]
 
   static readonly CATEGORIES: { id: BuildingCategory; label: string; emoji: string; hint: string }[] = [
@@ -476,6 +546,7 @@ export class Building {
     { id: 'facilities', label: 'Facilities', emoji: '🚻', hint: 'Comfort & cleanliness' },
     { id: 'decor', label: 'Decor', emoji: '🌷', hint: 'Beauty & comfort' },
     { id: 'lodging', label: 'Lodging', emoji: '🏨', hint: 'Guest capacity' },
+    { id: 'shops', label: 'Shops', emoji: '🛍️', hint: 'Guest-based income' },
   ]
 
   static getById(id: string): BuildingDef | undefined {
@@ -538,6 +609,32 @@ export class Building {
     return building.category === 'lodging'
   }
 
+  static isShop(building: BuildingDef): building is ShopBuildingDef {
+    return building.category === 'shops'
+  }
+
+  static getShopModifiers(state: GameState): Modifier[] {
+    const modifiers: Modifier[] = []
+    const guests = state.stats.guests
+
+    for (const slot of state.slots) {
+      if (!slot.buildingId) continue
+      const building = this.SHOP_BUILDINGS.find(b => b.id === slot.buildingId)
+      if (!building) continue
+
+      const effectiveGuests = Math.min(guests, building.guestCap)
+      const income = effectiveGuests * building.incomePerGuest
+
+      modifiers.push({
+        source: { type: 'building' as const, slotIndex: slot.index, buildingId: slot.buildingId },
+        stat: 'money',
+        flat: income,
+      })
+    }
+
+    return modifiers
+  }
+
   static getCapacityBonus(buildingId: string): number {
     const building = this.LODGING_BUILDINGS.find(b => b.id === buildingId)
     return building?.capacityBonus ?? 0
@@ -555,7 +652,7 @@ export class Building {
 
   /**
    * Get all displayable effects for a building.
-   * Includes stat effects + capacity bonus for lodging.
+   * Includes stat effects + capacity bonus for lodging + income for shops.
    * Returns unified format: { statId, value, isPositive }
    */
   static getDisplayEffects(building: BuildingDef): DisplayEffect[] {
@@ -571,6 +668,18 @@ export class Building {
         statId: 'capacity',
         value: building.capacityBonus,
         isPositive: true,
+      })
+    }
+
+    // Add income for shop buildings
+    if (this.isShop(building)) {
+      const maxIncome = building.incomePerGuest * building.guestCap
+      effects.push({
+        statId: 'income',
+        value: maxIncome,
+        isPositive: true,
+        perGuest: building.incomePerGuest,
+        guestCap: building.guestCap,
       })
     }
 
@@ -613,7 +722,9 @@ export class Building {
 }
 
 export type DisplayEffect = {
-  statId: StatId | 'capacity'
+  statId: StatId | 'capacity' | 'income'
   value: number
   isPositive: boolean
+  perGuest?: number // For shops: income per guest
+  guestCap?: number // For shops: guest cap
 }
