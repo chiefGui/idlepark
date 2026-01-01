@@ -57,3 +57,90 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Seasonal Particles */
+.seasonal-particles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.seasonal-particle {
+  position: absolute;
+  top: -2rem;
+  font-size: 0.875rem;
+  opacity: 0.35;
+  will-change: transform;
+}
+
+/* Winter snowfall - gentle vertical fall with slight sway */
+@keyframes snowfall {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.35;
+  }
+  95% {
+    opacity: 0.35;
+  }
+  100% {
+    transform: translate3d(15px, 100vh, 0);
+    opacity: 0;
+  }
+}
+
+.animate-snowfall {
+  animation: snowfall linear infinite;
+}
+
+/* Spring petals - drifting with gentle rotation */
+@keyframes petalfall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.35;
+  }
+  95% {
+    opacity: 0.35;
+  }
+  100% {
+    transform: translate3d(30px, 100vh, 0) rotate(180deg);
+    opacity: 0;
+  }
+}
+
+.animate-petalfall {
+  animation: petalfall ease-in-out infinite;
+}
+
+/* Fall leaves - tumbling with more rotation */
+@keyframes leaffall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.4;
+  }
+  50% {
+    transform: translate3d(-20px, 50vh, 0) rotate(180deg);
+  }
+  95% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate3d(25px, 100vh, 0) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.animate-leaffall {
+  animation: leaffall ease-in-out infinite;
+}
+
