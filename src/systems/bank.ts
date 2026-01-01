@@ -1,6 +1,7 @@
 import type { GameState, BankLoanPackageId } from '../engine/game-types'
 import { GameTypes } from '../engine/game-types'
 import { Timeline } from './timeline'
+import { Guest } from './guest'
 
 // === BANK TYPES ===
 
@@ -8,46 +9,92 @@ export type LoanPackageDef = {
   id: BankLoanPackageId
   name: string
   emoji: string
-  amount: number        // Loan amount
-  interestRate: number  // Interest rate (0.10 = 10%)
-  duration: number      // Days to repay
+  minAmount: number         // Minimum loan amount for this tier
+  incomeMultiplier: number  // Loan = X days of income (if higher than min)
+  interestRate: number      // Interest rate (0.10 = 10%)
+  duration: number          // Days to repay
+  unlockMilestone: string   // Milestone required to unlock
 }
 
 // === BANK CLASS ===
 
 export class Bank {
-  // Loan packages
+  // Loan packages - unlock progressively, scale with income
+  // Each tier has a minimum amount + income-based scaling
+  // Milestones: 50 → 100 → 200 → 400 → 700 → 1000
+  static readonly STARTER: LoanPackageDef = {
+    id: 'starter',
+    name: 'Starter Loan',
+    emoji: '🪙',
+    minAmount: 3000,
+    incomeMultiplier: 10,
+    interestRate: 0.05,
+    duration: 20,
+    unlockMilestone: 'guests_50',
+  }
+
   static readonly SMALL: LoanPackageDef = {
     id: 'small',
     name: 'Small Loan',
     emoji: '💵',
-    amount: 1000,
-    interestRate: 0.10,
-    duration: 20,
+    minAmount: 8000,
+    incomeMultiplier: 15,
+    interestRate: 0.08,
+    duration: 25,
+    unlockMilestone: 'guests_100',
   }
 
   static readonly MEDIUM: LoanPackageDef = {
     id: 'medium',
     name: 'Medium Loan',
     emoji: '💰',
-    amount: 5000,
-    interestRate: 0.15,
-    duration: 30,
+    minAmount: 20000,
+    incomeMultiplier: 25,
+    interestRate: 0.12,
+    duration: 35,
+    unlockMilestone: 'guests_200',
   }
 
   static readonly LARGE: LoanPackageDef = {
     id: 'large',
     name: 'Large Loan',
+    emoji: '💎',
+    minAmount: 50000,
+    incomeMultiplier: 35,
+    interestRate: 0.15,
+    duration: 45,
+    unlockMilestone: 'guests_400',
+  }
+
+  static readonly MAJOR: LoanPackageDef = {
+    id: 'major',
+    name: 'Major Loan',
     emoji: '🏦',
-    amount: 15000,
-    interestRate: 0.25,
-    duration: 40,
+    minAmount: 100000,
+    incomeMultiplier: 50,
+    interestRate: 0.18,
+    duration: 55,
+    unlockMilestone: 'guests_700',
+  }
+
+  static readonly MEGA: LoanPackageDef = {
+    id: 'mega',
+    name: 'Mega Loan',
+    emoji: '👑',
+    minAmount: 200000,
+    incomeMultiplier: 75,
+    interestRate: 0.22,
+    duration: 70,
+    unlockMilestone: 'guests_1000',
   }
 
   static readonly ALL: LoanPackageDef[] = [
+    Bank.STARTER,
     Bank.SMALL,
     Bank.MEDIUM,
     Bank.LARGE,
+    Bank.MAJOR,
+    Bank.MEGA,
   ]
 
   static getById(id: BankLoanPackageId): LoanPackageDef | undefined {
@@ -55,17 +102,55 @@ export class Bank {
   }
 
   /**
+   * Check if a specific loan package is unlocked
+   */
+  static isPackageUnlocked(pkg: LoanPackageDef, state: GameState): boolean {
+    return Timeline.hasAchievedMilestone(pkg.unlockMilestone, state)
+  }
+
+  /**
+   * Get all unlocked loan packages
+   */
+  static getUnlockedPackages(state: GameState): LoanPackageDef[] {
+    return this.ALL.filter(pkg => this.isPackageUnlocked(pkg, state))
+  }
+
+  /**
+   * Get estimated daily income for loan calculation
+   */
+  static getDailyIncome(state: GameState): number {
+    const guests = GameTypes.getTotalGuests(state.guestBreakdown)
+    const baseIncome = Guest.calculateIncomeWithEntertainment(
+      guests,
+      state.ticketPrice,
+      state.stats.entertainment
+    )
+    return Math.max(baseIncome, 50) // Floor of $50/day for calculations
+  }
+
+  /**
+   * Calculate loan amount based on current income
+   * Uses per-tier minimum or income-based amount (whichever is higher)
+   */
+  static getLoanAmount(pkg: LoanPackageDef, state: GameState): number {
+    const dailyIncome = this.getDailyIncome(state)
+    const incomeBasedAmount = dailyIncome * pkg.incomeMultiplier
+    return Math.max(pkg.minAmount, Math.floor(incomeBasedAmount))
+  }
+
+  /**
    * Calculate total repayment amount (principal + interest)
    */
-  static getTotalRepayment(pkg: LoanPackageDef): number {
-    return pkg.amount * (1 + pkg.interestRate)
+  static getTotalRepayment(pkg: LoanPackageDef, state: GameState): number {
+    const amount = this.getLoanAmount(pkg, state)
+    return Math.floor(amount * (1 + pkg.interestRate))
   }
 
   /**
    * Calculate daily payment
    */
-  static getDailyPayment(pkg: LoanPackageDef): number {
-    return this.getTotalRepayment(pkg) / pkg.duration
+  static getDailyPayment(pkg: LoanPackageDef, state: GameState): number {
+    return Math.ceil(this.getTotalRepayment(pkg, state) / pkg.duration)
   }
 
   /**
@@ -87,9 +172,7 @@ export class Bank {
    */
   static getLoanDaysRemaining(state: GameState): number {
     if (!state.bankLoan) return 0
-    const daysElapsed = state.currentDay - state.bankLoan.startDay
-    const totalDays = Math.ceil(state.bankLoan.remainingAmount / state.bankLoan.dailyPayment)
-    return Math.max(0, totalDays - daysElapsed)
+    return Math.ceil(state.bankLoan.remainingAmount / state.bankLoan.dailyPayment)
   }
 
   /**
@@ -111,23 +194,24 @@ export class Bank {
   /**
    * Check if can take a specific loan
    */
-  static canTakeLoan(_pkg: LoanPackageDef, state: GameState): { canBuy: boolean; reason?: string } {
-    if (!this.isUnlocked(state)) {
-      return { canBuy: false, reason: 'Reach 50 guests to unlock' }
+  static canTakeLoan(pkg: LoanPackageDef, state: GameState): { canBuy: boolean; reason?: string } {
+    if (!this.isPackageUnlocked(pkg, state)) {
+      // Extract guest count from milestone (e.g., 'guests_100' -> '100')
+      const guestCount = pkg.unlockMilestone.replace('guests_', '')
+      return { canBuy: false, reason: `${guestCount} guests` }
     }
     if (this.hasActiveLoan(state)) {
-      return { canBuy: false, reason: 'Repay current loan first' }
+      return { canBuy: false, reason: 'Repay first' }
     }
     if (this.isOnCooldown(state)) {
       const days = this.getCooldownRemaining(state)
-      return { canBuy: false, reason: `${Math.ceil(days)} day cooldown` }
+      return { canBuy: false, reason: `${Math.ceil(days)}d cooldown` }
     }
     return { canBuy: true }
   }
 
   /**
    * Process daily loan repayment
-   * Returns the amount deducted from money
    */
   static processDailyRepayment(state: GameState): { newState: Partial<GameState>; amountPaid: number } {
     if (!state.bankLoan) {
@@ -138,7 +222,6 @@ export class Bank {
     const newRemaining = state.bankLoan.remainingAmount - payment
 
     if (newRemaining <= 0) {
-      // Loan fully repaid
       return {
         newState: {
           bankLoan: null,
@@ -148,7 +231,6 @@ export class Bank {
       }
     }
 
-    // Continue paying
     return {
       newState: {
         bankLoan: {

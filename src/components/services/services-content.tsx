@@ -1,12 +1,11 @@
 import { motion } from 'framer-motion'
-import { Zap, Users, DollarSign, TrendingUp, Lock, ChevronLeft, Clock, Sparkles, Check, Landmark, Calendar, Percent } from 'lucide-react'
+import { Zap, Users, DollarSign, Lock, ChevronLeft } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { Service } from '../../systems/service'
-import { Marketing, type CampaignDef } from '../../systems/marketing'
-import { Bank, type LoanPackageDef } from '../../systems/bank'
+import { Marketing } from '../../systems/marketing'
+import { Bank } from '../../systems/bank'
 import { Perk } from '../../systems/perk'
 import { Format } from '../../utils/format'
-import { GameTypes } from '../../engine/game-types'
 import type { DrawerScreen } from '../ui/drawer'
 
 type ServicesContentProps = {
@@ -320,175 +319,60 @@ export function MarketingContent() {
   const isCooldownActive = cooldownRemaining > 0 && !activeCampaign
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-          <span className="text-2xl">📣</span>
-        </div>
-        <div className="flex-1">
-          <div className="text-lg font-medium">Marketing</div>
-          <div className="text-sm text-[var(--color-text-muted)]">
-            Run campaigns to attract more guests
-          </div>
-        </div>
-      </div>
-
-      {/* Active Campaign Banner */}
+    <div className="space-y-2">
+      {/* Status bar */}
       {activeCampaign && (
-        <div className="p-4 rounded-xl bg-purple-500/20 border border-purple-500/30">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-purple-500/30 flex items-center justify-center">
-              <span className="text-xl">{activeCampaign.emoji}</span>
-            </div>
-            <div className="flex-1">
-              <div className="font-medium text-purple-200">{activeCampaign.name}</div>
-              <div className="text-sm text-purple-300/70">Active campaign</div>
-            </div>
-            <div className="text-right">
-              <div className="flex items-center gap-1 text-purple-200">
-                <Clock size={14} />
-                <span className="font-bold">{Math.ceil(daysRemaining)}</span>
-              </div>
-              <div className="text-xs text-purple-300/70">days left</div>
-            </div>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <div className="p-2 rounded-lg bg-purple-500/20 text-center">
-              <div className="text-xs text-purple-300/70">Guest Boost</div>
-              <div className="font-bold text-purple-200">+{Math.round(activeCampaign.effects.guestArrivalBonus * 100)}%</div>
-            </div>
-            {activeCampaign.effects.appealBonus > 0 && (
-              <div className="p-2 rounded-lg bg-purple-500/20 text-center">
-                <div className="text-xs text-purple-300/70">Appeal Boost</div>
-                <div className="font-bold text-purple-200">+{activeCampaign.effects.appealBonus}</div>
-              </div>
-            )}
-          </div>
+        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-purple-500/20 text-sm">
+          <span className="text-purple-200">{activeCampaign.emoji} {activeCampaign.name} running</span>
+          <span className="text-purple-300">{Math.ceil(daysRemaining)} days left</span>
         </div>
       )}
-
-      {/* Cooldown Banner */}
       {isCooldownActive && (
-        <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-          <div className="flex items-center gap-3">
-            <Clock size={20} className="text-[var(--color-text-muted)]" />
-            <div className="flex-1">
-              <div className="font-medium">Cooldown Active</div>
-              <div className="text-sm text-[var(--color-text-muted)]">
-                Wait {Math.ceil(cooldownRemaining)} more day{cooldownRemaining !== 1 ? 's' : ''} before next campaign
-              </div>
-            </div>
-          </div>
+        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[var(--color-surface)] text-sm text-[var(--color-text-muted)]">
+          <span>Cooldown active</span>
+          <span>{Math.ceil(cooldownRemaining)} days</span>
         </div>
       )}
 
-      {/* Campaign Cards */}
+      {/* Campaign List */}
       <div className="space-y-2">
-        {Marketing.ALL.map((campaign) => (
-          <CampaignCard
-            key={campaign.id}
-            campaign={campaign}
-            state={state}
-            onPurchase={() => startCampaign(campaign.id)}
-          />
-        ))}
-      </div>
+        {Marketing.ALL.map((campaign) => {
+          const { canBuy, reason } = Marketing.canPurchase(campaign, state)
+          const isActive = state.marketing?.activeCampaign?.campaignId === campaign.id
 
-      {/* Info */}
-      <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
-        <p className="text-xs text-purple-200/80">
-          Marketing campaigns temporarily boost guest arrival rate and appeal.
-          Only one campaign can run at a time, with a {GameTypes.MARKETING_COOLDOWN_DAYS}-day cooldown between campaigns.
-        </p>
+          return (
+            <div
+              key={campaign.id}
+              className={`p-3 rounded-xl ${
+                isActive ? 'bg-purple-500/15 ring-1 ring-purple-500/30' : 'bg-[var(--color-surface)]'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-medium">{campaign.emoji} {campaign.name}</span>
+                {isActive ? (
+                  <span className="text-xs text-purple-400">Active</span>
+                ) : (
+                  <button
+                    onClick={() => startCampaign(campaign.id)}
+                    disabled={!canBuy}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                      canBuy
+                        ? 'bg-purple-500 text-white'
+                        : 'bg-[var(--color-text-muted)]/20 text-[var(--color-text-muted)]'
+                    }`}
+                  >
+                    {reason || Format.money(campaign.cost)}
+                  </button>
+                )}
+              </div>
+              <div className="text-sm text-[var(--color-text-muted)]">
+                +{Math.round(campaign.effects.guestArrivalBonus * 100)}% more guests for {campaign.duration} days
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
-  )
-}
-
-// Individual campaign card
-function CampaignCard({
-  campaign,
-  state,
-  onPurchase,
-}: {
-  campaign: CampaignDef
-  state: ReturnType<typeof useGameStore.getState>
-  onPurchase: () => void
-}) {
-  const { canBuy, reason } = Marketing.canPurchase(campaign, state)
-  const isActive = state.marketing?.activeCampaign?.campaignId === campaign.id
-
-  return (
-    <motion.div
-      whileTap={canBuy ? { scale: 0.98 } : undefined}
-      className={`p-4 rounded-xl border transition-colors ${
-        isActive
-          ? 'bg-purple-500/20 border-purple-500/30'
-          : canBuy
-          ? 'bg-[var(--color-surface)] border-[var(--color-border)] active:bg-[var(--color-surface-hover)]'
-          : 'bg-[var(--color-surface)]/50 border-[var(--color-border)] opacity-60'
-      }`}
-    >
-      <div className="flex items-start gap-3">
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-          isActive ? 'bg-purple-500/30' : 'bg-[var(--color-accent)]/10'
-        }`}>
-          <span className="text-xl">{campaign.emoji}</span>
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <span className="font-medium">{campaign.name}</span>
-            {isActive && (
-              <span className="text-xs bg-purple-500/30 text-purple-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <Sparkles size={10} /> Active
-              </span>
-            )}
-          </div>
-          <div className="text-sm text-[var(--color-text-muted)]">{campaign.description}</div>
-          <div className="flex items-center gap-3 mt-2 text-xs">
-            <span className="flex items-center gap-1">
-              <Clock size={12} className="text-[var(--color-text-muted)]" />
-              {campaign.duration} days
-            </span>
-            <span className="flex items-center gap-1 text-[var(--color-positive)]">
-              <Users size={12} />
-              +{Math.round(campaign.effects.guestArrivalBonus * 100)}%
-            </span>
-            {campaign.effects.appealBonus > 0 && (
-              <span className="flex items-center gap-1 text-amber-500">
-                <TrendingUp size={12} />
-                +{campaign.effects.appealBonus}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="text-right">
-          {isActive ? (
-            <div className="flex items-center gap-1 text-purple-200">
-              <Check size={16} />
-            </div>
-          ) : (
-            <>
-              <button
-                onClick={onPurchase}
-                disabled={!canBuy}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  canBuy
-                    ? 'bg-purple-500 text-white active:bg-purple-600'
-                    : 'bg-[var(--color-text-muted)]/20 text-[var(--color-text-muted)] cursor-not-allowed'
-                }`}
-              >
-                {Format.money(campaign.cost)}
-              </button>
-              {!canBuy && reason && (
-                <div className="text-xs text-[var(--color-text-muted)] mt-1">{reason}</div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    </motion.div>
   )
 }
 
@@ -501,186 +385,72 @@ export function BankContent() {
   const cooldownRemaining = Bank.getCooldownRemaining(state)
   const isCooldownActive = cooldownRemaining > 0 && !activeLoan
 
-  // Calculate days remaining on active loan
   const daysRemaining = activeLoan
     ? Math.ceil(activeLoan.remainingAmount / activeLoan.dailyPayment)
     : 0
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-          <Landmark size={24} className="text-emerald-500" />
-        </div>
-        <div className="flex-1">
-          <div className="text-lg font-medium">Bank</div>
-          <div className="text-sm text-[var(--color-text-muted)]">
-            Borrow money to grow your park
-          </div>
-        </div>
-      </div>
-
-      {/* Active Loan Banner */}
+    <div className="space-y-2">
+      {/* Status bar */}
       {activeLoan && (
-        <div className="p-4 rounded-xl bg-emerald-500/20 border border-emerald-500/30">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/30 flex items-center justify-center">
-              <span className="text-xl">{Bank.getById(activeLoan.packageId)?.emoji ?? '💰'}</span>
-            </div>
-            <div className="flex-1">
-              <div className="font-medium text-emerald-200">{Bank.getById(activeLoan.packageId)?.name ?? 'Active Loan'}</div>
-              <div className="text-sm text-emerald-300/70">Repaying daily</div>
-            </div>
-            <div className="text-right">
-              <div className="flex items-center gap-1 text-emerald-200">
-                <Clock size={14} />
-                <span className="font-bold">{daysRemaining}</span>
-              </div>
-              <div className="text-xs text-emerald-300/70">days left</div>
-            </div>
+        <div className="px-3 py-2 rounded-lg bg-emerald-500/20 text-sm">
+          <div className="flex items-center justify-between text-emerald-200">
+            <span>Repaying {Bank.getById(activeLoan.packageId)?.name}</span>
+            <span>{daysRemaining} days left</span>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <div className="p-2 rounded-lg bg-emerald-500/20 text-center">
-              <div className="text-xs text-emerald-300/70">Remaining</div>
-              <div className="font-bold text-emerald-200">{Format.money(activeLoan.remainingAmount)}</div>
-            </div>
-            <div className="p-2 rounded-lg bg-emerald-500/20 text-center">
-              <div className="text-xs text-emerald-300/70">Daily Payment</div>
-              <div className="font-bold text-emerald-200">{Format.money(activeLoan.dailyPayment)}</div>
-            </div>
+          <div className="flex items-center justify-between text-emerald-300/70 text-xs mt-1">
+            <span>{Format.money(activeLoan.dailyPayment)} per day</span>
+            <span>{Format.money(activeLoan.remainingAmount)} remaining</span>
           </div>
         </div>
       )}
-
-      {/* Cooldown Banner */}
       {isCooldownActive && (
-        <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-          <div className="flex items-center gap-3">
-            <Clock size={20} className="text-[var(--color-text-muted)]" />
-            <div className="flex-1">
-              <div className="font-medium">Cooldown Active</div>
-              <div className="text-sm text-[var(--color-text-muted)]">
-                Wait {Math.ceil(cooldownRemaining)} more day{cooldownRemaining !== 1 ? 's' : ''} before taking another loan
-              </div>
-            </div>
-          </div>
+        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[var(--color-surface)] text-sm text-[var(--color-text-muted)]">
+          <span>Cooldown active</span>
+          <span>{Math.ceil(cooldownRemaining)} days</span>
         </div>
       )}
 
-      {/* Loan Package Cards */}
+      {/* Loan List */}
       <div className="space-y-2">
-        {Bank.ALL.map((pkg) => (
-          <LoanPackageCard
-            key={pkg.id}
-            pkg={pkg}
-            state={state}
-            onTakeLoan={() => takeLoan(pkg.id)}
-          />
-        ))}
-      </div>
+        {Bank.ALL.map((pkg) => {
+          const { canBuy, reason } = Bank.canTakeLoan(pkg, state)
+          const isActive = state.bankLoan?.packageId === pkg.id
+          const loanAmount = Bank.getLoanAmount(pkg, state)
+          const totalRepayment = Bank.getTotalRepayment(pkg, state)
 
-      {/* Info */}
-      <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-        <p className="text-xs text-emerald-200/80">
-          Loans provide immediate cash but require daily repayment with interest.
-          Only one loan can be active at a time, with a {GameTypes.BANK_COOLDOWN_DAYS}-day cooldown between loans.
-        </p>
+          return (
+            <div
+              key={pkg.id}
+              className={`p-3 rounded-xl ${
+                isActive ? 'bg-emerald-500/15 ring-1 ring-emerald-500/30' : 'bg-[var(--color-surface)]'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-medium">{pkg.emoji} Borrow {Format.money(loanAmount)}</span>
+                {isActive ? (
+                  <span className="text-xs text-emerald-400">Active</span>
+                ) : (
+                  <button
+                    onClick={() => takeLoan(pkg.id)}
+                    disabled={!canBuy}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                      canBuy
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-[var(--color-text-muted)]/20 text-[var(--color-text-muted)]'
+                    }`}
+                  >
+                    {reason || 'Borrow'}
+                  </button>
+                )}
+              </div>
+              <div className="text-sm text-[var(--color-text-muted)]">
+                Pay back {Format.money(totalRepayment)} over {pkg.duration} days
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
-  )
-}
-
-// Individual loan package card
-function LoanPackageCard({
-  pkg,
-  state,
-  onTakeLoan,
-}: {
-  pkg: LoanPackageDef
-  state: ReturnType<typeof useGameStore.getState>
-  onTakeLoan: () => void
-}) {
-  const { canBuy, reason } = Bank.canTakeLoan(pkg, state)
-  const isActive = state.bankLoan?.packageId === pkg.id
-  const totalRepayment = Bank.getTotalRepayment(pkg)
-  const dailyPayment = Bank.getDailyPayment(pkg)
-
-  return (
-    <motion.div
-      whileTap={canBuy ? { scale: 0.98 } : undefined}
-      className={`p-4 rounded-xl border transition-colors ${
-        isActive
-          ? 'bg-emerald-500/20 border-emerald-500/30'
-          : canBuy
-          ? 'bg-[var(--color-surface)] border-[var(--color-border)] active:bg-[var(--color-surface-hover)]'
-          : 'bg-[var(--color-surface)]/50 border-[var(--color-border)] opacity-60'
-      }`}
-    >
-      <div className="flex items-start gap-3">
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-          isActive ? 'bg-emerald-500/30' : 'bg-[var(--color-accent)]/10'
-        }`}>
-          <span className="text-xl">{pkg.emoji}</span>
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <span className="font-medium">{pkg.name}</span>
-            {isActive && (
-              <span className="text-xs bg-emerald-500/30 text-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <Sparkles size={10} /> Active
-              </span>
-            )}
-          </div>
-          <div className="text-sm text-[var(--color-text-muted)]">
-            Borrow {Format.money(pkg.amount)} at {Math.round(pkg.interestRate * 100)}% interest
-          </div>
-          <div className="flex items-center gap-3 mt-2 text-xs">
-            <span className="flex items-center gap-1">
-              <Calendar size={12} className="text-[var(--color-text-muted)]" />
-              {pkg.duration} days
-            </span>
-            <span className="flex items-center gap-1 text-[var(--color-text-muted)]">
-              <Percent size={12} />
-              {Math.round(pkg.interestRate * 100)}%
-            </span>
-            <span className="flex items-center gap-1 text-amber-500">
-              <DollarSign size={12} />
-              {Format.money(dailyPayment)}/day
-            </span>
-          </div>
-        </div>
-        <div className="text-right">
-          {isActive ? (
-            <div className="flex items-center gap-1 text-emerald-200">
-              <Check size={16} />
-            </div>
-          ) : (
-            <>
-              <button
-                onClick={onTakeLoan}
-                disabled={!canBuy}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  canBuy
-                    ? 'bg-emerald-500 text-white active:bg-emerald-600'
-                    : 'bg-[var(--color-text-muted)]/20 text-[var(--color-text-muted)] cursor-not-allowed'
-                }`}
-              >
-                {Format.money(pkg.amount)}
-              </button>
-              {!canBuy && reason && (
-                <div className="text-xs text-[var(--color-text-muted)] mt-1">{reason}</div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-      {/* Repayment info */}
-      {!isActive && (
-        <div className="mt-2 pt-2 border-t border-[var(--color-border)] text-xs text-[var(--color-text-muted)]">
-          Total repayment: {Format.money(totalRepayment)}
-        </div>
-      )}
-    </motion.div>
   )
 }

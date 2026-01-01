@@ -210,7 +210,7 @@ export type MarketingState = {
 
 // === BANK ===
 
-export type BankLoanPackageId = 'small' | 'medium' | 'large'
+export type BankLoanPackageId = 'starter' | 'small' | 'medium' | 'large' | 'major' | 'mega'
 
 export type BankLoanState = {
   packageId: BankLoanPackageId
@@ -281,7 +281,7 @@ export class GameTypes {
   static readonly MARKETING_COOLDOWN_DAYS = 5
 
   // Bank
-  static readonly BANK_COOLDOWN_DAYS = 90
+  static readonly BANK_COOLDOWN_DAYS = 180
 
   static createInitialStats(): Record<StatId, number> {
     return {
