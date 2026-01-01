@@ -176,6 +176,15 @@ export class Marketing {
   }
 
   /**
+   * Get the arrival rate bonus multiplier from active campaign.
+   * Returns 0 if no campaign, or the bonus (e.g., 0.3 for +30%)
+   */
+  static getArrivalBonus(state: GameState): number {
+    const campaign = this.getActiveCampaign(state)
+    return campaign?.effects.guestArrivalBonus ?? 0
+  }
+
+  /**
    * Get modifiers from active campaign
    */
   static getModifiers(state: GameState): Modifier[] {
