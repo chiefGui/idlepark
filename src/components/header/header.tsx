@@ -17,14 +17,19 @@ export function Header() {
 
   return (
     <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
-      <motion.button
-        whileTap={{ scale: 0.95 }}
-        onClick={() => store.show()}
-        className="p-2 -ml-2 hover:bg-[var(--color-surface-hover)] rounded-xl transition-colors"
-      >
-        <Menu size={24} />
-      </motion.button>
+      {/* Left side: Menu + Notifications */}
+      <div className="flex items-center gap-1">
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => store.show()}
+          className="p-2 -ml-2 hover:bg-[var(--color-surface-hover)] rounded-xl transition-colors"
+        >
+          <Menu size={24} />
+        </motion.button>
+        <NotificationCenter />
+      </div>
 
+      {/* Center: Status indicators */}
       <div className="flex items-center gap-3">
         {gameOver ? (
           <motion.span
@@ -48,10 +53,8 @@ export function Header() {
         ) : null}
       </div>
 
-      <div className="flex items-center gap-2">
-        <NotificationCenter />
-        <DayProgress />
-      </div>
+      {/* Right side: Calendar */}
+      <DayProgress />
     </header>
   )
 }
