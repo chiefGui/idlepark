@@ -645,8 +645,10 @@ export class Feed {
   }
 
   static shouldGenerateAmbient(guestCount: number): boolean {
-    if (guestCount < 10) return false
-    const chance = Math.min(0.0005, guestCount / 200000)
+    // Much lower probability - ambient messages are low priority noise
+    // Combined with 20s cooldown, this creates ~1 message per 30-60 seconds
+    if (guestCount < 20) return false
+    const chance = Math.min(0.00005, guestCount / 2000000)
     return Math.random() < chance
   }
 
@@ -662,18 +664,18 @@ export class Feed {
     { stat: 'guests', crossUp: 200, event: 'guest_threshold', context: { guestCount: 200 }, priority: true },
     { stat: 'guests', crossUp: 300, event: 'guest_threshold', context: { guestCount: 300 }, priority: true },
     { stat: 'guests', crossUp: 500, event: 'guest_threshold', context: { guestCount: 500 }, priority: true },
-    // Capacity (with hysteresis to prevent spam, non-priority to respect cooldown)
-    { stat: 'capacityPercent', crossUp: 100, resetBelow: 90, event: 'capacity_reached', priority: false },
-    { stat: 'capacityPercent', crossUp: 80, resetBelow: 70, event: 'capacity_warning', priority: false },
-    // Appeal (with hysteresis, non-priority to respect cooldown)
-    { stat: 'appeal', crossUp: 85, resetBelow: 75, event: 'appeal_high', priority: false },
-    { stat: 'appeal', crossDown: 40, resetAbove: 50, event: 'appeal_low', priority: false },
+    // Capacity - wide hysteresis to prevent oscillation spam
+    { stat: 'capacityPercent', crossUp: 100, resetBelow: 85, event: 'capacity_reached', priority: false },
+    { stat: 'capacityPercent', crossUp: 85, resetBelow: 65, event: 'capacity_warning', priority: false },
+    // Appeal - wide hysteresis bands (20-point gap) to prevent oscillation
+    { stat: 'appeal', crossUp: 90, resetBelow: 70, event: 'appeal_high', priority: false },
+    { stat: 'appeal', crossDown: 35, resetAbove: 55, event: 'appeal_low', priority: false },
     // Financial (with hysteresis)
     { stat: 'money', crossDown: 0, resetAbove: 500, event: 'financial_warning', priority: true },
     { stat: 'money', crossUp: 0, resetBelow: -500, event: 'financial_success', priority: true, extraCheck: (curr) => curr.moneyRate > 50 },
-    // Random chance events (no hysteresis - controlled by chance)
-    { stat: 'perceivedValue', below: 0.8, event: 'price_complaint', priority: false, chance: 0.002, includeTicketPrice: true },
-    { stat: 'perceivedValue', above: 1.3, event: 'price_praise', priority: false, chance: 0.002, includeTicketPrice: true },
+    // Random chance events - very low probability, combined with 20s cooldown
+    { stat: 'perceivedValue', below: 0.8, event: 'price_complaint', priority: false, chance: 0.0005, includeTicketPrice: true },
+    { stat: 'perceivedValue', above: 1.3, event: 'price_praise', priority: false, chance: 0.0005, includeTicketPrice: true },
   ]
 
   static checkTickEvents(current: TickStats, prev: TickStats, firedThresholds: Set<string>): TriggeredEvent[] {

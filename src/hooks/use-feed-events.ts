@@ -5,7 +5,23 @@ import { Feed, type TickStats } from '../systems/feed'
 import { Guest } from '../systems/guest'
 import { useGameStore } from '../store/game-store'
 
-const FEED_COOLDOWN = 5000
+// Tiered cooldown system to prevent spam
+const PRIORITY_COOLDOWN = 2000 // Minimum spacing even for priority events
+const NORMAL_COOLDOWN = 5000 // Standard events
+const LOW_PRIORITY_COOLDOWN = 20000 // Ambient, price feedback
+
+// Events that use low-priority (longer) cooldown
+const LOW_PRIORITY_EVENTS: FeedEventType[] = [
+  'ambient',
+  'price_complaint',
+  'price_praise',
+  'capacity_warning',
+]
+
+// Events that bypass cooldown entirely (critical alerts)
+const CRITICAL_EVENTS: FeedEventType[] = [
+  'financial_warning',
+]
 
 // Declarative config for priority events (player actions / important events)
 type PriorityEventConfig = {
@@ -15,27 +31,59 @@ type PriorityEventConfig = {
   condition?: (payload: { count: number }) => boolean
 }
 
+// Priority events with minimum spacing to prevent spam
+// Happenings excluded - they have their own dedicated toast
 const PRIORITY_EVENTS: PriorityEventConfig[] = [
   { event: 'building:built', type: 'building_built', contextKey: 'buildingId' },
   { event: 'building:demolished', type: 'building_demolished', contextKey: 'buildingId' },
   { event: 'milestone:achieved', type: 'milestone_achieved', contextKey: 'milestoneId' },
   { event: 'perk:purchased', type: 'perk_purchased', contextKey: 'perkId' },
-  { event: 'happening:started', type: 'happening_started', contextKey: 'happeningId' },
-  { event: 'happening:ended', type: 'happening_ended', contextKey: 'happeningId' },
   { event: 'guests:departed', type: 'guest_departed', contextKey: 'guestCount', condition: (p) => p.count > 0 },
 ]
 
 export function useFeedEvents() {
   const addFeedEntry = useGameStore((s) => s.actions.addFeedEntry)
   const prevRef = useRef<TickStats | null>(null)
-  const lastFeedTimeRef = useRef<number>(0)
+  // Track cooldowns separately for different tiers
+  const lastPriorityTimeRef = useRef<number>(0)
+  const lastNormalTimeRef = useRef<number>(0)
+  const lastLowPriorityTimeRef = useRef<number>(0)
   const firedThresholdsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
-    const addWithCooldown = (entry: ReturnType<typeof Feed.createEntry>, priority = false) => {
+    // Tiered cooldown system
+    const addWithCooldown = (
+      entry: ReturnType<typeof Feed.createEntry>,
+      priority = false,
+      eventType?: FeedEventType
+    ) => {
       const now = Date.now()
-      if (!priority && now - lastFeedTimeRef.current < FEED_COOLDOWN) return false
-      lastFeedTimeRef.current = now
+
+      // Critical events bypass all cooldowns
+      if (eventType && CRITICAL_EVENTS.includes(eventType)) {
+        addFeedEntry(entry)
+        return true
+      }
+
+      // Priority events (player actions) - still need minimum spacing
+      if (priority) {
+        if (now - lastPriorityTimeRef.current < PRIORITY_COOLDOWN) return false
+        lastPriorityTimeRef.current = now
+        addFeedEntry(entry)
+        return true
+      }
+
+      // Low priority events (ambient, price feedback) - longer cooldown
+      if (eventType && LOW_PRIORITY_EVENTS.includes(eventType)) {
+        if (now - lastLowPriorityTimeRef.current < LOW_PRIORITY_COOLDOWN) return false
+        lastLowPriorityTimeRef.current = now
+        addFeedEntry(entry)
+        return true
+      }
+
+      // Normal events - standard cooldown
+      if (now - lastNormalTimeRef.current < NORMAL_COOLDOWN) return false
+      lastNormalTimeRef.current = now
       addFeedEntry(entry)
       return true
     }
@@ -52,7 +100,7 @@ export function useFeedEvents() {
           ? { [config.contextKey]: payload[config.contextKey] ?? payload.count }
           : undefined
         const entry = Feed.createEntry(config.type, state.currentDay, context)
-        addWithCooldown(entry, true)
+        addWithCooldown(entry, true, config.type)
       })
       unsubs.push(unsub)
     }
@@ -83,7 +131,7 @@ export function useFeedEvents() {
         // Check all events and process them (firedThresholdsRef is mutated by checkTickEvents)
         const events = Feed.checkTickEvents(current, prevRef.current, firedThresholdsRef.current)
         for (const { type, context, priority } of events) {
-          addWithCooldown(Feed.createEntry(type, state.currentDay, context), priority)
+          addWithCooldown(Feed.createEntry(type, state.currentDay, context), priority, type)
         }
 
         prevRef.current = current
