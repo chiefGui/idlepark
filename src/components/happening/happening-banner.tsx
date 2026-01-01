@@ -3,27 +3,48 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { Happening } from '../../systems/happening'
+import type { HappeningEffect } from '../../engine/game-types'
 
-function formatModifierEffect(happening: ReturnType<typeof Happening.getById>): string {
-  if (!happening) return ''
-
-  const effects: string[] = []
-  for (const mod of happening.modifiers) {
-    if (mod.flat) {
-      const sign = mod.flat > 0 ? '+' : ''
-      effects.push(`${sign}${mod.flat} ${mod.stat}`)
+function formatEffect(effect: HappeningEffect): string {
+  switch (effect.type) {
+    case 'stat': {
+      if (effect.flat) {
+        const sign = effect.flat > 0 ? '+' : ''
+        return `${sign}${effect.flat} ${effect.stat}`
+      }
+      if (effect.increased) {
+        const sign = effect.increased > 0 ? '+' : ''
+        return `${sign}${effect.increased}% ${effect.stat}`
+      }
+      if (effect.more) {
+        const percent = Math.round((effect.more - 1) * 100)
+        const sign = percent > 0 ? '+' : ''
+        return `${sign}${percent}% ${effect.stat}`
+      }
+      return ''
     }
-    if (mod.increased) {
-      const sign = mod.increased > 0 ? '+' : ''
-      effects.push(`${sign}${mod.increased}% ${mod.stat}`)
-    }
-    if (mod.more) {
-      const percent = Math.round((mod.more - 1) * 100)
+    case 'buildingCost': {
+      const percent = Math.round((effect.multiplier - 1) * 100)
       const sign = percent > 0 ? '+' : ''
-      effects.push(`${sign}${percent}% ${mod.stat}`)
+      const category = effect.category ? ` ${effect.category}` : ''
+      return `${sign}${percent}%${category} building costs`
+    }
+    case 'arrival': {
+      const percent = Math.round((effect.multiplier - 1) * 100)
+      const sign = percent > 0 ? '+' : ''
+      return `${sign}${percent}% guest arrivals`
+    }
+    case 'ticketIncome': {
+      const percent = Math.round((effect.multiplier - 1) * 100)
+      const sign = percent > 0 ? '+' : ''
+      return `${sign}${percent}% ticket income`
     }
   }
-  return effects.join(', ')
+}
+
+function formatHappeningEffects(happening: ReturnType<typeof Happening.getById>): string {
+  if (!happening) return ''
+  return happening.effects.map(formatEffect).filter(Boolean).join(', ')
 }
 
 export function HappeningBanner() {
@@ -39,7 +60,7 @@ export function HappeningBanner() {
   const remainingDays = Math.max(0, Math.ceil(currentHappening.endDay - currentDay))
   const isPositive = happening.type === 'positive'
   const bgColor = isPositive ? 'var(--color-positive)' : 'var(--color-negative)'
-  const effect = formatModifierEffect(happening)
+  const effect = formatHappeningEffects(happening)
 
   return (
     <AnimatePresence>
