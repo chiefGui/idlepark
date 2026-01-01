@@ -61,6 +61,14 @@ export class Milestone {
     condition: { type: 'stat', statId: 'guests', min: 100 },
   }
 
+  static readonly GUESTS_150: MilestoneDef = {
+    id: 'guests_150',
+    name: 'Major Attraction',
+    emoji: '🎪',
+    description: 'Have 150 guests in your park',
+    condition: { type: 'stat', statId: 'guests', min: 150 },
+  }
+
   static readonly DAY_10: MilestoneDef = {
     id: 'day_10',
     name: 'Established',
@@ -151,6 +159,7 @@ export class Milestone {
     Milestone.GUESTS_50,
     Milestone.GUESTS_75,
     Milestone.GUESTS_100,
+    Milestone.GUESTS_150,
     Milestone.GUESTS_200,
     Milestone.GUESTS_300,
     Milestone.GUESTS_500,
