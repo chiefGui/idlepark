@@ -45,6 +45,9 @@ const collectModifiers = (state: GameState): Modifier[] => {
     }
   }
 
+  // Collect from shops (guest-based income)
+  modifiers.push(...Building.getShopModifiers(state))
+
   // Collect from perks
   for (const perkId of state.ownedPerks) {
     modifiers.push(...Perk.getModifiers(perkId))

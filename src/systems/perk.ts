@@ -156,6 +156,17 @@ export class Perk {
     requirements: [{ type: 'stat', statId: 'guests', min: 50 }],
   }
 
+  // Shop unlock perk
+  static readonly RETAIL_LICENSE: PerkDef = {
+    id: 'retail_license',
+    name: 'Retail License',
+    emoji: '🛍️',
+    description: 'Open shops that earn based on guest traffic',
+    costs: [{ statId: 'money', amount: 2000 }],
+    effects: [],
+    requirements: [{ type: 'stat', statId: 'guests', min: 75 }],
+  }
+
   static readonly ALL: PerkDef[] = [
     Perk.SPOTLESS_PARK,
     Perk.EXTRA_SLOT_1,
@@ -168,6 +179,7 @@ export class Perk {
     Perk.LODGING_3,
     Perk.FAST_PASS_UNLOCK,
     Perk.THRILL_SEEKERS,
+    Perk.RETAIL_LICENSE,
   ]
 
   static getById(id: string): PerkDef | undefined {
