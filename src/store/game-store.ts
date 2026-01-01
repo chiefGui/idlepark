@@ -15,6 +15,7 @@ import { Feed } from '../systems/feed'
 import { Happening } from '../systems/happening'
 import { Service } from '../systems/service'
 import { Marketing } from '../systems/marketing'
+import { Season } from '../systems/season'
 
 const MAX_DAILY_RECORDS = 30
 
@@ -68,6 +69,9 @@ const collectModifiers = (state: GameState): Modifier[] => {
 
   // Collect from active marketing campaign
   modifiers.push(...Marketing.getModifiers(state))
+
+  // Collect from current season
+  modifiers.push(...Season.getModifiers(state.currentDay))
 
   return modifiers
 }
