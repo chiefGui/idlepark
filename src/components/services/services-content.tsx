@@ -119,19 +119,29 @@ export function ServicesContent({ onNavigate }: ServicesContentProps) {
   )
 }
 
-// Fast Pass info UI with tier selector
+// Fast Pass info UI with tier slider
 export function FastPassContent() {
   const state = useGameStore((s) => s)
   const setFastPassTier = state.actions.setFastPassTier
-  const serviceDef = Service.FAST_PASS
 
   const currentTier = Service.getCurrentFastPassTier(state)
   const capacityBonus = Service.getTotalCapacityBonus(state)
   const fastPassPrice = Service.getFastPassPrice(state)
 
+  // Map tier to slider index (0-3)
+  const tierIndex = Service.FAST_PASS_TIERS.findIndex(t => t.id === state.fastPassTier)
+
   // Calculate current bonus income
   const baseIncome = state.rates.money
   const bonusIncome = baseIncome * (currentTier.incomeBoostPercent / 100)
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const index = Number(e.target.value)
+    const tier = Service.FAST_PASS_TIERS[index]
+    if (tier) {
+      setFastPassTier(tier.id)
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -141,66 +151,100 @@ export function FastPassContent() {
           <Zap size={24} className="text-amber-500" />
         </div>
         <div className="flex-1">
-          <div className="text-lg font-medium">{serviceDef.name}</div>
+          <div className="text-lg font-medium">Fast Pass</div>
           <div className="text-sm text-[var(--color-text-muted)]">
-            Set pricing to balance capacity vs income
+            Balance capacity vs income
           </div>
         </div>
       </div>
 
-      {/* Tier Selector */}
-      <div className="space-y-2">
-        <div className="text-sm font-medium text-[var(--color-text-muted)]">Pricing Tier</div>
-        <div className="grid grid-cols-4 gap-2">
-          {Service.FAST_PASS_TIERS.map((tier) => {
-            const isSelected = tier.id === state.fastPassTier
-            const tierPrice = state.ticketPrice * (1 + tier.priceMultiplier)
+      {/* Pricing Tier Slider */}
+      <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-sm text-[var(--color-text-muted)]">Pricing Tier</div>
+            <div className="text-2xl font-bold text-amber-400">{currentTier.name}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-sm text-[var(--color-text-muted)]">Fast Pass Price</div>
+            <div className="text-2xl font-bold">${fastPassPrice.toFixed(0)}</div>
+          </div>
+        </div>
 
-            return (
-              <motion.button
+        {/* Slider */}
+        <div className="space-y-2">
+          <input
+            type="range"
+            min={0}
+            max={3}
+            step={1}
+            value={tierIndex}
+            onChange={handleSliderChange}
+            className="w-full h-2 rounded-full appearance-none cursor-pointer
+              bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600
+              [&::-webkit-slider-thumb]:appearance-none
+              [&::-webkit-slider-thumb]:w-7
+              [&::-webkit-slider-thumb]:h-7
+              [&::-webkit-slider-thumb]:rounded-full
+              [&::-webkit-slider-thumb]:bg-white
+              [&::-webkit-slider-thumb]:shadow-lg
+              [&::-webkit-slider-thumb]:border-2
+              [&::-webkit-slider-thumb]:border-amber-400
+              [&::-webkit-slider-thumb]:transition-transform
+              [&::-webkit-slider-thumb]:active:scale-110
+              [&::-moz-range-thumb]:w-7
+              [&::-moz-range-thumb]:h-7
+              [&::-moz-range-thumb]:rounded-full
+              [&::-moz-range-thumb]:bg-white
+              [&::-moz-range-thumb]:shadow-lg
+              [&::-moz-range-thumb]:border-2
+              [&::-moz-range-thumb]:border-amber-400
+            "
+          />
+          <div className="flex justify-between text-xs text-[var(--color-text-muted)]">
+            {Service.FAST_PASS_TIERS.map((tier) => (
+              <span
                 key={tier.id}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setFastPassTier(tier.id)}
-                className={`p-3 rounded-xl border-2 transition-all ${
-                  isSelected
-                    ? 'bg-amber-500/20 border-amber-500'
-                    : 'bg-[var(--color-surface)] border-[var(--color-border)] active:bg-[var(--color-surface-hover)]'
-                }`}
+                className={tier.id === currentTier.id ? 'text-amber-400 font-medium' : ''}
               >
-                <div className={`text-sm font-bold mb-1 ${isSelected ? 'text-amber-400' : ''}`}>
-                  {tier.name}
-                </div>
-                <div className="text-xs text-[var(--color-text-muted)]">
-                  +{tier.capacityBoostPercent}% cap
-                </div>
-                <div className="text-xs text-[var(--color-text-muted)]">
-                  ${tierPrice.toFixed(0)}
-                </div>
-              </motion.button>
-            )
-          })}
+                {tier.name}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Price breakdown */}
+        <div className="mt-4 pt-3 border-t border-[var(--color-border)]">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-[var(--color-text-muted)]">
+              Ticket ${state.ticketPrice} + {Math.round(currentTier.priceMultiplier * 100)}%
+            </span>
+            <span className="text-amber-400 font-medium">
+              = ${fastPassPrice.toFixed(2)}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Current Stats */}
+      {/* Impact Stats */}
       <div className="grid grid-cols-2 gap-3">
         <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
           <div className="flex items-center gap-2 mb-2">
             <Users size={16} className="text-amber-500" />
-            <span className="text-sm text-[var(--color-text-muted)]">Capacity Boost</span>
+            <span className="text-sm text-[var(--color-text-muted)]">Capacity</span>
           </div>
           <div className="text-2xl font-bold text-amber-500">
             +{currentTier.capacityBoostPercent}%
           </div>
           <div className="text-xs text-[var(--color-text-muted)] mt-1">
-            +{capacityBonus} guests currently
+            +{capacityBonus} guests
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign size={16} className="text-[var(--color-positive)]" />
-            <span className="text-sm text-[var(--color-text-muted)]">Income Boost</span>
+            <span className="text-sm text-[var(--color-text-muted)]">Income</span>
           </div>
           <div className="text-2xl font-bold text-[var(--color-positive)]">
             +{currentTier.incomeBoostPercent}%
@@ -211,24 +255,14 @@ export function FastPassContent() {
         </div>
       </div>
 
-      {/* Fast Pass Price */}
-      <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-sm text-[var(--color-text-muted)]">Fast Pass Price</div>
-            <div className="text-lg font-bold">${fastPassPrice.toFixed(2)}</div>
-          </div>
-          <div className="text-right">
-            <div className="text-sm text-[var(--color-text-muted)]">Ticket Price</div>
-            <div className="text-lg">${state.ticketPrice} <span className="text-amber-400">+{Math.round(currentTier.priceMultiplier * 100)}%</span></div>
-          </div>
-        </div>
-      </div>
-
-      {/* Info */}
+      {/* Trade-off hint */}
       <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
         <p className="text-xs text-amber-200/80">
-          Lower prices attract more guests (higher capacity). Higher prices mean fewer buyers but more income per guest. Capacity boost scales with your park size!
+          {tierIndex === 0
+            ? 'Budget pricing maximizes guest capacity. Great for growing your park!'
+            : tierIndex === 3
+            ? 'VIP pricing maximizes income per guest. Best for established parks.'
+            : 'Slide left for more guests, right for more income per guest.'}
         </p>
       </div>
     </div>
