@@ -29,11 +29,11 @@ export class Building {
     emoji: '🎡',
     description: 'A scenic ride with great views',
     category: 'rides',
-    costs: [{ statId: 'money', amount: 200 }],
+    costs: [{ statId: 'money', amount: 350 }],
     effects: [
-      { statId: 'money', perDay: -8 },
-      { statId: 'entertainment', perDay: 35 },
-      { statId: 'appeal', perDay: 2 },
+      { statId: 'money', perDay: -12 },
+      { statId: 'entertainment', perDay: 45 },
+      { statId: 'appeal', perDay: 4 },
     ],
     requirements: [],
   }
