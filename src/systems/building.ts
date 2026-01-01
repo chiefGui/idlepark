@@ -419,7 +419,7 @@ export class Building {
   ]
 
   static readonly CATEGORIES: { id: BuildingCategory; label: string; emoji: string; hint: string }[] = [
-    { id: 'rides', label: 'Rides', emoji: '🎢', hint: 'Entertainment' },
+    { id: 'rides', label: 'Rides', emoji: '🎢', hint: 'Fun' },
     { id: 'food', label: 'Food', emoji: '🍔', hint: 'Food & comfort' },
     { id: 'facilities', label: 'Facilities', emoji: '🚻', hint: 'Comfort & cleanliness' },
     { id: 'decor', label: 'Decor', emoji: '🌷', hint: 'Beauty & comfort' },
