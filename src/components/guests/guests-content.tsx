@@ -170,31 +170,36 @@ function GuestMoodBar({ breakdown, total }: { breakdown: { happy: number; neutra
   const unhappyPct = (breakdown.unhappy / total) * 100
 
   return (
-    <div className="h-4 rounded-full overflow-hidden flex bg-[var(--color-bg)]">
-      {happyPct > 0 && (
-        <motion.div
-          className="h-full bg-[var(--color-positive)]"
-          initial={{ width: 0 }}
-          animate={{ width: `${happyPct}%` }}
-          transition={{ duration: 0.3 }}
-        />
-      )}
-      {neutralPct > 0 && (
-        <motion.div
-          className="h-full bg-[var(--color-accent)]"
-          initial={{ width: 0 }}
-          animate={{ width: `${neutralPct}%` }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-        />
-      )}
-      {unhappyPct > 0 && (
-        <motion.div
-          className="h-full bg-[var(--color-negative)]"
-          initial={{ width: 0 }}
-          animate={{ width: `${unhappyPct}%` }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-        />
-      )}
+    <div className="h-4 rounded-full overflow-hidden bg-[var(--color-bg)]">
+      <div className="h-full flex">
+        {happyPct > 0 && (
+          <motion.div
+            className="h-full bg-[var(--color-positive)]"
+            style={{ width: `${happyPct}%` }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          />
+        )}
+        {neutralPct > 0 && (
+          <motion.div
+            className="h-full bg-[var(--color-accent)]"
+            style={{ width: `${neutralPct}%` }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          />
+        )}
+        {unhappyPct > 0 && (
+          <motion.div
+            className="h-full bg-[var(--color-negative)]"
+            style={{ width: `${unhappyPct}%` }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          />
+        )}
+      </div>
     </div>
   )
 }
