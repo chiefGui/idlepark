@@ -462,6 +462,47 @@ const MESSAGES: Record<FeedEventType, string[]> = {
     "Getting packed. Grab food now before the lines get worse",
     "Almost at capacity - perfect time to try the less popular spots",
   ],
+  wish: [
+    // Hopeful
+    "I really wish this park had a {building}... that would be SO perfect",
+    "You know what would make this park even better? A {building} 💭",
+    "Manifesting a {building} at this park... universe please deliver 🙏",
+    "Dear park management: please add a {building}. Sincerely, everyone",
+    "Not me daydreaming about what a {building} would be like here...",
+    // Casual
+    "Lowkey wish they had a {building}. Just sayin'",
+    "Anyone else think a {building} would be cool here?",
+    "Random thought but a {building} would really fit this vibe",
+    "Imagine if they built a {building}... just imagine",
+    "Would absolutely lose my mind if they added a {building}",
+    // Passionate
+    "PETITION for this park to get a {building}!! Who's with me??",
+    "This park NEEDS a {building}. I will die on this hill",
+    "A {building} here would literally change my life",
+    "If they built a {building} I would never leave. NEVER",
+    // Suggestive
+    "Just a thought... what about a {building}? 👀",
+    "Friendly suggestion: {building}. You're welcome",
+    "The only thing missing from this park is a {building}",
+  ],
+  wish_fulfilled: [
+    // Ecstatic
+    "THEY ACTUALLY BUILT THE {building}!! THEY LISTENED TO US 😭🎉",
+    "NO WAY. THE {building} IS REAL. I'M SHAKING RN",
+    "HELLO?? THEY ADDED A {building}?? I MANIFESTED THIS",
+    "THE {building}!! MY DREAMS CAME TRUE. This park is ELITE",
+    "I wished for a {building} and they DELIVERED. Faith in humanity restored",
+    // Grateful
+    "They really built the {building} we asked for. Respect 🙏",
+    "Shoutout to whoever decided to add the {building}. You're a legend",
+    "The {building} is here! They actually listen to us!!",
+    "Asked for a {building}, got a {building}. This park gets it",
+    // Celebratory
+    "EVERYBODY GET IN HERE!! THE {building} IS REAL!! 🎊",
+    "We asked, they delivered. {building} gang rise up!",
+    "Time to party at the new {building}!! Our voices were heard!",
+    "The prophecy has been fulfilled. The {building} has arrived",
+  ],
 }
 
 // Random spots for ambient messages

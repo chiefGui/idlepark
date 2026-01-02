@@ -17,6 +17,7 @@ import { Service } from '../systems/service'
 import { Marketing } from '../systems/marketing'
 import { Bank } from '../systems/bank'
 import { Season } from '../systems/season'
+import { Wish } from '../systems/wish'
 
 const MAX_DAILY_RECORDS = 30
 
@@ -295,7 +296,32 @@ export const useGameStore = create<GameStoreState>()(
             }
           }
 
-          const computed = computeRatesAndModifiers({ ...updatedState, timeline, stats: finalStats, dailyRecords, financials, guestBreakdown, currentHappening, nextHappeningDay, lastHappeningType, marketing, bankLoan, lastLoanRepaidDay })
+          // Process wishes
+          let wishes = Wish.cleanupExpired(state.wishes, newDay)
+          let wishBoost = state.wishBoost
+          let lastWishDay = state.lastWishDay
+          let feedEntries = state.feedEntries
+          let unreadFeedCount = state.unreadFeedCount
+
+          // Clean up expired boost
+          if (wishBoost && wishBoost.expiresDay <= newDay) {
+            wishBoost = null
+          }
+
+          // Try to generate new wish
+          const wishState = { ...updatedState, currentDay: newDay, wishes, lastWishDay }
+          if (Wish.shouldGenerateWish(wishState)) {
+            const generated = Wish.generateWish(wishState)
+            if (generated) {
+              wishes = [...wishes, generated.wish]
+              feedEntries = Feed.addEntry(feedEntries, generated.feedEntry)
+              unreadFeedCount++
+              lastWishDay = newDay
+              GameEvents.emit('feed:new', { entry: generated.feedEntry })
+            }
+          }
+
+          const computed = computeRatesAndModifiers({ ...updatedState, timeline, stats: finalStats, dailyRecords, financials, guestBreakdown, currentHappening, nextHappeningDay, lastHappeningType, marketing, bankLoan, lastLoanRepaidDay, wishes, wishBoost, lastWishDay })
           set({
             stats: finalStats,
             guestBreakdown,
@@ -312,6 +338,11 @@ export const useGameStore = create<GameStoreState>()(
             marketing,
             bankLoan,
             lastLoanRepaidDay,
+            wishes,
+            wishBoost,
+            lastWishDay,
+            feedEntries,
+            unreadFeedCount,
             rates: computed.rates,
             modifiers: computed.modifiers,
           })
@@ -344,13 +375,38 @@ export const useGameStore = create<GameStoreState>()(
             ...state.financials,
             totalInvested: state.financials.totalInvested + investmentAmount,
           }
-          const newState = { ...state, stats: newStats, slots: newSlots, financials }
+
+          // Check if this fulfills a wish
+          const fulfilledWish = Wish.checkFulfillment(state, buildingId)
+          let wishes = state.wishes
+          let wishBoost = state.wishBoost
+          let feedEntries = state.feedEntries
+          let unreadFeedCount = state.unreadFeedCount
+
+          if (fulfilledWish) {
+            // Remove the fulfilled wish
+            wishes = Wish.removeFulfilled(wishes, buildingId)
+            // Create the boost
+            wishBoost = Wish.createBoost(state)
+            // Create celebration feed entry
+            const celebrationEntry = Wish.generateFulfillmentEntry(state, buildingId)
+            feedEntries = Feed.addEntry(feedEntries, celebrationEntry)
+            unreadFeedCount++
+            GameEvents.emit('feed:new', { entry: celebrationEntry })
+            GameEvents.emit('wish:fulfilled', { buildingId, boost: wishBoost })
+          }
+
+          const newState = { ...state, stats: newStats, slots: newSlots, financials, wishes, wishBoost, feedEntries, unreadFeedCount }
 
           const computed = computeRatesAndModifiers(newState)
           set({
             stats: newStats,
             slots: newSlots,
             financials,
+            wishes,
+            wishBoost,
+            feedEntries,
+            unreadFeedCount,
             rates: computed.rates,
             modifiers: computed.modifiers,
           })
