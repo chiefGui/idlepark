@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MessageCircle, Heart, Repeat2, Share, Star, Clock } from 'lucide-react'
+import { MessageCircle, Heart, Repeat2, Share, Star, Clock, Gift } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { Feed } from '../../systems/feed'
 import { Building } from '../../systems/building'
 import { Format } from '../../utils/format'
+import { GameTypes } from '../../engine/game-types'
 import type { FeedEntry, FeedEventType, WishState } from '../../engine/game-types'
 
 const EVENT_EMOJI: Record<FeedEventType, string> = {
@@ -94,12 +95,11 @@ function FeedEntryCard({ entry, index }: { entry: FeedEntry; index: number }) {
   )
 }
 
-function WishCard({ wish, index, currentDay }: { wish: WishState; index: number; currentDay: number }) {
+function WishEntryCard({ wish, entry, index, currentDay }: { wish: WishState; entry: FeedEntry; index: number; currentDay: number }) {
+  const avatarUrl = Feed.generateAvatarUrl(entry.avatarSeed)
   const building = Building.getById(wish.buildingId)
-  if (!building) return null
-
   const daysLeft = Math.max(0, Math.ceil(wish.expiresDay - currentDay))
-  const progress = daysLeft / 10 // 10 is WISH_DURATION_DAYS
+  const boostPercent = Math.round((GameTypes.WISH_BOOST_MULTIPLIER - 1) * 100)
 
   return (
     <motion.div
@@ -107,44 +107,57 @@ function WishCard({ wish, index, currentDay }: { wish: WishState; index: number;
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ delay: index * 0.05 }}
-      className="bg-[var(--color-surface)] rounded-xl p-4 border border-[var(--color-accent)]/30"
+      className="bg-[var(--color-surface)] rounded-xl p-4 space-y-3 border border-[var(--color-accent)]/20"
     >
+      {/* Header: Avatar, Handle, Time + Wish badge */}
       <div className="flex items-start gap-3">
-        <div className="w-12 h-12 rounded-xl bg-[var(--color-accent)]/20 flex items-center justify-center text-2xl">
-          {building.emoji}
+        <div className="relative flex-shrink-0">
+          <img
+            src={avatarUrl}
+            alt={entry.handle}
+            className="w-11 h-11 rounded-full bg-[var(--color-bg)]"
+          />
+          <span className="absolute -bottom-0.5 -right-0.5 text-sm">
+            {EVENT_EMOJI[entry.type]}
+          </span>
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold">{building.name}</span>
-            <span className="text-lg">🌟</span>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-semibold text-sm truncate">
+              @{entry.handle}
+            </span>
+            <span className="text-[var(--color-text-muted)] text-xs">
+              · {Feed.formatTimestamp(entry.timestamp)}
+            </span>
           </div>
-          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
-            Guests are wishing for this!
-          </p>
+          <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+            <span>Day {entry.day}</span>
+            <span className="px-1.5 py-0.5 rounded-full bg-[var(--color-accent)]/15 text-[var(--color-accent)] font-medium flex items-center gap-1">
+              <Clock size={10} />
+              {daysLeft}d left
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Time remaining */}
-      <div className="mt-3 flex items-center gap-2 text-sm">
-        <Clock size={14} className="text-[var(--color-text-muted)]" />
-        <span className="text-[var(--color-text-muted)]">
-          {daysLeft} {daysLeft === 1 ? 'day' : 'days'} left
-        </span>
-      </div>
+      {/* Message */}
+      <p className="text-sm leading-relaxed">{entry.message}</p>
 
-      {/* Progress bar */}
-      <div className="mt-2 h-1.5 rounded-full bg-[var(--color-bg)] overflow-hidden">
-        <motion.div
-          className="h-full rounded-full bg-[var(--color-accent)]"
-          initial={{ width: '100%' }}
-          animate={{ width: `${progress * 100}%` }}
-        />
-      </div>
-
-      {/* Reward hint */}
-      <div className="mt-3 text-xs text-[var(--color-accent)] flex items-center gap-1">
-        <Star size={12} />
-        <span>Build to earn a temporary boost!</span>
+      {/* Reward disclosure */}
+      <div className="flex items-center gap-3 p-2.5 rounded-lg bg-[var(--color-bg)]">
+        <div className="w-10 h-10 rounded-lg bg-[var(--color-accent)]/20 flex items-center justify-center text-xl">
+          {building?.emoji ?? '🏗️'}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium truncate">{building?.name ?? 'Unknown'}</div>
+          <div className="text-xs text-[var(--color-text-muted)]">
+            {building?.costs[0] ? Format.money(building.costs[0].amount) : ''}
+          </div>
+        </div>
+        <div className="flex items-center gap-1 text-xs font-medium text-[var(--color-positive)]">
+          <Gift size={14} />
+          +{boostPercent}% boost
+        </div>
       </div>
     </motion.div>
   )
@@ -189,14 +202,21 @@ function PostsTab() {
 
 function WishesTab() {
   const wishes = useGameStore((s) => s.wishes)
+  const feedEntries = useGameStore((s) => s.feedEntries)
   const currentDay = useGameStore((s) => s.currentDay)
   const wishBoost = useGameStore((s) => s.wishBoost)
 
-  // Filter active wishes
-  const activeWishes = wishes.filter((w) => w.expiresDay > currentDay)
+  // Filter active wishes and find their feed entries
+  const activeWishes = wishes
+    .filter((w) => w.expiresDay > currentDay)
+    .map((wish) => {
+      const entry = feedEntries.find((e) => e.id === wish.feedEntryId)
+      return { wish, entry }
+    })
+    .filter((w): w is { wish: WishState; entry: FeedEntry } => w.entry !== undefined)
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Active boost indicator */}
       {wishBoost && wishBoost.expiresDay > currentDay && (
         <motion.div
@@ -234,8 +254,14 @@ function WishesTab() {
         </motion.div>
       ) : (
         <AnimatePresence mode="popLayout">
-          {activeWishes.map((wish, index) => (
-            <WishCard key={wish.feedEntryId} wish={wish} index={index} currentDay={currentDay} />
+          {activeWishes.map(({ wish, entry }, index) => (
+            <WishEntryCard
+              key={wish.feedEntryId}
+              wish={wish}
+              entry={entry}
+              index={index}
+              currentDay={currentDay}
+            />
           ))}
         </AnimatePresence>
       )}
