@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { TrendingUp, TrendingDown, AlertCircle, Lightbulb, Smile, Meh, Frown } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertCircle, Lightbulb, Smile, Meh, Frown, ChevronRight } from 'lucide-react'
 import type { StatId, GameState } from '../../engine/game-types'
 import { Modifiers } from '../../engine/modifiers'
 import { useGameStore } from '../../store/game-store'
@@ -11,6 +11,7 @@ import { STAT_CONFIG } from '../../constants/stats'
 
 type StatDetailProps = {
   statId: StatId
+  onNavigateToFinances?: () => void
 }
 
 function getWarning(statId: StatId, state: GameState): string | null {
@@ -75,7 +76,7 @@ function getTip(statId: StatId, state: GameState): string | null {
   return null
 }
 
-export function StatDetail({ statId }: StatDetailProps) {
+export function StatDetail({ statId, onNavigateToFinances }: StatDetailProps) {
   const stats = useGameStore((s) => s.stats)
   const rates = useGameStore((s) => s.rates)
   const modifiers = useGameStore((s) => s.modifiers)
@@ -83,11 +84,60 @@ export function StatDetail({ statId }: StatDetailProps) {
   const ownedPerks = useGameStore((s) => s.ownedPerks)
   const ticketPrice = useGameStore((s) => s.ticketPrice)
   const guestBreakdown = useGameStore((s) => s.guestBreakdown)
+  const bankLoan = useGameStore((s) => s.bankLoan)
 
   const config = STAT_CONFIG[statId]
   const value = stats[statId]
   const rate = rates[statId]
-  const state: GameState = { slots, ownedPerks, stats, ticketPrice, guestBreakdown } as GameState
+  const state: GameState = { slots, ownedPerks, stats, ticketPrice, guestBreakdown, bankLoan } as GameState
+
+  // Money stat gets simplified view with link to Finances
+  if (statId === 'money') {
+    const warning = getWarning(statId, state)
+    return (
+      <div className="space-y-4">
+        {warning && (
+          <div className="p-3 rounded-xl bg-[var(--color-negative)]/10 border border-[var(--color-negative)]/20">
+            <div className="flex items-center gap-2">
+              <AlertCircle size={16} className="text-[var(--color-negative)] flex-shrink-0" />
+              <span className="text-sm">{warning}</span>
+            </div>
+          </div>
+        )}
+
+        <div className="p-4 rounded-xl bg-[var(--color-bg)]">
+          <div className="text-3xl font-bold mb-1">{Format.money(value)}</div>
+          <div className={`text-sm flex items-center gap-1 ${
+            rate >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+          }`}>
+            {rate >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+            {rate >= 0 ? '+' : ''}{Format.money(rate)}/day
+          </div>
+        </div>
+
+        {bankLoan && (
+          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-amber-200">Active Loan</span>
+              <span className="text-sm font-medium text-amber-100">
+                {Format.money(bankLoan.remainingAmount)} owed
+              </span>
+            </div>
+          </div>
+        )}
+
+        {onNavigateToFinances && (
+          <button
+            onClick={onNavigateToFinances}
+            className="w-full p-3 rounded-xl bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30 flex items-center justify-between text-[var(--color-accent)] active:bg-[var(--color-accent)]/20 transition-colors"
+          >
+            <span className="text-sm font-medium">View Detailed Breakdown</span>
+            <ChevronRight size={18} />
+          </button>
+        )}
+      </div>
+    )
+  }
 
   // Get sources from the unified modifier system
   const sources = useMemo(() => {

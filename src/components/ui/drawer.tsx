@@ -8,10 +8,11 @@ import { ParkSettingsContent } from '../park/park-settings-content'
 import { TimelineContent } from '../timeline/timeline-content'
 import { FeedContent } from '../feed/feed-content'
 import { ServicesContent, FastPassContent, MarketingContent, BankContent } from '../services/services-content'
+import { FinancialContent } from '../analytics/financial-content'
 import { StatDetail } from '../stats/stat-detail'
 import { Drawer, type DrawerStore } from './primitives'
 
-export type DrawerScreen = 'menu' | 'milestones' | 'perks' | 'analytics' | 'park' | 'timeline' | 'feed' | 'services' | 'service_bank' | 'service_fast_pass' | 'service_marketing' | 'guests' | 'cleanliness'
+export type DrawerScreen = 'menu' | 'milestones' | 'perks' | 'analytics' | 'analytics_finances' | 'park' | 'timeline' | 'feed' | 'services' | 'service_bank' | 'service_fast_pass' | 'service_marketing' | 'guests' | 'cleanliness'
 
 type DrawerContextValue = {
   store: DrawerStore
@@ -88,6 +89,7 @@ const SCREEN_TITLES: Record<DrawerScreen, string> = {
   park: 'HQ',
   perks: 'Perks',
   analytics: 'Analytics',
+  analytics_finances: 'Finances',
   milestones: 'Milestones',
   timeline: 'Timeline',
   feed: 'Feed',
@@ -106,10 +108,12 @@ function MenuDrawer() {
   const reset = state.actions.reset
   const unreadFeedCount = state.unreadFeedCount
 
-  // Handle back navigation - services sub-screens go back to services
+  // Handle back navigation - services sub-screens go back to services, analytics sub-screens go back to analytics
   const handleBack = () => {
     if (screen.startsWith('service_')) {
       setScreen('services')
+    } else if (screen.startsWith('analytics_')) {
+      setScreen('analytics')
     } else {
       setScreen('menu')
     }
@@ -197,6 +201,7 @@ function MenuDrawer() {
               {screen === 'timeline' && <TimelineContent />}
               {screen === 'perks' && <PerksContent />}
               {screen === 'analytics' && <AnalyticsContent />}
+              {screen === 'analytics_finances' && <FinancialContent />}
               {screen === 'services' && <ServicesContent onNavigate={setScreen} />}
               {screen === 'service_bank' && <BankContent />}
               {screen === 'service_fast_pass' && <FastPassContent />}
