@@ -173,6 +173,8 @@ export type FinancialStats = {
   totalInvested: number      // Sum of all building/perk costs
   totalEarned: number        // Cumulative income from guests
   totalUpkeepPaid: number    // Cumulative upkeep costs
+  totalBorrowed: number      // Total loan amounts received
+  totalLoanRepaid: number    // Total loan payments made (principal + interest)
   peakMoney: number          // Highest money ever reached
   peakGuests: number         // Most guests ever
 }
@@ -309,6 +311,8 @@ export class GameTypes {
       totalInvested: 0,
       totalEarned: 0,
       totalUpkeepPaid: 0,
+      totalBorrowed: 0,
+      totalLoanRepaid: 0,
       peakMoney: this.STARTING_MONEY,
       peakGuests: 0,
     }
