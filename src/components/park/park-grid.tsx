@@ -42,9 +42,9 @@ function Tile({ slot, onClick }: TileProps) {
       <motion.button
         whileTap={{ scale: 0.95 }}
         onClick={onClick}
-        className="aspect-square flex items-center justify-center rounded-xl border-2 border-dashed border-[var(--color-border)]/40 active:border-[var(--color-accent)]"
+        className="aspect-square flex items-center justify-center rounded-xl border-2 border-dashed border-[var(--color-accent)]/40 bg-[var(--color-accent)]/5 active:bg-[var(--color-accent)]/10 active:border-[var(--color-accent)]"
       >
-        <Plus size={18} className="text-[var(--color-text-muted)]/50" />
+        <Plus size={18} className="text-[var(--color-accent)]/60" />
       </motion.button>
     )
   }
