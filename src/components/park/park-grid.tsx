@@ -10,8 +10,8 @@ import { BuildingSelector } from '../slots/building-selector'
 import { BuildingDetails } from '../slots/building-details'
 
 // Grid configuration
-const GRID_COLS = 4
-const TILE_SIZE = 76
+const GRID_COLS = 5
+const TILE_SIZE = 64
 const TILE_GAP = 8
 
 // Category indicator colors (subtle)
@@ -37,15 +37,10 @@ function Tile({ slot, onClick }: TileProps) {
   if (isLocked) {
     return (
       <div
-        className="flex items-center justify-center rounded-2xl"
-        style={{
-          width: TILE_SIZE,
-          height: TILE_SIZE,
-          backgroundColor: 'var(--color-surface)',
-          opacity: 0.25,
-        }}
+        className="flex items-center justify-center rounded-xl border border-[var(--color-border)]/20 bg-[var(--color-surface)]/20"
+        style={{ width: TILE_SIZE, height: TILE_SIZE }}
       >
-        <Lock size={14} className="text-[var(--color-text-muted)]" />
+        <Lock size={12} className="text-[var(--color-text-muted)]/30" />
       </div>
     )
   }
@@ -55,38 +50,27 @@ function Tile({ slot, onClick }: TileProps) {
       <motion.button
         whileTap={{ scale: 0.92 }}
         onClick={onClick}
-        className="flex items-center justify-center rounded-2xl border-2 border-dashed transition-colors active:border-[var(--color-accent)]"
-        style={{
-          width: TILE_SIZE,
-          height: TILE_SIZE,
-          borderColor: 'var(--color-border)',
-          backgroundColor: 'transparent',
-        }}
+        className="flex items-center justify-center rounded-xl border-2 border-dashed border-[var(--color-border)]/50 active:border-[var(--color-accent)]"
+        style={{ width: TILE_SIZE, height: TILE_SIZE }}
       >
-        <Plus size={22} className="text-[var(--color-text-muted)]" />
+        <Plus size={20} className="text-[var(--color-text-muted)]/60" />
       </motion.button>
     )
   }
 
-  // Built tile - clean, icon-focused
+  // Built tile
   const catColor = categoryColor[building!.category]
 
   return (
     <motion.button
       whileTap={{ scale: 0.92 }}
       onClick={onClick}
-      className="relative flex items-center justify-center rounded-2xl bg-[var(--color-surface)] active:bg-[var(--color-surface-hover)]"
-      style={{
-        width: TILE_SIZE,
-        height: TILE_SIZE,
-      }}
+      className="relative flex items-center justify-center rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] active:bg-[var(--color-surface-hover)]"
+      style={{ width: TILE_SIZE, height: TILE_SIZE }}
     >
-      {/* Icon - the star */}
-      <BuildingIcon buildingId={building!.id} size={44} />
-
-      {/* Category indicator - small dot bottom right */}
+      <BuildingIcon buildingId={building!.id} size={36} />
       <div
-        className="absolute bottom-1.5 right-1.5 w-2 h-2 rounded-full"
+        className="absolute bottom-1 right-1 w-2 h-2 rounded-full"
         style={{ backgroundColor: catColor }}
       />
     </motion.button>
