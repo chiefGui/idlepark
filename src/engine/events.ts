@@ -1,5 +1,5 @@
 import mitt from 'mitt'
-import type { FeedEntry, BankLoanPackageId } from './game-types'
+import type { FeedEntry, BankLoanPackageId, WishBoostState } from './game-types'
 
 export type MoneyPopupReason = 'building' | 'perk' | 'milestone' | 'demolish' | 'marketing' | 'loan'
 
@@ -23,6 +23,7 @@ export type GameEventMap = {
   'bank:loan_taken': { packageId: BankLoanPackageId; amount: number }
   'bank:loan_repaid': { packageId: BankLoanPackageId }
   'money:changed': { amount: number; reason: MoneyPopupReason }
+  'wish:fulfilled': { buildingId: string; boost: WishBoostState }
 }
 
 const emitter = mitt<GameEventMap>()
