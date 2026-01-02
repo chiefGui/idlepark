@@ -146,7 +146,7 @@ export function BuildingSelector({ slotIndex, onClose, initialCategory }: Buildi
       <BuildingPreview
         building={previewBuilding}
         canAfford={previewData?.canAfford ?? false}
-        isOwned={(previewData?.ownedCount ?? 0) > 0}
+        ownedCount={previewData?.ownedCount ?? 0}
         onClose={() => setPreviewBuilding(null)}
         onBuild={() => previewBuilding && handleBuild(previewBuilding.id)}
       />
