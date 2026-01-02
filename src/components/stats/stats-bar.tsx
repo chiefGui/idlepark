@@ -160,7 +160,7 @@ export function StatsBar() {
             statId={selectedStat}
             onNavigateToFinances={() => {
               setSelectedStat(null)
-              navigateTo('analytics_finances')
+              navigateTo('finances')
             }}
           />
         )}

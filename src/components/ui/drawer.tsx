@@ -1,14 +1,13 @@
 import { useState, useContext, useEffect, useCallback, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronLeft, Zap, BarChart3, RotateCcw, Building2, BookOpen, MessageCircle, Sparkles } from 'lucide-react'
+import { X, ChevronLeft, Zap, RotateCcw, BookOpen, MessageCircle, Sparkles, Wallet, Users } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { PerksContent } from '../perks/perks-content'
-import { AnalyticsContent } from '../analytics/analytics-content'
-import { ParkSettingsContent } from '../park/park-settings-content'
+import { FinancialContent } from '../analytics/financial-content'
+import { GuestsContent } from '../guests/guests-content'
 import { TimelineContent } from '../timeline/timeline-content'
 import { FeedContent } from '../feed/feed-content'
 import { ServicesContent, FastPassContent, MarketingContent, BankContent } from '../services/services-content'
-import { FinancialContent } from '../analytics/financial-content'
 import { StatDetail } from '../stats/stat-detail'
 import { DrawerRoot, DrawerContent, DrawerTitle, DrawerClose } from './primitives'
 import { useDrawerStore } from './primitives/drawer-hooks'
@@ -51,15 +50,15 @@ export function DrawerProvider({ children }: DrawerProviderProps) {
 type MenuItem = {
   id: DrawerScreen
   label: string
-  icon: typeof Building2
+  icon: typeof Wallet
   description: string
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { id: 'park', label: 'HQ', icon: Building2, description: 'Manage your park' },
+  { id: 'finances', label: 'Finances', icon: Wallet, description: 'Money & ticket pricing' },
+  { id: 'guests_overview', label: 'Guests', icon: Users, description: 'Guest breakdown' },
   { id: 'perks', label: 'Perks', icon: Zap, description: 'Upgrade your park' },
   { id: 'services', label: 'Services', icon: Sparkles, description: 'Premium guest services' },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'View park statistics' },
   { id: 'timeline', label: 'Timeline', icon: BookOpen, description: "Your park's story" },
   { id: 'feed', label: 'Feed', icon: MessageCircle, description: 'Guest chatter' },
 ]
@@ -67,10 +66,9 @@ const MENU_ITEMS: MenuItem[] = [
 // Screen titles for non-menu screens
 const SCREEN_TITLES: Record<DrawerScreen, string> = {
   menu: 'Menu',
-  park: 'HQ',
+  finances: 'Finances',
+  guests_overview: 'Guests',
   perks: 'Perks',
-  analytics: 'Analytics',
-  analytics_finances: 'Finances',
   milestones: 'Milestones',
   timeline: 'Timeline',
   feed: 'Feed',
@@ -89,12 +87,10 @@ function MenuDrawer() {
   const reset = state.actions.reset
   const unreadFeedCount = state.unreadFeedCount
 
-  // Handle back navigation - services sub-screens go back to services, analytics sub-screens go back to analytics
+  // Handle back navigation - services sub-screens go back to services
   const handleBack = () => {
     if (screen.startsWith('service_')) {
       setScreen('services')
-    } else if (screen.startsWith('analytics_')) {
-      setScreen('analytics')
     } else {
       setScreen('menu')
     }
@@ -178,11 +174,10 @@ function MenuDrawer() {
               className="p-4"
             >
               {screen === 'feed' && <FeedContent />}
-              {screen === 'park' && <ParkSettingsContent />}
+              {screen === 'finances' && <FinancialContent />}
+              {screen === 'guests_overview' && <GuestsContent />}
               {screen === 'timeline' && <TimelineContent />}
               {screen === 'perks' && <PerksContent />}
-              {screen === 'analytics' && <AnalyticsContent />}
-              {screen === 'analytics_finances' && <FinancialContent />}
               {screen === 'services' && <ServicesContent onNavigate={setScreen} />}
               {screen === 'service_bank' && <BankContent />}
               {screen === 'service_fast_pass' && <FastPassContent />}

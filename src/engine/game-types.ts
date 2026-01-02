@@ -102,6 +102,8 @@ export type FeedEventType =
   | 'happening_ended'
   | 'capacity_reached'
   | 'capacity_warning'
+  | 'wish'
+  | 'wish_fulfilled'
 
 // === HAPPENINGS ===
 
@@ -171,7 +173,24 @@ export type FeedEntry = {
   likes: number
   retweets: number
   replies: number
+  /** For wish entries, the building they're wishing for */
+  wishBuildingId?: string
 }
+
+// === WISHES ===
+
+export type WishState = {
+  buildingId: string
+  createdDay: number
+  expiresDay: number
+  feedEntryId: string  // Reference to the feed entry
+}
+
+export type WishBoostState = {
+  type: 'arrivals' | 'income' | 'appeal'
+  multiplier: number
+  expiresDay: number
+} | null
 
 export type SlotState = {
   index: number
@@ -264,6 +283,10 @@ export type GameState = {
   currentHappening: HappeningState
   nextHappeningDay: number
   lastHappeningType: HappeningType | null
+  // Wishes
+  wishes: WishState[]
+  wishBoost: WishBoostState
+  lastWishDay: number
 }
 
 export class GameTypes {
@@ -302,6 +325,13 @@ export class GameTypes {
 
   // Bank
   static readonly BANK_COOLDOWN_DAYS = 180
+
+  // Wishes
+  static readonly WISH_DURATION_DAYS = 10      // How long a wish stays active
+  static readonly WISH_COOLDOWN_DAYS = 5       // Min days between new wishes
+  static readonly WISH_BOOST_DURATION = 3      // Boost lasts 3 days
+  static readonly WISH_BOOST_MULTIPLIER = 1.25 // +25% boost
+  static readonly MAX_ACTIVE_WISHES = 3        // Max wishes at once
 
   static createInitialStats(): Record<StatId, number> {
     return {
@@ -382,6 +412,10 @@ export class GameTypes {
       currentHappening: null,
       nextHappeningDay: this.FIRST_HAPPENING_DAY,
       lastHappeningType: null,
+      // Wishes
+      wishes: [],
+      wishBoost: null,
+      lastWishDay: 0,
     }
   }
 }
