@@ -1,27 +1,35 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, Plus } from 'lucide-react'
+import { ChevronDown, Plus, Expand } from 'lucide-react'
 import type { BuildingCategory, SlotState } from '../../engine/game-types'
 import { useGameStore } from '../../store/game-store'
 import { Building } from '../../systems/building'
 import { BuildingIcon } from '../../buildings'
 import { Slot } from '../../systems/slot'
+import { Perk } from '../../systems/perk'
 import { BuildingSelector } from '../slots/building-selector'
 import { BuildingDetails } from '../slots/building-details'
+import { useDrawerNavigation } from '../ui/drawer-hooks'
 
 export function BuildingsPanel() {
-  const slots = useGameStore((s) => s.slots)
+  const state = useGameStore()
+  const slots = state.slots
   const demolishSlot = useGameStore((s) => s.actions.demolishSlot)
+  const navigateTo = useDrawerNavigation()
   const [expandedCategories, setExpandedCategories] = useState<Set<BuildingCategory>>(
     new Set(['rides', 'food', 'facilities', 'decor'])
   )
   const [buildCategory, setBuildCategory] = useState<BuildingCategory | null>(null)
   const [detailsSlotIndex, setDetailsSlotIndex] = useState<number | null>(null)
+  const [showFullModal, setShowFullModal] = useState(false)
 
   const selectedSlot = detailsSlotIndex !== null ? slots[detailsSlotIndex] : null
   const selectedBuilding = selectedSlot?.buildingId
     ? Building.getById(selectedSlot.buildingId)
     : null
+
+  const hasEmptySlot = Slot.getEmpty(state).length > 0
+  const nextExpansionPerk = Perk.getNextExpansionPerk(state)
 
   const toggleCategory = (category: BuildingCategory) => {
     setExpandedCategories((prev) => {
@@ -41,6 +49,19 @@ export function BuildingsPanel() {
     }
   }
 
+  const handleBuildAttempt = (category: BuildingCategory) => {
+    if (hasEmptySlot) {
+      setBuildCategory(category)
+    } else {
+      setShowFullModal(true)
+    }
+  }
+
+  const handleExpandPark = () => {
+    setShowFullModal(false)
+    navigateTo('perks')
+  }
+
   return (
     <>
       <div className="space-y-3 px-4 pb-4">
@@ -51,7 +72,7 @@ export function BuildingsPanel() {
             slots={slots}
             isExpanded={expandedCategories.has(cat.id)}
             onToggle={() => toggleCategory(cat.id)}
-            onBuild={() => setBuildCategory(cat.id)}
+            onBuild={() => handleBuildAttempt(cat.id)}
             onSelectBuilding={setDetailsSlotIndex}
           />
         ))}
@@ -72,6 +93,53 @@ export function BuildingsPanel() {
         onClose={() => setDetailsSlotIndex(null)}
         onDemolish={handleDemolish}
       />
+
+      {/* Park Full Modal */}
+      <AnimatePresence>
+        {showFullModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowFullModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[var(--color-surface)] rounded-2xl p-5 w-full max-w-xs text-center border border-[var(--color-border)]"
+            >
+              <div className="w-12 h-12 rounded-full bg-[var(--color-accent)]/20 flex items-center justify-center mx-auto mb-3">
+                <Expand size={24} className="text-[var(--color-accent)]" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Park is Full</h3>
+              <p className="text-sm text-[var(--color-text-muted)] mb-4">
+                {nextExpansionPerk
+                  ? `Get "${nextExpansionPerk.name}" to unlock more building slots.`
+                  : "You've built in all available slots!"}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowFullModal(false)}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[var(--color-bg)] text-sm font-medium active:bg-[var(--color-surface-hover)] transition-colors"
+                >
+                  Close
+                </button>
+                {nextExpansionPerk && (
+                  <button
+                    onClick={handleExpandPark}
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-[var(--color-accent)] text-white text-sm font-medium active:opacity-90 transition-opacity"
+                  >
+                    View Perks
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }
@@ -105,9 +173,6 @@ function CategorySection({
         building: Building.getById(slot.buildingId!)!,
       }))
   }, [slots, category.id])
-
-  const emptySlots = Slot.getEmpty({ slots })
-  const hasEmptySlot = emptySlots.length > 0
 
   return (
     <motion.div
@@ -164,19 +229,16 @@ function CategorySection({
                   </motion.button>
                 ))}
 
-                {/* Add button - only show if there's an empty slot */}
-                {hasEmptySlot && (
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={onBuild}
-                    className="aspect-square rounded-xl border-2 border-dashed border-[var(--color-accent)] bg-[var(--color-accent)]/10 flex flex-col items-center justify-center gap-1 active:bg-[var(--color-accent)]/20 transition-colors"
-                  >
-                    <Plus size={24} className="text-[var(--color-accent)]" />
-                    <span className="text-[10px] font-medium text-[var(--color-accent)]">Add</span>
-                  </motion.button>
-                )}
+                {/* Add button - always visible */}
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={onBuild}
+                  className="aspect-square rounded-xl border-2 border-dashed border-[var(--color-accent)] bg-[var(--color-accent)]/10 flex flex-col items-center justify-center gap-1 active:bg-[var(--color-accent)]/20 transition-colors"
+                >
+                  <Plus size={24} className="text-[var(--color-accent)]" />
+                  <span className="text-[10px] font-medium text-[var(--color-accent)]">Add</span>
+                </motion.button>
               </div>
-
             </div>
           </motion.div>
         )}
