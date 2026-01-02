@@ -4,6 +4,7 @@ import { MessageCircle, Heart, Repeat2, Share, Star, Clock } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { Feed } from '../../systems/feed'
 import { Building } from '../../systems/building'
+import { BuildingIcon } from '../../buildings'
 import { Format } from '../../utils/format'
 import type { FeedEntry, FeedEventType, WishState } from '../../engine/game-types'
 
@@ -110,8 +111,8 @@ function WishCard({ wish, index, currentDay }: { wish: WishState; index: number;
       className="bg-[var(--color-surface)] rounded-xl p-4 border border-[var(--color-accent)]/30"
     >
       <div className="flex items-start gap-3">
-        <div className="w-12 h-12 rounded-xl bg-[var(--color-accent)]/20 flex items-center justify-center text-2xl">
-          {building.emoji}
+        <div className="w-12 h-12 rounded-xl bg-[var(--color-accent)]/20 flex items-center justify-center">
+          <BuildingIcon buildingId={building.id} size={32} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">

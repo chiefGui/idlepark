@@ -1,11 +1,20 @@
 import { useMemo } from 'react'
 import { TrendingUp, TrendingDown, AlertCircle, Smile, Meh, Frown, ChevronRight } from 'lucide-react'
 import type { StatId, GameState } from '../../engine/game-types'
-import { Modifiers } from '../../engine/modifiers'
+import { Modifiers, type SourceContribution } from '../../engine/modifiers'
 import { useGameStore } from '../../store/game-store'
 import { Guest } from '../../systems/guest'
 import { Format } from '../../utils/format'
 import { STAT_CONFIG } from '../../constants/stats'
+import { BuildingIcon } from '../../buildings'
+
+/** Renders either a BuildingIcon (for buildings) or emoji (for other sources) */
+function SourceIcon({ source, size = 16 }: { source: SourceContribution; size?: number }) {
+  if (source.sourceType === 'building' && source.buildingId) {
+    return <BuildingIcon buildingId={source.buildingId} size={size} />
+  }
+  return <span style={{ fontSize: size }}>{source.emoji}</span>
+}
 
 type StatDetailProps = {
   statId: StatId
@@ -119,6 +128,7 @@ export function StatDetail({ statId, onNavigateToFinances }: StatDetailProps) {
           flat: arrivalRate,
           increased: 0,
           more: 1,
+          sourceType: 'guest',
         })
       }
     }
@@ -201,7 +211,7 @@ export function StatDetail({ statId, onNavigateToFinances }: StatDetailProps) {
               {sources.map((source, i) => (
                 <div key={i} className="flex items-center justify-between py-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm">{source.emoji}</span>
+                    <SourceIcon source={source} size={16} />
                     <span className="text-xs">{source.label}</span>
                   </div>
                   <span className="text-xs font-medium"
@@ -340,7 +350,7 @@ export function StatDetail({ statId, onNavigateToFinances }: StatDetailProps) {
             return (
               <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-[var(--color-bg)]">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">{source.emoji}</span>
+                  <SourceIcon source={source} size={20} />
                   <span className="text-sm">{source.label}</span>
                   {source.count && source.count > 1 && (
                     <span className="text-xs text-[var(--color-text-muted)]">×{source.count}</span>
