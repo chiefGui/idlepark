@@ -87,7 +87,12 @@ export function StatDetail({ statId }: StatDetailProps) {
   const config = STAT_CONFIG[statId]
   const value = stats[statId]
   const rate = rates[statId]
-  const state: GameState = { slots, ownedPerks, stats, ticketPrice, guestBreakdown } as GameState
+
+  // Memoize state object to prevent dependency churn
+  const state = useMemo<GameState>(
+    () => ({ slots, ownedPerks, stats, ticketPrice, guestBreakdown } as GameState),
+    [slots, ownedPerks, stats, ticketPrice, guestBreakdown]
+  )
 
   // Get sources from the unified modifier system
   const sources = useMemo(() => {

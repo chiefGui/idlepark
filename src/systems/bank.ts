@@ -170,7 +170,7 @@ export class Bank {
   /**
    * Get remaining days on current loan
    */
-  static getLoanDaysRemaining(state: GameState): number {
+  static getLoanDaysRemaining(state: Pick<GameState, 'bankLoan'>): number {
     if (!state.bankLoan) return 0
     return Math.ceil(state.bankLoan.remainingAmount / state.bankLoan.dailyPayment)
   }

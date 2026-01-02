@@ -5,12 +5,13 @@ import { useGameStore } from '../store/game-store'
 export function useGameLoop() {
   const tick = useGameStore((s) => s.actions.tick)
   const gameOver = useGameStore((s) => s.gameOver)
-  const lastTimeRef = useRef(performance.now())
+  const lastTimeRef = useRef(0)
 
   useEffect(() => {
     if (gameOver) return
 
     let animationId: number
+    lastTimeRef.current = performance.now()
 
     const loop = (currentTime: number) => {
       const elapsed = currentTime - lastTimeRef.current
@@ -24,7 +25,6 @@ export function useGameLoop() {
       animationId = requestAnimationFrame(loop)
     }
 
-    lastTimeRef.current = performance.now()
     animationId = requestAnimationFrame(loop)
 
     return () => cancelAnimationFrame(animationId)

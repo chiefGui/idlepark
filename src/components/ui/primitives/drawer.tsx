@@ -1,20 +1,9 @@
 import { forwardRef, type ReactNode, type ComponentPropsWithoutRef } from 'react'
 import * as Ariakit from '@ariakit/react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useDrawerContext, type DrawerStore } from './drawer-hooks'
 
-export type DrawerStore = Ariakit.DialogStore
-
-export function useDrawerStore(props?: Ariakit.DialogStoreProps): DrawerStore {
-  return Ariakit.useDialogStore(props)
-}
-
-export function useDrawerContext(): DrawerStore {
-  const store = Ariakit.useDialogContext()
-  if (!store) {
-    throw new Error('Drawer components must be used within a Drawer')
-  }
-  return store
-}
+export type { DrawerStore }
 
 type DrawerRootProps = {
   store: DrawerStore
@@ -106,14 +95,3 @@ export const DrawerDescription = forwardRef<HTMLParagraphElement, DrawerDescript
     return <Ariakit.DialogDescription ref={ref} {...props} />
   }
 )
-
-export const Drawer = {
-  Root: DrawerRoot,
-  Trigger: DrawerTrigger,
-  Content: DrawerContent,
-  Close: DrawerClose,
-  Title: DrawerTitle,
-  Description: DrawerDescription,
-  useStore: useDrawerStore,
-  useContext: useDrawerContext,
-}

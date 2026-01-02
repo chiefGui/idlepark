@@ -10,7 +10,6 @@ import { BuildingDetails } from '../slots/building-details'
 
 export function BuildingsPanel() {
   const slots = useGameStore((s) => s.slots)
-  const ownedPerks = useGameStore((s) => s.ownedPerks)
   const demolishSlot = useGameStore((s) => s.actions.demolishSlot)
   const [expandedCategories, setExpandedCategories] = useState<Set<BuildingCategory>>(
     new Set(['rides', 'food', 'facilities', 'decor'])
@@ -49,7 +48,6 @@ export function BuildingsPanel() {
             key={cat.id}
             category={cat}
             slots={slots}
-            ownedPerks={ownedPerks}
             isExpanded={expandedCategories.has(cat.id)}
             onToggle={() => toggleCategory(cat.id)}
             onBuild={() => setBuildCategory(cat.id)}
@@ -61,7 +59,7 @@ export function BuildingsPanel() {
       <AnimatePresence>
         {buildCategory !== null && (
           <BuildingSelector
-            slotIndex={Slot.getFirstEmptyIndex({ slots } as any) ?? -1}
+            slotIndex={Slot.getFirstEmptyIndex({ slots }) ?? -1}
             onClose={() => setBuildCategory(null)}
             initialCategory={buildCategory}
           />
@@ -80,7 +78,6 @@ export function BuildingsPanel() {
 type CategorySectionProps = {
   category: { id: BuildingCategory; label: string; emoji: string; hint: string }
   slots: SlotState[]
-  ownedPerks: string[]
   isExpanded: boolean
   onToggle: () => void
   onBuild: () => void
@@ -90,7 +87,6 @@ type CategorySectionProps = {
 function CategorySection({
   category,
   slots,
-  ownedPerks,
   isExpanded,
   onToggle,
   onBuild,
@@ -109,7 +105,7 @@ function CategorySection({
       }))
   }, [slots, category.id])
 
-  const emptySlots = Slot.getEmpty({ slots, ownedPerks } as any)
+  const emptySlots = Slot.getEmpty({ slots })
   const hasEmptySlot = emptySlots.length > 0
 
   return (
