@@ -4,13 +4,14 @@ import { Bank } from '../../systems/bank'
 import { Guest } from '../../systems/guest'
 import { Building } from '../../systems/building'
 import { Slot } from '../../systems/slot'
-import { Landmark, TrendingUp, TrendingDown, Clock } from 'lucide-react'
+import { Landmark, TrendingUp, TrendingDown, Clock, Wallet, PiggyBank } from 'lucide-react'
 
 export function FinancialContent() {
   const state = useGameStore()
   const stats = state.stats
   const bankLoan = state.bankLoan
   const rates = state.rates
+  const dailyRecords = state.dailyRecords
 
   // Calculate daily income breakdown
   const totalGuests = state.guestBreakdown.happy + state.guestBreakdown.neutral + state.guestBreakdown.unhappy
@@ -122,6 +123,104 @@ export function FinancialContent() {
           </span>
         </div>
       </div>
+
+      {/* Profit History Chart */}
+      {dailyRecords.length >= 2 && (
+        <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+          <div className="text-sm text-[var(--color-text-muted)] mb-3">Profit History (14 days)</div>
+          <ProfitChart records={dailyRecords.slice(-14)} />
+        </div>
+      )}
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+          <div className="flex items-center gap-2 mb-1">
+            <Wallet size={14} className="text-[var(--color-text-muted)]" />
+            <span className="text-xs text-[var(--color-text-muted)]">Ticket Price</span>
+          </div>
+          <div className="font-semibold">{Format.money(state.ticketPrice)}</div>
+        </div>
+        <div className="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+          <div className="flex items-center gap-2 mb-1">
+            <PiggyBank size={14} className="text-[var(--color-text-muted)]" />
+            <span className="text-xs text-[var(--color-text-muted)]">Per Guest</span>
+          </div>
+          <div className="font-semibold">{Format.money(totalGuests > 0 ? ticketIncome / totalGuests : 0)}</div>
+        </div>
+      </div>
     </div>
+  )
+}
+
+type ProfitChartProps = {
+  records: { day: number; moneyEarned: number }[]
+}
+
+function ProfitChart({ records }: ProfitChartProps) {
+  if (records.length < 2) return null
+
+  const values = records.map((r) => r.moneyEarned)
+  const max = Math.max(...values, 0)
+  const min = Math.min(...values, 0)
+  const range = max - min || 1
+
+  const width = 100
+  const height = 48
+  const vPadding = 4
+
+  const zeroY = height - vPadding - ((0 - min) / range) * (height - vPadding * 2)
+
+  const points = records.map((r, i) => {
+    const x = (i / (records.length - 1)) * width
+    const y = height - vPadding - ((r.moneyEarned - min) / range) * (height - vPadding * 2)
+    return { x, y, value: r.moneyEarned }
+  })
+
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
+  const fillPath = `${linePath} L ${points[points.length - 1].x} ${zeroY} L ${points[0].x} ${zeroY} Z`
+
+  const lastValue = records[records.length - 1].moneyEarned
+  const isPositive = lastValue >= 0
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-12" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="profitGradientFinances" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={isPositive ? 'var(--color-positive)' : 'var(--color-negative)'} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={isPositive ? 'var(--color-positive)' : 'var(--color-negative)'} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      <line
+        x1={0}
+        y1={zeroY}
+        x2={width}
+        y2={zeroY}
+        stroke="var(--color-border)"
+        strokeWidth="1"
+        strokeDasharray="2,2"
+      />
+
+      <path d={fillPath} fill="url(#profitGradientFinances)" />
+
+      <path
+        d={linePath}
+        fill="none"
+        stroke={isPositive ? 'var(--color-positive)' : 'var(--color-negative)'}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+
+      <circle
+        cx={points[points.length - 1].x}
+        cy={points[points.length - 1].y}
+        r="3"
+        fill={isPositive ? 'var(--color-positive)' : 'var(--color-negative)'}
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
   )
 }
