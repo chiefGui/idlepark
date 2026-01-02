@@ -1,6 +1,6 @@
 import * as Ariakit from '@ariakit/react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, ChevronRight } from 'lucide-react'
+import { Bell, ChevronRight, Star, AlertTriangle } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { Notifications, type Notification, type NotificationAction } from '../../systems/notifications'
 import { useDrawerNavigation } from '../ui/drawer-hooks'
@@ -8,6 +8,7 @@ import type { DrawerScreen } from '../ui/drawer-context'
 
 const ACTION_TO_SCREEN: Record<NotificationAction, DrawerScreen> = {
   perks: 'perks',
+  feed: 'feed',
 }
 
 export function NotificationCenter() {
@@ -18,6 +19,7 @@ export function NotificationCenter() {
 
   const notifications = Notifications.getActive(state)
   const count = notifications.length
+  const hasWarnings = notifications.some((n) => n.severity === 'warning')
 
   const handleAction = (notification: Notification) => {
     if (notification.action) {
@@ -37,12 +39,13 @@ export function NotificationCenter() {
           />
         }
       >
-        <Bell size={20} className={count > 0 ? 'text-[var(--color-warning)]' : 'text-[var(--color-text-muted)]'} />
+        <Bell size={20} className={count > 0 ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)]'} />
         {count > 0 && (
           <motion.span
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-warning)] text-white text-[10px] font-bold flex items-center justify-center"
+            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full text-white text-[10px] font-bold flex items-center justify-center"
+            style={{ backgroundColor: hasWarnings ? 'var(--color-warning)' : 'var(--color-accent)' }}
           >
             {count > 9 ? '9+' : count}
           </motion.span>
@@ -78,25 +81,11 @@ export function NotificationCenter() {
                 </div>
               ) : (
                 notifications.map((notification) => (
-                  <motion.button
+                  <NotificationItem
                     key={notification.id}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => handleAction(notification)}
-                    className="w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-[var(--color-surface-hover)] transition-colors border-b border-[var(--color-border)] last:border-b-0"
-                  >
-                    <div className="w-2 h-2 rounded-full bg-[var(--color-warning)] flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm">{notification.message}</p>
-                      {notification.actionLabel && (
-                        <span className="text-xs text-[var(--color-accent)] font-medium">
-                          {notification.actionLabel}
-                        </span>
-                      )}
-                    </div>
-                    {notification.action && (
-                      <ChevronRight size={16} className="text-[var(--color-text-muted)] flex-shrink-0" />
-                    )}
-                  </motion.button>
+                    notification={notification}
+                    onAction={() => handleAction(notification)}
+                  />
                 ))
               )}
             </div>
@@ -104,5 +93,46 @@ export function NotificationCenter() {
         )}
       </AnimatePresence>
     </Ariakit.PopoverProvider>
+  )
+}
+
+function NotificationItem({
+  notification,
+  onAction,
+}: {
+  notification: Notification
+  onAction: () => void
+}) {
+  const isWarning = notification.severity === 'warning'
+  const color = isWarning ? 'var(--color-warning)' : 'var(--color-accent)'
+
+  return (
+    <motion.button
+      whileTap={{ scale: 0.98 }}
+      onClick={onAction}
+      className="w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-[var(--color-surface-hover)] transition-colors border-b border-[var(--color-border)] last:border-b-0"
+    >
+      <div
+        className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+        style={{ backgroundColor: `color-mix(in srgb, ${color} 20%, transparent)` }}
+      >
+        {isWarning ? (
+          <AlertTriangle size={12} style={{ color }} />
+        ) : (
+          <Star size={12} style={{ color }} />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm">{notification.message}</p>
+        {notification.actionLabel && (
+          <span className="text-xs font-medium" style={{ color }}>
+            {notification.actionLabel}
+          </span>
+        )}
+      </div>
+      {notification.action && (
+        <ChevronRight size={16} className="text-[var(--color-text-muted)] flex-shrink-0" />
+      )}
+    </motion.button>
   )
 }

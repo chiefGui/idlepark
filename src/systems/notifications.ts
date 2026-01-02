@@ -2,6 +2,8 @@ import type { GameState } from '../engine/game-types'
 import { Slot } from './slot'
 import { Perk } from './perk'
 import { Guest } from './guest'
+import { Wish } from './wish'
+import { Building } from './building'
 
 export type NotificationType =
   | 'park_full'
@@ -9,11 +11,16 @@ export type NotificationType =
   | 'low_cleanliness'
   | 'unhappy_guests'
   | 'need_rides'
+  | 'wish'
 
-export type NotificationAction = 'perks'
+export type NotificationSeverity = 'warning' | 'info'
+
+export type NotificationAction = 'perks' | 'feed'
 
 export type Notification = {
-  id: NotificationType
+  id: string
+  type: NotificationType
+  severity: NotificationSeverity
   message: string
   action?: NotificationAction
   actionLabel?: string
@@ -33,12 +40,31 @@ export class Notifications {
   static getActive(state: GameState): Notification[] {
     const notifications: Notification[] = []
 
+    // Active wishes - show as positive notifications
+    const activeWishes = Wish.getActive(state)
+    for (const wish of activeWishes) {
+      const building = Building.getById(wish.buildingId)
+      if (building) {
+        const daysLeft = wish.expiresDay - state.currentDay
+        notifications.push({
+          id: `wish_${wish.buildingId}`,
+          type: 'wish',
+          severity: 'info',
+          message: `Guests want a ${building.name}! ${daysLeft} day${daysLeft !== 1 ? 's' : ''} left.`,
+          action: 'feed',
+          actionLabel: 'View Feed',
+        })
+      }
+    }
+
     // Park full - no empty slots
     const emptySlots = Slot.getEmpty(state)
     const nextExpansion = Perk.getNextExpansionPerk(state)
     if (emptySlots.length === 0 && nextExpansion) {
       notifications.push({
         id: 'park_full',
+        type: 'park_full',
+        severity: 'warning',
         message: `No room for buildings. Get ${nextExpansion.name} to expand.`,
         action: 'perks',
         actionLabel: 'View Perks',
@@ -50,6 +76,8 @@ export class Notifications {
     if (state.stats.guests >= capacity) {
       notifications.push({
         id: 'capacity_full',
+        type: 'capacity_full',
+        severity: 'warning',
         message: 'Park at capacity! Build lodging to welcome more guests.',
       })
     }
@@ -58,6 +86,8 @@ export class Notifications {
     if (state.stats.cleanliness < CLEANLINESS_THRESHOLD && state.stats.guests >= 5) {
       notifications.push({
         id: 'low_cleanliness',
+        type: 'low_cleanliness',
+        severity: 'warning',
         message: 'Park is getting dirty! Guests are unhappy.',
       })
     }
@@ -67,6 +97,8 @@ export class Notifications {
     if (entertainmentRatio < ENTERTAINMENT_SUPPLY_THRESHOLD && state.stats.guests >= 10) {
       notifications.push({
         id: 'need_rides',
+        type: 'need_rides',
+        severity: 'warning',
         message: 'Guests are bored! Build more rides.',
       })
     }
@@ -80,6 +112,8 @@ export class Notifications {
     if (unhappyCount >= UNHAPPY_GUEST_MIN && unhappyRatio >= UNHAPPY_GUEST_RATIO) {
       notifications.push({
         id: 'unhappy_guests',
+        type: 'unhappy_guests',
+        severity: 'warning',
         message: `${unhappyCount} guests are unhappy and may leave.`,
       })
     }
