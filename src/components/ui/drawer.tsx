@@ -1,4 +1,4 @@
-import { useState, createContext, useContext, useEffect, useCallback, type ReactNode } from 'react'
+import { useState, useContext, useEffect, useCallback, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronLeft, Zap, BarChart3, RotateCcw, Building2, BookOpen, MessageCircle, Sparkles } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
@@ -9,37 +9,18 @@ import { TimelineContent } from '../timeline/timeline-content'
 import { FeedContent } from '../feed/feed-content'
 import { ServicesContent, FastPassContent, MarketingContent, BankContent } from '../services/services-content'
 import { StatDetail } from '../stats/stat-detail'
-import { Drawer, type DrawerStore } from './primitives'
+import { DrawerRoot, DrawerContent, DrawerTitle, DrawerClose } from './primitives'
+import { useDrawerStore } from './primitives/drawer-hooks'
+import { DrawerContext, type DrawerScreen } from './drawer-context'
 
-export type DrawerScreen = 'menu' | 'milestones' | 'perks' | 'analytics' | 'park' | 'timeline' | 'feed' | 'services' | 'service_bank' | 'service_fast_pass' | 'service_marketing' | 'guests' | 'cleanliness'
-
-type DrawerContextValue = {
-  store: DrawerStore
-  screen: DrawerScreen
-  setScreen: (screen: DrawerScreen) => void
-  navigateTo: (screen: DrawerScreen) => void
-}
-
-const DrawerContext = createContext<DrawerContextValue | null>(null)
-
-export function useDrawer() {
-  const ctx = useContext(DrawerContext)
-  if (!ctx) throw new Error('useDrawer must be used within DrawerProvider')
-  return ctx.store
-}
-
-export function useDrawerNavigation() {
-  const ctx = useContext(DrawerContext)
-  if (!ctx) throw new Error('useDrawerNavigation must be used within DrawerProvider')
-  return ctx.navigateTo
-}
+export type { DrawerScreen }
 
 type DrawerProviderProps = {
   children: ReactNode
 }
 
 export function DrawerProvider({ children }: DrawerProviderProps) {
-  const store = Drawer.useStore()
+  const store = useDrawerStore()
   const [screen, setScreen] = useState<DrawerScreen>('menu')
 
   const navigateTo = useCallback((targetScreen: DrawerScreen) => {
@@ -58,10 +39,10 @@ export function DrawerProvider({ children }: DrawerProviderProps) {
 
   return (
     <DrawerContext.Provider value={{ store, screen, setScreen, navigateTo }}>
-      <Drawer.Root store={store}>
+      <DrawerRoot store={store}>
         {children}
         <MenuDrawer />
-      </Drawer.Root>
+      </DrawerRoot>
     </DrawerContext.Provider>
   )
 }
@@ -126,7 +107,7 @@ function MenuDrawer() {
   const title = currentMenuItem?.label ?? SCREEN_TITLES[screen] ?? 'Menu'
 
   return (
-    <Drawer.Content
+    <DrawerContent
       side="left"
       className="w-[85vw] max-w-sm bg-[var(--color-bg)] flex flex-col shadow-2xl"
     >
@@ -139,12 +120,12 @@ function MenuDrawer() {
             <ChevronLeft size={20} />
           </button>
         ) : null}
-        <Drawer.Title className="flex-1 text-lg font-semibold">
+        <DrawerTitle className="flex-1 text-lg font-semibold">
           {title}
-        </Drawer.Title>
-        <Drawer.Close className="p-2 -mr-2 active:bg-[var(--color-surface)] rounded-lg transition-colors">
+        </DrawerTitle>
+        <DrawerClose className="p-2 -mr-2 active:bg-[var(--color-surface)] rounded-lg transition-colors">
           <X size={20} />
-        </Drawer.Close>
+        </DrawerClose>
       </div>
 
       <div className="flex-1 overflow-auto">
@@ -219,6 +200,6 @@ function MenuDrawer() {
           </button>
         </div>
       )}
-    </Drawer.Content>
+    </DrawerContent>
   )
 }

@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, ChevronRight } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { Notifications, type Notification, type NotificationAction } from '../../systems/notifications'
-import { useDrawerNavigation, type DrawerScreen } from '../ui/drawer'
+import { useDrawerNavigation } from '../ui/drawer-hooks'
+import type { DrawerScreen } from '../ui/drawer-context'
 
 const ACTION_TO_SCREEN: Record<NotificationAction, DrawerScreen> = {
   perks: 'perks',

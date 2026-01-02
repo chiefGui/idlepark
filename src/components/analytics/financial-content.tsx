@@ -54,7 +54,7 @@ export function FinancialContent() {
               </div>
             </div>
             <div className="text-right text-sm text-amber-200/70">
-              {Bank.getLoanDaysRemaining({ bankLoan } as any)} days left
+              {Bank.getLoanDaysRemaining({ bankLoan })} days left
             </div>
           </div>
         </div>
