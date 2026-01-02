@@ -6,7 +6,7 @@ type GuestTypesBarProps = {
   mix: GuestTypeMix | undefined
 }
 
-const DEFAULT_MIX: GuestTypeMix = { thrills: 25, family: 25, relaxation: 25, social: 25 }
+const DEFAULT_MIX: GuestTypeMix = { thrills: 34, family: 33, relaxation: 33 }
 
 export function GuestTypesBar({ mix }: GuestTypesBarProps) {
   const safeMix = mix ?? DEFAULT_MIX
@@ -33,7 +33,7 @@ export function GuestTypesBar({ mix }: GuestTypesBarProps) {
       </div>
 
       {/* Labels - responsive grid for mobile */}
-      <div className="grid grid-cols-4 gap-1 text-xs text-[var(--color-text-muted)]">
+      <div className="grid grid-cols-3 gap-1 text-xs text-[var(--color-text-muted)]">
         {GUEST_TYPES.map((type) => (
           <TypeLabel
             key={type}

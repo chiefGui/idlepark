@@ -121,7 +121,8 @@ export const useGameStore = create<GameStoreState>()(
           // 1. Process arrivals (new guests start as neutral, respects capacity)
           const arrivalRate = Guest.calculateArrivalRate(state)
           const capacity = Guest.getCapacity(state)
-          guestBreakdown = Guest.processArrivals(guestBreakdown, arrivalRate, deltaDay, capacity)
+          const familyBonus = Guest.getFamilyArrivalBonus(state)
+          guestBreakdown = Guest.processArrivals(guestBreakdown, arrivalRate, deltaDay, capacity, familyBonus)
 
           // 2. Process tier transitions based on appeal
           const currentAppeal = Guest.calculateAppeal(state)
@@ -131,7 +132,8 @@ export const useGameStore = create<GameStoreState>()(
           let naturalDeparted = 0
           let unhappyDeparted = 0
           if (crossedDayBoundary) {
-            const result = Guest.processDepartures(guestBreakdown)
+            const relaxerReduction = Guest.getRelaxerDepartureReduction(state)
+            const result = Guest.processDepartures(guestBreakdown, relaxerReduction)
             guestBreakdown = result.newBreakdown
             naturalDeparted = result.naturalDeparted
             unhappyDeparted = result.unhappyDeparted
