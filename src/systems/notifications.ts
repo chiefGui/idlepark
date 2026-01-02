@@ -45,7 +45,7 @@ export class Notifications {
     for (const wish of activeWishes) {
       const building = Building.getById(wish.buildingId)
       if (building) {
-        const daysLeft = wish.expiresDay - state.currentDay
+        const daysLeft = Math.floor(wish.expiresDay - state.currentDay)
         notifications.push({
           id: `wish_${wish.buildingId}`,
           type: 'wish',
