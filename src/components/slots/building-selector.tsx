@@ -1,13 +1,14 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Lock, Check, ChevronRight } from 'lucide-react'
+import { X, Lock, ChevronRight, BedDouble, ShoppingBag } from 'lucide-react'
 import { Building } from '../../systems/building'
 import { useGameStore } from '../../store/game-store'
 import { Requirements } from '../../engine/requirements'
 import { Format } from '../../utils/format'
 import { BuildingPreview } from './building-preview'
 import { BuildingIcon } from '../../buildings'
-import type { BuildingCategory, BuildingDef } from '../../engine/game-types'
+import { STAT_CONFIG } from '../../constants/stats'
+import type { BuildingCategory, BuildingDef, StatId } from '../../engine/game-types'
 
 type BuildingSelectorProps = {
   slotIndex: number
@@ -21,9 +22,15 @@ export function BuildingSelector({ slotIndex, onClose, initialCategory }: Buildi
   const [activeCategory, setActiveCategory] = useState<BuildingCategory>(initialCategory ?? 'rides')
   const [previewBuilding, setPreviewBuilding] = useState<BuildingDef | null>(null)
 
-  // Check what's already built
-  const ownedBuildingIds = useMemo(() => {
-    return new Set(state.slots.filter(s => s.buildingId).map(s => s.buildingId!))
+  // Count how many of each building type the player owns
+  const buildingCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const slot of state.slots) {
+      if (slot.buildingId) {
+        counts.set(slot.buildingId, (counts.get(slot.buildingId) ?? 0) + 1)
+      }
+    }
+    return counts
   }, [state.slots])
 
   const categoryBuildings = useMemo(() => {
@@ -31,10 +38,10 @@ export function BuildingSelector({ slotIndex, onClose, initialCategory }: Buildi
       building,
       isUnlocked: Building.isUnlocked(building, state),
       canAfford: Building.canAfford(building, state),
-      isOwned: ownedBuildingIds.has(building.id),
+      ownedCount: buildingCounts.get(building.id) ?? 0,
       unmetReqs: Requirements.getUnmetRequirements(building.requirements, state),
     }))
-  }, [activeCategory, state, ownedBuildingIds])
+  }, [activeCategory, state, buildingCounts])
 
   const unlockedBuildings = categoryBuildings.filter((b) => b.isUnlocked)
   const lockedBuildings = categoryBuildings.filter((b) => !b.isUnlocked)
@@ -103,38 +110,32 @@ export function BuildingSelector({ slotIndex, onClose, initialCategory }: Buildi
             ))}
           </div>
 
-          {/* Building Grid */}
-          <div className="flex-1 overflow-auto p-3">
-            {unlockedBuildings.length > 0 && (
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                {unlockedBuildings.map(({ building, canAfford, isOwned }) => (
-                  <BuildingCard
-                    key={building.id}
-                    building={building}
-                    canAfford={canAfford}
-                    isOwned={isOwned}
-                    onTap={() => setPreviewBuilding(building)}
-                  />
-                ))}
-              </div>
-            )}
+          {/* Building List - Single column for better info display */}
+          <div className="flex-1 overflow-auto p-3 space-y-2">
+            {unlockedBuildings.map(({ building, canAfford, ownedCount }) => (
+              <BuildingCard
+                key={building.id}
+                building={building}
+                canAfford={canAfford}
+                ownedCount={ownedCount}
+                onTap={() => setPreviewBuilding(building)}
+              />
+            ))}
 
             {lockedBuildings.length > 0 && (
               <>
                 {unlockedBuildings.length > 0 && (
-                  <div className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-2 px-1">
+                  <div className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider pt-2 px-1">
                     Locked
                   </div>
                 )}
-                <div className="grid grid-cols-2 gap-2">
-                  {lockedBuildings.map(({ building, unmetReqs }) => (
-                    <LockedBuildingCard
-                      key={building.id}
-                      building={building}
-                      unlockReason={unmetReqs[0] ? Requirements.formatRequirement(unmetReqs[0]) : ''}
-                    />
-                  ))}
-                </div>
+                {lockedBuildings.map(({ building, unmetReqs }) => (
+                  <LockedBuildingCard
+                    key={building.id}
+                    building={building}
+                    unlockReason={unmetReqs[0] ? Requirements.formatRequirement(unmetReqs[0]) : ''}
+                  />
+                ))}
               </>
             )}
           </div>
@@ -145,7 +146,7 @@ export function BuildingSelector({ slotIndex, onClose, initialCategory }: Buildi
       <BuildingPreview
         building={previewBuilding}
         canAfford={previewData?.canAfford ?? false}
-        isOwned={previewData?.isOwned ?? false}
+        ownedCount={previewData?.ownedCount ?? 0}
         onClose={() => setPreviewBuilding(null)}
         onBuild={() => previewBuilding && handleBuild(previewBuilding.id)}
       />
@@ -156,118 +157,151 @@ export function BuildingSelector({ slotIndex, onClose, initialCategory }: Buildi
 type BuildingCardProps = {
   building: BuildingDef
   canAfford: boolean
-  isOwned: boolean
+  ownedCount: number
   onTap: () => void
 }
 
-/**
- * Get the primary highlight for a building - the most important thing to show.
- */
-function getPrimaryHighlight(building: BuildingDef): { label: string; value: string; type: 'positive' | 'warning' } {
-  // Lodging: show capacity
-  if (Building.isLodging(building)) {
-    return {
-      label: 'capacity',
-      value: `+${building.capacityBonus}`,
-      type: 'positive',
-    }
-  }
-
-  // Shops: show income per guest
-  if (Building.isShop(building)) {
-    return {
-      label: '$/guest',
-      value: `$${building.incomePerGuest.toFixed(2)}`,
-      type: 'positive',
-    }
-  }
-
-  // Others: find the biggest positive non-money effect
-  const effects = Building.getDisplayEffects(building)
-  const benefits = effects
-    .filter(e => e.statId !== 'money' && e.isPositive)
-    .sort((a, b) => b.value - a.value)
-
-  if (benefits.length > 0) {
-    const best = benefits[0]
-    return {
-      label: Format.statLabel(best.statId),
-      value: `+${best.value}`,
-      type: 'positive',
-    }
-  }
-
-  return { label: '', value: '', type: 'positive' }
-}
-
-function BuildingCard({ building, canAfford, isOwned, onTap }: BuildingCardProps) {
+function BuildingCard({ building, canAfford, ownedCount, onTap }: BuildingCardProps) {
   const cost = building.costs[0]?.amount ?? 0
-  const upkeep = Building.getUpkeep(building)
-  const highlight = getPrimaryHighlight(building)
+  const effects = Building.getDisplayEffects(building)
+
+  // Separate benefits from costs
+  const benefits = effects.filter(e => e.statId !== 'money' && e.isPositive)
+  const costs = effects.filter(e => e.statId === 'money' && !e.isPositive)
+  const upkeep = costs[0]?.value ? Math.abs(costs[0].value) : 0
+
+  // Special handling for lodging and shops
+  const isLodging = Building.isLodging(building)
+  const isShop = Building.isShop(building)
 
   return (
     <motion.button
-      whileTap={{ scale: 0.97 }}
+      whileTap={{ scale: 0.98 }}
       onClick={onTap}
       className={`
-        relative p-3 rounded-xl border text-left transition-all
+        w-full p-3 rounded-xl border text-left transition-all
         ${canAfford
           ? 'bg-[var(--color-surface)] border-[var(--color-border)] active:bg-[var(--color-surface-hover)]'
           : 'bg-[var(--color-surface)]/50 border-[var(--color-border)]/50'
         }
       `}
     >
-      {/* Owned badge */}
-      {isOwned && (
-        <div className="absolute top-2 right-2">
-          <div className="w-5 h-5 rounded-full bg-[var(--color-positive)]/20 flex items-center justify-center">
-            <Check size={12} className="text-[var(--color-positive)]" />
-          </div>
-        </div>
-      )}
-
-      {/* Icon + Name row */}
-      <div className="flex items-center gap-2 mb-2">
+      {/* Header: Icon + Name + Count */}
+      <div className="flex items-center gap-3 mb-2">
         <div className={!canAfford ? 'opacity-50' : ''}>
-          <BuildingIcon buildingId={building.id} size={32} />
+          <BuildingIcon buildingId={building.id} size={36} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className={`font-medium text-sm truncate ${!canAfford ? 'text-[var(--color-text-muted)]' : ''}`}>
+          <div className={`font-medium truncate ${!canAfford ? 'text-[var(--color-text-muted)]' : ''}`}>
             {building.name}
           </div>
         </div>
+        {ownedCount > 0 && (
+          <div className="px-2 py-0.5 rounded-full bg-[var(--color-accent)]/20 text-[var(--color-accent)] text-xs font-semibold">
+            ×{ownedCount}
+          </div>
+        )}
       </div>
 
-      {/* Primary highlight badge */}
-      {highlight.value && (
-        <div className={`
-          inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold mb-2
-          ${highlight.type === 'positive'
-            ? 'bg-[var(--color-positive)]/15 text-[var(--color-positive)]'
-            : 'bg-[var(--color-warning)]/15 text-[var(--color-warning)]'
-          }
-          ${!canAfford ? 'opacity-60' : ''}
-        `}>
-          <span>{highlight.value}</span>
-          <span className="opacity-70">{highlight.label}</span>
-        </div>
-      )}
+      {/* Stats Row - All benefits with icons */}
+      <div className="flex flex-wrap gap-1.5 mb-2">
+        {/* Lodging capacity */}
+        {isLodging && (
+          <StatBadge
+            icon={<BedDouble size={12} />}
+            value={`+${building.capacityBonus}`}
+            label="cap"
+            color="#6366f1"
+            muted={!canAfford}
+          />
+        )}
 
-      {/* Cost row */}
-      <div className="flex items-center justify-between text-xs">
-        <div className="flex items-center gap-2">
+        {/* Shop income */}
+        {isShop && (
+          <StatBadge
+            icon={<ShoppingBag size={12} />}
+            value={`$${building.incomePerGuest.toFixed(2)}`}
+            label="/guest"
+            color="#22c55e"
+            muted={!canAfford}
+          />
+        )}
+
+        {/* Regular stat benefits */}
+        {benefits.filter(e => e.statId !== 'capacity' && e.statId !== 'income').map((effect, i) => {
+          const config = STAT_CONFIG[effect.statId as StatId]
+          if (!config) return null
+          const Icon = config.icon
+          return (
+            <StatBadge
+              key={i}
+              icon={<Icon size={12} />}
+              value={`+${effect.value}`}
+              color={config.color}
+              muted={!canAfford}
+            />
+          )
+        })}
+
+        {/* Negative effects (except money/upkeep) */}
+        {effects.filter(e => e.statId !== 'money' && !e.isPositive).map((effect, i) => {
+          const config = STAT_CONFIG[effect.statId as StatId]
+          if (!config) return null
+          const Icon = config.icon
+          return (
+            <StatBadge
+              key={`neg-${i}`}
+              icon={<Icon size={12} />}
+              value={`${effect.value}`}
+              color="var(--color-negative)"
+              muted={!canAfford}
+            />
+          )
+        })}
+      </div>
+
+      {/* Footer: Cost + Upkeep + Chevron */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 text-sm">
           <span className={`font-semibold ${canAfford ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-muted)]'}`}>
             {Format.money(cost)}
           </span>
           {upkeep > 0 && (
-            <span className="text-[var(--color-text-muted)]">
-              −${upkeep}/d
+            <span className="text-[var(--color-text-muted)] text-xs">
+              −{Format.money(upkeep)}/day
             </span>
           )}
         </div>
-        <ChevronRight size={14} className="text-[var(--color-text-muted)]" />
+        <ChevronRight size={16} className="text-[var(--color-text-muted)]" />
       </div>
     </motion.button>
+  )
+}
+
+type StatBadgeProps = {
+  icon: React.ReactNode
+  value: string
+  label?: string
+  color: string
+  muted?: boolean
+}
+
+function StatBadge({ icon, value, label, color, muted }: StatBadgeProps) {
+  return (
+    <div
+      className={`
+        inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium
+        ${muted ? 'opacity-50' : ''}
+      `}
+      style={{
+        backgroundColor: `color-mix(in srgb, ${color} 15%, transparent)`,
+        color: color
+      }}
+    >
+      {icon}
+      <span>{value}</span>
+      {label && <span className="opacity-70">{label}</span>}
+    </div>
   )
 }
 
@@ -278,29 +312,21 @@ type LockedBuildingCardProps = {
 
 function LockedBuildingCard({ building, unlockReason }: LockedBuildingCardProps) {
   return (
-    <div className="relative p-3 rounded-xl border border-[var(--color-border)]/30 bg-[var(--color-surface)]/20">
-      {/* Locked badge */}
-      <div className="absolute top-2 right-2">
-        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--color-text-muted)]/20 text-[10px] text-[var(--color-text-muted)]">
-          <Lock size={10} />
-        </div>
-      </div>
-
-      {/* Icon + Name */}
-      <div className="flex items-center gap-2 mb-1">
+    <div className="w-full p-3 rounded-xl border border-[var(--color-border)]/30 bg-[var(--color-surface)]/20">
+      {/* Header */}
+      <div className="flex items-center gap-3">
         <div className="grayscale opacity-40">
-          <BuildingIcon buildingId={building.id} size={32} />
+          <BuildingIcon buildingId={building.id} size={36} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-medium text-sm truncate text-[var(--color-text-muted)]/60">
+          <div className="font-medium truncate text-[var(--color-text-muted)]/60">
             {building.name}
           </div>
+          <div className="flex items-center gap-1 text-[10px] text-[var(--color-warning)] mt-0.5">
+            <Lock size={10} />
+            <span>{unlockReason}</span>
+          </div>
         </div>
-      </div>
-
-      {/* Unlock requirement */}
-      <div className="text-[10px] text-[var(--color-warning)] mt-2 truncate">
-        {unlockReason}
       </div>
     </div>
   )
