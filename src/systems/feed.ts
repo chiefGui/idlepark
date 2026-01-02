@@ -159,25 +159,46 @@ const MESSAGES: Record<FeedEventType, string[]> = {
     "Me and my {count} closest friends hanging at the park",
   ],
   guest_departed: [
-    // Concerned
+    // Concerned - these are UNHAPPY departures only
     "Just saw {count} people leave looking unhappy... yikes 😬",
-    "Not gonna lie, {count} guests just bounced. Something's off",
-    "Oof {count} people left today. Hope they come back",
-    "{count} guests said goodbye. The vibes might need work",
+    "Not gonna lie, {count} guests just bounced frustrated. Something's off",
+    "Oof {count} unhappy people left today. Hope they come back",
+    "{count} guests stormed off. The vibes need work",
     // Observational
     "Watched {count} frustrated visitors leave. We can do better",
     "The exit line had {count} unhappy faces. That's rough",
-    "{count} people gave up and left. Wake up call maybe?",
+    "{count} people gave up and left angry. Wake up call maybe?",
     // Sympathetic
-    "Feel bad for the {count} who left. It's not always perfect here",
+    "Feel bad for the {count} who left upset. It's not always perfect here",
     "{count} people couldn't take it anymore. I get it honestly",
-    "Some days are rough. {count} found that out today",
+    "Some days are rough. {count} unhappy guests found that out today",
     // Concerned local
-    "As a regular, seeing {count} leave hurts. Fix it pls",
-    "{count} people won't be back. That's a problem",
+    "As a regular, seeing {count} leave mad hurts. Fix it pls",
+    "{count} angry guests won't be back. That's a problem",
     // Hopeful
-    "{count} left but maybe they'll give it another chance?",
-    "Bye to {count} visitors. Hope tomorrow's better for everyone",
+    "{count} left frustrated but maybe they'll give it another chance?",
+    "Bye to {count} unhappy visitors. Hope tomorrow's better for everyone",
+  ],
+  guest_departed_natural: [
+    // Positive farewells - guests going home after a great visit
+    "Saw {count} happy guests heading home. They'll be back for sure! 👋",
+    "{count} visitors just left with huge smiles. That's what it's about!",
+    "Waving goodbye to {count} satisfied guests. See you next time!",
+    "Another {count} people leaving happy. This park delivers 🎉",
+    "{count} guests just finished an amazing day. Love to see it",
+    // Nostalgic
+    "Watched {count} families head home tired but happy. Core memories made today",
+    "{count} people leaving with souvenirs and smiles. Mission accomplished",
+    "The sunset crowd of {count} heading out. What a perfect day they had",
+    "End of day vibes: {count} happy guests going home. Beautiful",
+    // Casual
+    "{count} guests headed out. Classic end-of-day flow",
+    "Natural turnover: {count} happy visitors calling it a day",
+    "{count} people wrapped up their visit. See ya next time!",
+    // Appreciative
+    "Thanks for visiting! {count} guests leaving with great memories",
+    "{count} satisfied guests heading home. That's what we like to see",
+    "Another successful day for {count} visitors. Come back soon!",
   ],
   appeal_high: [
     // Pure joy

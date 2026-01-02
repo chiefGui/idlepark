@@ -128,11 +128,13 @@ export const useGameStore = create<GameStoreState>()(
           guestBreakdown = Guest.processTransitions(guestBreakdown, currentAppeal, deltaDay)
 
           // 3. Process departures at day boundary (natural turnover + unhappy extra)
-          let departedGuests = 0
+          let naturalDeparted = 0
+          let unhappyDeparted = 0
           if (crossedDayBoundary) {
             const result = Guest.processDepartures(guestBreakdown)
             guestBreakdown = result.newBreakdown
-            departedGuests = result.departed
+            naturalDeparted = result.naturalDeparted
+            unhappyDeparted = result.unhappyDeparted
           }
 
           const totalGuests = GameTypes.getTotalGuests(guestBreakdown)
@@ -238,9 +240,12 @@ export const useGameStore = create<GameStoreState>()(
             // Recalculate guest type mix (once per day, not per tick)
             guestTypeMix = calculateGuestTypeMix(state)
 
-            // Emit event if guests departed
-            if (departedGuests > 0) {
-              GameEvents.emit('guests:departed', { count: departedGuests })
+            // Emit events for guest departures (split by type for appropriate feed messages)
+            if (unhappyDeparted > 0) {
+              GameEvents.emit('guests:departed', { count: unhappyDeparted })
+            }
+            if (naturalDeparted > 0) {
+              GameEvents.emit('guests:departed_natural', { count: naturalDeparted })
             }
           }
 
