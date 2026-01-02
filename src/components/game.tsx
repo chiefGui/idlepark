@@ -8,6 +8,32 @@ import { FeedToast } from './feed/feed-toast'
 import { HappeningBanner } from './happening/happening-banner'
 import { HappeningToast } from './happening/happening-toast'
 import { SeasonalParticles } from './seasonal/seasonal-particles'
+import { Advisor } from './park-rating'
+
+function GameContent() {
+  return (
+    <div className="h-full flex flex-col bg-[var(--color-bg)]">
+      <Header />
+      <HappeningBanner />
+
+      {/* Advisor tip - contextual guidance for players */}
+      <div className="px-4 pt-2">
+        <Advisor compact />
+      </div>
+
+      <StatsBar />
+
+      <main className="flex-1 overflow-auto">
+        <div className="max-w-lg mx-auto pt-4">
+          <BuildingsPanel />
+        </div>
+      </main>
+
+      <FeedToast />
+      <HappeningToast />
+    </div>
+  )
+}
 
 export function Game() {
   useGameLoop()
@@ -16,20 +42,7 @@ export function Game() {
   return (
     <DrawerProvider>
       <SeasonalParticles />
-      <div className="h-full flex flex-col bg-[var(--color-bg)]">
-        <Header />
-        <HappeningBanner />
-        <StatsBar />
-
-        <main className="flex-1 overflow-auto">
-          <div className="max-w-lg mx-auto pt-4">
-            <BuildingsPanel />
-          </div>
-        </main>
-
-        <FeedToast />
-        <HappeningToast />
-      </div>
+      <GameContent />
     </DrawerProvider>
   )
 }
