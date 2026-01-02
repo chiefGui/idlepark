@@ -1,4 +1,8 @@
 import type { Requirement, GameState } from './game-types'
+import { Perk } from '../systems/perk'
+import { Building } from '../systems/building'
+import { Milestone } from '../systems/milestone'
+import { Format } from '../utils/format'
 
 export class Requirements {
   static check(req: Requirement, state: GameState): boolean {
@@ -32,18 +36,38 @@ export class Requirements {
 
   static formatRequirement(req: Requirement): string {
     switch (req.type) {
-      case 'stat':
-        if (req.min !== undefined) return `${req.statId} >= ${req.min}`
-        if (req.max !== undefined) return `${req.statId} <= ${req.max}`
-        return req.statId
+      case 'stat': {
+        const label = STAT_LABELS[req.statId] ?? req.statId
+        if (req.min !== undefined) return `${Format.number(req.min)}+ ${label}`
+        if (req.max !== undefined) return `${label} under ${Format.number(req.max)}`
+        return label
+      }
       case 'day':
-        return `Day ${req.min}`
-      case 'milestone':
-        return `Milestone: ${req.id}`
-      case 'perk':
-        return `Perk: ${req.id}`
-      case 'building':
-        return `Building: ${req.id}${req.count ? ` x${req.count}` : ''}`
+        return `Reach day ${req.min}`
+      case 'milestone': {
+        const milestone = Milestone.getById(req.id)
+        return milestone?.name ?? req.id
+      }
+      case 'perk': {
+        const perk = Perk.getById(req.id)
+        return perk?.name ?? req.id
+      }
+      case 'building': {
+        const building = Building.getById(req.id)
+        const name = building?.name ?? req.id
+        return req.count && req.count > 1 ? `${req.count}x ${name}` : name
+      }
     }
   }
+}
+
+const STAT_LABELS: Record<string, string> = {
+  money: 'money',
+  guests: 'guests',
+  entertainment: 'entertainment',
+  food: 'food',
+  comfort: 'comfort',
+  cleanliness: 'cleanliness',
+  beauty: 'beauty',
+  appeal: 'appeal',
 }

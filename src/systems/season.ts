@@ -1,5 +1,5 @@
 import type { Modifier } from '../engine/modifiers'
-import type { Season as SeasonType } from '../utils/calendar'
+import type { Season as SeasonType } from '../engine/game-types'
 import { Calendar } from '../utils/calendar'
 
 type SeasonDef = {

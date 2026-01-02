@@ -17,6 +17,7 @@ import { Service } from '../systems/service'
 import { Marketing } from '../systems/marketing'
 import { Bank } from '../systems/bank'
 import { Season } from '../systems/season'
+import { calculateGuestTypeMix } from '../systems/guest-types'
 
 const MAX_DAILY_RECORDS = 30
 
@@ -222,6 +223,7 @@ export const useGameStore = create<GameStoreState>()(
 
           // Update daily records when crossing day boundaries
           let dailyRecords = state.dailyRecords
+          let guestTypeMix = state.guestTypeMix
 
           if (crossedDayBoundary) {
             const dayRecord: DailyRecord = {
@@ -231,6 +233,9 @@ export const useGameStore = create<GameStoreState>()(
               peakAppeal: Math.max(state.stats.appeal, finalStats.appeal),
             }
             dailyRecords = [...dailyRecords, dayRecord].slice(-MAX_DAILY_RECORDS)
+
+            // Recalculate guest type mix (once per day, not per tick)
+            guestTypeMix = calculateGuestTypeMix(state)
 
             // Emit event if guests departed
             if (departedGuests > 0) {
@@ -261,8 +266,9 @@ export const useGameStore = create<GameStoreState>()(
 
           // Check if a new happening should start
           if (!currentHappening && newDay >= nextHappeningDay) {
-            const nextHappening = Happening.selectNext(lastHappeningType)
-            currentHappening = Happening.start({ ...updatedState, currentDay: newDay }, nextHappening.id)
+            const stateForHappening = { ...updatedState, currentDay: newDay, lastHappeningType }
+            const nextHappening = Happening.selectNext(stateForHappening)
+            currentHappening = Happening.start(stateForHappening, nextHappening.id)
             timeline = [...timeline, {
               type: 'happening_started' as const,
               happeningId: nextHappening.id,
@@ -299,10 +305,11 @@ export const useGameStore = create<GameStoreState>()(
             }
           }
 
-          const computed = computeRatesAndModifiers({ ...updatedState, timeline, stats: finalStats, dailyRecords, financials, guestBreakdown, currentHappening, nextHappeningDay, lastHappeningType, marketing, bankLoan, lastLoanRepaidDay })
+          const computed = computeRatesAndModifiers({ ...updatedState, timeline, stats: finalStats, dailyRecords, financials, guestBreakdown, guestTypeMix, currentHappening, nextHappeningDay, lastHappeningType, marketing, bankLoan, lastLoanRepaidDay })
           set({
             stats: finalStats,
             guestBreakdown,
+            guestTypeMix,
             currentDay: newDay,
             lastTickTime: Date.now(),
             consecutiveNegativeDays,
@@ -350,11 +357,15 @@ export const useGameStore = create<GameStoreState>()(
           }
           const newState = { ...state, stats: newStats, slots: newSlots, financials }
 
+          // Recalculate guest type mix when buildings change
+          const guestTypeMix = calculateGuestTypeMix(newState)
+
           const computed = computeRatesAndModifiers(newState)
           set({
             stats: newStats,
             slots: newSlots,
             financials,
+            guestTypeMix,
             rates: computed.rates,
             modifiers: computed.modifiers,
           })
@@ -384,10 +395,14 @@ export const useGameStore = create<GameStoreState>()(
           const newSlots = Slot.demolish(state.slots, slotIndex)
           const newState = { ...state, stats: newStats, slots: newSlots }
 
+          // Recalculate guest type mix when buildings change
+          const guestTypeMix = calculateGuestTypeMix(newState)
+
           const computed = computeRatesAndModifiers(newState)
           set({
             stats: newStats,
             slots: newSlots,
+            guestTypeMix,
             rates: computed.rates,
             modifiers: computed.modifiers,
           })
@@ -606,15 +621,30 @@ export const useGameStore = create<GameStoreState>()(
           const moneyRate = rates.money
           let daysToSimulate = daysElapsed
 
+          // Cap offline progression to 60 days (~30 min real time)
+          // Keeps iteration count low for mobile performance
+          const MAX_OFFLINE_DAYS = 60
+          daysToSimulate = Math.min(daysToSimulate, MAX_OFFLINE_DAYS)
+
           if (moneyRate < 0 && state.stats.money > 0) {
             const daysUntilBankrupt =
               state.stats.money / Math.abs(moneyRate) +
               GameTypes.BANKRUPTCY_THRESHOLD_DAYS
 
-            daysToSimulate = Math.min(daysElapsed, daysUntilBankrupt)
+            daysToSimulate = Math.min(daysToSimulate, daysUntilBankrupt)
           }
 
-          get().actions.tick(daysToSimulate)
+          // Process day by day so happenings, daily records, etc. work correctly
+          const fullDays = Math.floor(daysToSimulate)
+          const remainder = daysToSimulate - fullDays
+
+          for (let i = 0; i < fullDays; i++) {
+            get().actions.tick(1)
+          }
+
+          if (remainder > 0) {
+            get().actions.tick(remainder)
+          }
         },
       },
     }),
@@ -630,6 +660,7 @@ export const useGameStore = create<GameStoreState>()(
         dailyRecords: state.dailyRecords,
         financials: state.financials,
         guestBreakdown: state.guestBreakdown,
+        guestTypeMix: state.guestTypeMix,
         feedEntries: state.feedEntries,
         unreadFeedCount: state.unreadFeedCount,
         currentDay: state.currentDay,
@@ -646,6 +677,10 @@ export const useGameStore = create<GameStoreState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
+          // Ensure guestTypeMix exists for older saves
+          if (!state.guestTypeMix) {
+            state.guestTypeMix = calculateGuestTypeMix(state)
+          }
           const computed = computeRatesAndModifiers(state)
           state.rates = computed.rates
           state.modifiers = computed.modifiers

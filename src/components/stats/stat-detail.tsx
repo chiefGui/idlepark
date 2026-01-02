@@ -1,11 +1,9 @@
 import { useMemo } from 'react'
-import { TrendingUp, TrendingDown, AlertCircle, Lightbulb, Smile, Meh, Frown, ChevronRight } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertCircle, Smile, Meh, Frown, ChevronRight } from 'lucide-react'
 import type { StatId, GameState } from '../../engine/game-types'
 import { Modifiers } from '../../engine/modifiers'
 import { useGameStore } from '../../store/game-store'
-import { Building } from '../../systems/building'
 import { Guest } from '../../systems/guest'
-import { Slot } from '../../systems/slot'
 import { Format } from '../../utils/format'
 import { STAT_CONFIG } from '../../constants/stats'
 
@@ -39,43 +37,6 @@ function getWarning(statId: StatId, state: GameState): string | null {
   return null
 }
 
-function getTip(statId: StatId, state: GameState): string | null {
-  const availableBuildings = Building.getAvailable(state)
-  const breakdown = state.guestBreakdown ?? { happy: 0, neutral: 0, unhappy: 0 }
-  const unhappyRatio = state.stats.guests > 0 ? breakdown.unhappy / state.stats.guests : 0
-
-  switch (statId) {
-    case 'guests': {
-      const capacity = Guest.getCapacity(state)
-      const capacityPercent = (state.stats.guests / capacity) * 100
-      if (capacityPercent >= 80 && capacityPercent < 100) {
-        return 'Approaching capacity! Build lodging soon to accommodate more guests.'
-      }
-      if (unhappyRatio > 0.3) return 'Too many unhappy guests! Improve fun, food, or comfort.'
-      if (state.stats.appeal < 30) return 'Build more attractions to increase appeal and draw visitors.'
-      break
-    }
-    case 'entertainment':
-      if (state.stats.entertainment < state.stats.guests * 0.5) {
-        const rides = availableBuildings.filter((b) => b.category === 'rides' && Building.canAfford(b, state))
-        if (rides[0]) return `Build a ${rides[0].emoji} ${rides[0].name} for more fun.`
-      }
-      break
-    case 'food':
-      if (state.stats.food < state.stats.guests * 0.3) {
-        const food = availableBuildings.filter((b) => b.category === 'food' && Building.canAfford(b, state))
-        if (food[0]) return `Build a ${food[0].emoji} ${food[0].name} to feed hungry guests.`
-      }
-      break
-    case 'cleanliness':
-      if (state.stats.cleanliness < 60 && !Slot.getOccupied(state).some((s) => s.buildingId === 'trash_can')) {
-        return 'Add a 🗑️ Trash Can to help keep the park clean.'
-      }
-      break
-  }
-  return null
-}
-
 export function StatDetail({ statId, onNavigateToFinances }: StatDetailProps) {
   const stats = useGameStore((s) => s.stats)
   const rates = useGameStore((s) => s.rates)
@@ -89,7 +50,12 @@ export function StatDetail({ statId, onNavigateToFinances }: StatDetailProps) {
   const config = STAT_CONFIG[statId]
   const value = stats[statId]
   const rate = rates[statId]
-  const state: GameState = { slots, ownedPerks, stats, ticketPrice, guestBreakdown, bankLoan } as GameState
+
+  // Memoize state object to prevent dependency churn
+  const state = useMemo<GameState>(
+    () => ({ slots, ownedPerks, stats, ticketPrice, guestBreakdown, bankLoan } as GameState),
+    [slots, ownedPerks, stats, ticketPrice, guestBreakdown, bankLoan]
+  )
 
   // Money stat gets simplified view with link to Finances
   if (statId === 'money') {
@@ -161,7 +127,6 @@ export function StatDetail({ statId, onNavigateToFinances }: StatDetailProps) {
   }, [modifiers, statId, state])
 
   const warning = getWarning(statId, state)
-  const tip = getTip(statId, state)
 
   const isGuestStat = statId === 'guests'
   const isAppealStat = statId === 'appeal'
@@ -411,14 +376,6 @@ export function StatDetail({ statId, onNavigateToFinances }: StatDetailProps) {
       {sources.length === 0 && !isGuestStat && !isAppealStat && (
         <div className="p-4 rounded-xl bg-[var(--color-bg)] text-center text-sm text-[var(--color-text-muted)]">
           Nothing affecting this stat yet
-        </div>
-      )}
-
-      {/* Tip - subtle, only when relevant */}
-      {tip && !warning && (
-        <div className="flex items-start gap-2 px-1 text-xs text-[var(--color-text-muted)]">
-          <Lightbulb size={12} className="mt-0.5 flex-shrink-0 opacity-60" />
-          <span>{tip}</span>
         </div>
       )}
     </div>

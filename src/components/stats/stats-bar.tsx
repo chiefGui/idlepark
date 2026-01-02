@@ -9,7 +9,7 @@ import { STAT_CONFIG, SECONDARY_STATS } from '../../constants/stats'
 import { InfoModal } from '../ui/info-modal'
 import { StatDetail } from './stat-detail'
 import { MoneyPopup } from '../ui/money-popup'
-import { useDrawerNavigation } from '../ui/drawer'
+import { useDrawerNavigation } from '../ui/drawer-hooks'
 
 export function StatsBar() {
   const state = useGameStore()
