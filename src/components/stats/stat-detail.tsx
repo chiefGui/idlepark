@@ -1,13 +1,22 @@
 import { useMemo } from 'react'
 import { TrendingUp, TrendingDown, AlertCircle, Lightbulb, Smile, Meh, Frown } from 'lucide-react'
 import type { StatId, GameState } from '../../engine/game-types'
-import { Modifiers } from '../../engine/modifiers'
+import { Modifiers, type SourceContribution } from '../../engine/modifiers'
 import { useGameStore } from '../../store/game-store'
 import { Building } from '../../systems/building'
 import { Guest } from '../../systems/guest'
 import { Slot } from '../../systems/slot'
 import { Format } from '../../utils/format'
 import { STAT_CONFIG } from '../../constants/stats'
+import { BuildingIcon } from '../../buildings'
+
+/** Renders either a BuildingIcon (for buildings) or emoji (for other sources) */
+function SourceIcon({ source, size = 16 }: { source: SourceContribution; size?: number }) {
+  if (source.sourceType === 'building' && source.buildingId) {
+    return <BuildingIcon buildingId={source.buildingId} size={size} />
+  }
+  return <span style={{ fontSize: size }}>{source.emoji}</span>
+}
 
 type StatDetailProps = {
   statId: StatId
@@ -57,18 +66,18 @@ function getTip(statId: StatId, state: GameState): string | null {
     case 'entertainment':
       if (state.stats.entertainment < state.stats.guests * 0.5) {
         const rides = availableBuildings.filter((b) => b.category === 'rides' && Building.canAfford(b, state))
-        if (rides[0]) return `Build a ${rides[0].emoji} ${rides[0].name} for more fun.`
+        if (rides[0]) return `Build a ${rides[0].name} for more fun.`
       }
       break
     case 'food':
       if (state.stats.food < state.stats.guests * 0.3) {
         const food = availableBuildings.filter((b) => b.category === 'food' && Building.canAfford(b, state))
-        if (food[0]) return `Build a ${food[0].emoji} ${food[0].name} to feed hungry guests.`
+        if (food[0]) return `Build a ${food[0].name} to feed hungry guests.`
       }
       break
     case 'cleanliness':
       if (state.stats.cleanliness < 60 && !Slot.getOccupied(state).some((s) => s.buildingId === 'trash_can')) {
-        return 'Add a 🗑️ Trash Can to help keep the park clean.'
+        return 'Add a Trash Can to help keep the park clean.'
       }
       break
   }
@@ -108,6 +117,7 @@ export function StatDetail({ statId }: StatDetailProps) {
           flat: arrivalRate,
           increased: 0,
           more: 1,
+          sourceType: 'guest',
         })
       }
     }
@@ -191,7 +201,7 @@ export function StatDetail({ statId }: StatDetailProps) {
               {sources.map((source, i) => (
                 <div key={i} className="flex items-center justify-between py-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm">{source.emoji}</span>
+                    <SourceIcon source={source} size={16} />
                     <span className="text-xs">{source.label}</span>
                   </div>
                   <span className="text-xs font-medium"
@@ -330,7 +340,7 @@ export function StatDetail({ statId }: StatDetailProps) {
             return (
               <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-[var(--color-bg)]">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">{source.emoji}</span>
+                  <SourceIcon source={source} size={20} />
                   <span className="text-sm">{source.label}</span>
                   {source.count && source.count > 1 && (
                     <span className="text-xs text-[var(--color-text-muted)]">×{source.count}</span>
