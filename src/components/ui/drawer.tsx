@@ -1,11 +1,10 @@
 import { useState, useContext, useEffect, useCallback, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronLeft, Zap, RotateCcw, Building2, BookOpen, MessageCircle, Sparkles, Wallet, Users } from 'lucide-react'
+import { X, ChevronLeft, Zap, RotateCcw, BookOpen, MessageCircle, Sparkles, Wallet, Users } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { PerksContent } from '../perks/perks-content'
 import { FinancialContent } from '../analytics/financial-content'
 import { GuestsContent } from '../guests/guests-content'
-import { ParkSettingsContent } from '../park/park-settings-content'
 import { TimelineContent } from '../timeline/timeline-content'
 import { FeedContent } from '../feed/feed-content'
 import { ServicesContent, FastPassContent, MarketingContent, BankContent } from '../services/services-content'
@@ -51,13 +50,12 @@ export function DrawerProvider({ children }: DrawerProviderProps) {
 type MenuItem = {
   id: DrawerScreen
   label: string
-  icon: typeof Building2
+  icon: typeof Wallet
   description: string
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { id: 'park', label: 'HQ', icon: Building2, description: 'Manage your park' },
-  { id: 'finances', label: 'Finances', icon: Wallet, description: 'Money & expenses' },
+  { id: 'finances', label: 'Finances', icon: Wallet, description: 'Money & ticket pricing' },
   { id: 'guests_overview', label: 'Guests', icon: Users, description: 'Guest breakdown' },
   { id: 'perks', label: 'Perks', icon: Zap, description: 'Upgrade your park' },
   { id: 'services', label: 'Services', icon: Sparkles, description: 'Premium guest services' },
@@ -68,7 +66,6 @@ const MENU_ITEMS: MenuItem[] = [
 // Screen titles for non-menu screens
 const SCREEN_TITLES: Record<DrawerScreen, string> = {
   menu: 'Menu',
-  park: 'HQ',
   finances: 'Finances',
   guests_overview: 'Guests',
   perks: 'Perks',
@@ -177,7 +174,6 @@ function MenuDrawer() {
               className="p-4"
             >
               {screen === 'feed' && <FeedContent />}
-              {screen === 'park' && <ParkSettingsContent />}
               {screen === 'finances' && <FinancialContent />}
               {screen === 'guests_overview' && <GuestsContent />}
               {screen === 'timeline' && <TimelineContent />}
