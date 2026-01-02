@@ -7,7 +7,6 @@ import { ParkGrid } from './park/park-grid'
 import { FeedToast } from './feed/feed-toast'
 import { HappeningBanner } from './happening/happening-banner'
 import { HappeningToast } from './happening/happening-toast'
-import { SeasonalParticles } from './seasonal/seasonal-particles'
 
 export function Game() {
   useGameLoop()
@@ -15,7 +14,6 @@ export function Game() {
 
   return (
     <DrawerProvider>
-      <SeasonalParticles />
       <div className="h-full flex flex-col bg-[var(--color-bg)]">
         <Header />
         <HappeningBanner />
