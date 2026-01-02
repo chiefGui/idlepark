@@ -4,6 +4,7 @@ import { ChevronDown, Plus } from 'lucide-react'
 import type { BuildingCategory, SlotState } from '../../engine/game-types'
 import { useGameStore } from '../../store/game-store'
 import { Building } from '../../systems/building'
+import { BuildingIcon } from '../../buildings'
 import { Slot } from '../../systems/slot'
 import { BuildingSelector } from '../slots/building-selector'
 import { BuildingDetails } from '../slots/building-details'
@@ -156,7 +157,7 @@ function CategorySection({
                     onClick={() => onSelectBuilding(slot.index)}
                     className="aspect-square rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] flex flex-col items-center justify-center gap-1 active:bg-[var(--color-surface-hover)] transition-colors"
                   >
-                    <span className="text-2xl">{building.emoji}</span>
+                    <BuildingIcon buildingId={building.id} size={32} />
                     <span className="text-[10px] font-medium text-center px-1 leading-tight truncate w-full">
                       {building.name}
                     </span>
