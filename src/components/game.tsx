@@ -21,10 +21,8 @@ export function Game() {
         <HappeningBanner />
         <StatsBar />
 
-        <main className="flex-1 overflow-auto">
-          <div className="max-w-lg mx-auto pt-4">
-            <ParkGrid />
-          </div>
+        <main className="flex-1 overflow-auto pt-2">
+          <ParkGrid />
         </main>
 
         <FeedToast />
