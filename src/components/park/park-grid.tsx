@@ -9,12 +9,7 @@ import { colors } from '../../buildings/icon-base'
 import { BuildingSelector } from '../slots/building-selector'
 import { BuildingDetails } from '../slots/building-details'
 
-// Grid configuration
-const GRID_COLS = 5
-const TILE_SIZE = 64
-const TILE_GAP = 8
-
-// Category indicator colors (subtle)
+// Category indicator colors
 const categoryColor: Record<BuildingCategory, string> = {
   rides: colors.rides.primary,
   food: colors.food.primary,
@@ -36,10 +31,7 @@ function Tile({ slot, onClick }: TileProps) {
 
   if (isLocked) {
     return (
-      <div
-        className="flex items-center justify-center rounded-xl border border-[var(--color-border)]/20 bg-[var(--color-surface)]/20"
-        style={{ width: TILE_SIZE, height: TILE_SIZE }}
-      >
+      <div className="aspect-square flex items-center justify-center rounded-xl border border-[var(--color-border)]/20 bg-[var(--color-surface)]/20">
         <Lock size={12} className="text-[var(--color-text-muted)]/30" />
       </div>
     )
@@ -48,29 +40,26 @@ function Tile({ slot, onClick }: TileProps) {
   if (isEmpty) {
     return (
       <motion.button
-        whileTap={{ scale: 0.92 }}
+        whileTap={{ scale: 0.95 }}
         onClick={onClick}
-        className="flex items-center justify-center rounded-xl border-2 border-dashed border-[var(--color-border)]/50 active:border-[var(--color-accent)]"
-        style={{ width: TILE_SIZE, height: TILE_SIZE }}
+        className="aspect-square flex items-center justify-center rounded-xl border-2 border-dashed border-[var(--color-border)]/40 active:border-[var(--color-accent)]"
       >
-        <Plus size={20} className="text-[var(--color-text-muted)]/60" />
+        <Plus size={18} className="text-[var(--color-text-muted)]/50" />
       </motion.button>
     )
   }
 
-  // Built tile
   const catColor = categoryColor[building!.category]
 
   return (
     <motion.button
-      whileTap={{ scale: 0.92 }}
+      whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      className="relative flex items-center justify-center rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] active:bg-[var(--color-surface-hover)]"
-      style={{ width: TILE_SIZE, height: TILE_SIZE }}
+      className="aspect-square relative flex items-center justify-center rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] active:bg-[var(--color-surface-hover)]"
     >
-      <BuildingIcon buildingId={building!.id} size={36} />
+      <BuildingIcon buildingId={building!.id} size={32} />
       <div
-        className="absolute bottom-1 right-1 w-2 h-2 rounded-full"
+        className="absolute bottom-1 right-1 w-1.5 h-1.5 rounded-full"
         style={{ backgroundColor: catColor }}
       />
     </motion.button>
@@ -115,14 +104,9 @@ export function ParkGrid() {
 
   return (
     <>
-      <div className="px-4 pb-6">
-        <div
-          className="grid justify-center mx-auto"
-          style={{
-            gridTemplateColumns: `repeat(${GRID_COLS}, ${TILE_SIZE}px)`,
-            gap: TILE_GAP,
-          }}
-        >
+      {/* Match stats-bar: px-4, grid-cols-6 gap-1.5 */}
+      <div className="px-4 pb-4">
+        <div className="grid grid-cols-6 gap-1.5">
           {sortedSlots.map((slot) => (
             <Tile key={slot.index} slot={slot} onClick={() => handleTileClick(slot)} />
           ))}
