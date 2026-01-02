@@ -1,12 +1,49 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { TrendingUp, TrendingDown, Minus, Smile, Meh, Frown } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { Guest } from '../../systems/guest'
 import { GuestTypesBar } from '../../systems/guest-types'
 import { Format } from '../../utils/format'
+import { FinancialContent } from './financial-content'
+
+type AnalyticsTab = 'overview' | 'finances'
 
 export function AnalyticsContent() {
+  const [tab, setTab] = useState<AnalyticsTab>('overview')
+
+  return (
+    <div className="space-y-4">
+      {/* Tab Switcher */}
+      <div className="flex gap-1 p-1 rounded-lg bg-[var(--color-bg)]">
+        <button
+          onClick={() => setTab('overview')}
+          className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+            tab === 'overview'
+              ? 'bg-[var(--color-surface)] text-[var(--color-text)]'
+              : 'text-[var(--color-text-muted)]'
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setTab('finances')}
+          className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+            tab === 'finances'
+              ? 'bg-[var(--color-surface)] text-[var(--color-text)]'
+              : 'text-[var(--color-text-muted)]'
+          }`}
+        >
+          Finances
+        </button>
+      </div>
+
+      {tab === 'overview' ? <OverviewContent /> : <FinancialContent />}
+    </div>
+  )
+}
+
+function OverviewContent() {
   const dailyRecords = useGameStore((s) => s.dailyRecords)
   const rates = useGameStore((s) => s.rates)
   const guestBreakdown = useGameStore((s) => s.guestBreakdown)
