@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Lock, Check } from 'lucide-react'
+import { X, Lock, Check, ChevronRight } from 'lucide-react'
 import { Building } from '../../systems/building'
 import { useGameStore } from '../../store/game-store'
 import { Requirements } from '../../engine/requirements'
 import { Format } from '../../utils/format'
+import { BuildingPreview } from './building-preview'
 import { BuildingIcon } from '../../buildings'
 import type { BuildingCategory, BuildingDef } from '../../engine/game-types'
 
@@ -18,15 +19,22 @@ export function BuildingSelector({ slotIndex, onClose, initialCategory }: Buildi
   const state = useGameStore()
   const buildAtSlot = useGameStore((s) => s.actions.buildAtSlot)
   const [activeCategory, setActiveCategory] = useState<BuildingCategory>(initialCategory ?? 'rides')
+  const [previewBuilding, setPreviewBuilding] = useState<BuildingDef | null>(null)
+
+  // Check what's already built
+  const ownedBuildingIds = useMemo(() => {
+    return new Set(state.slots.filter(s => s.buildingId).map(s => s.buildingId!))
+  }, [state.slots])
 
   const categoryBuildings = useMemo(() => {
     return Building.getByCategory(activeCategory).map((building) => ({
       building,
       isUnlocked: Building.isUnlocked(building, state),
       canAfford: Building.canAfford(building, state),
+      isOwned: ownedBuildingIds.has(building.id),
       unmetReqs: Requirements.getUnmetRequirements(building.requirements, state),
     }))
-  }, [activeCategory, state])
+  }, [activeCategory, state, ownedBuildingIds])
 
   const unlockedBuildings = categoryBuildings.filter((b) => b.isUnlocked)
   const lockedBuildings = categoryBuildings.filter((b) => !b.isUnlocked)
@@ -35,6 +43,13 @@ export function BuildingSelector({ slotIndex, onClose, initialCategory }: Buildi
     const success = buildAtSlot(buildingId, slotIndex)
     if (success) onClose()
   }
+
+  // Get preview state
+  const previewData = useMemo(() => {
+    if (!previewBuilding) return null
+    const data = categoryBuildings.find(b => b.building.id === previewBuilding.id)
+    return data ?? null
+  }, [previewBuilding, categoryBuildings])
 
   return (
     <AnimatePresence>
@@ -92,12 +107,13 @@ export function BuildingSelector({ slotIndex, onClose, initialCategory }: Buildi
           <div className="flex-1 overflow-auto p-3">
             {unlockedBuildings.length > 0 && (
               <div className="grid grid-cols-2 gap-2 mb-3">
-                {unlockedBuildings.map(({ building, canAfford }) => (
+                {unlockedBuildings.map(({ building, canAfford, isOwned }) => (
                   <BuildingCard
                     key={building.id}
                     building={building}
                     canAfford={canAfford}
-                    onBuild={() => handleBuild(building.id)}
+                    isOwned={isOwned}
+                    onTap={() => setPreviewBuilding(building)}
                   />
                 ))}
               </div>
@@ -124,6 +140,15 @@ export function BuildingSelector({ slotIndex, onClose, initialCategory }: Buildi
           </div>
         </motion.div>
       </motion.div>
+
+      {/* Building Preview Sheet */}
+      <BuildingPreview
+        building={previewBuilding}
+        canAfford={previewData?.canAfford ?? false}
+        isOwned={previewData?.isOwned ?? false}
+        onClose={() => setPreviewBuilding(null)}
+        onBuild={() => previewBuilding && handleBuild(previewBuilding.id)}
+      />
     </AnimatePresence>
   )
 }
@@ -131,19 +156,59 @@ export function BuildingSelector({ slotIndex, onClose, initialCategory }: Buildi
 type BuildingCardProps = {
   building: BuildingDef
   canAfford: boolean
-  onBuild: () => void
+  isOwned: boolean
+  onTap: () => void
 }
 
-function BuildingCard({ building, canAfford, onBuild }: BuildingCardProps) {
+/**
+ * Get the primary highlight for a building - the most important thing to show.
+ */
+function getPrimaryHighlight(building: BuildingDef): { label: string; value: string; type: 'positive' | 'warning' } {
+  // Lodging: show capacity
+  if (Building.isLodging(building)) {
+    return {
+      label: 'capacity',
+      value: `+${building.capacityBonus}`,
+      type: 'positive',
+    }
+  }
+
+  // Shops: show income per guest
+  if (Building.isShop(building)) {
+    return {
+      label: '$/guest',
+      value: `$${building.incomePerGuest.toFixed(2)}`,
+      type: 'positive',
+    }
+  }
+
+  // Others: find the biggest positive non-money effect
+  const effects = Building.getDisplayEffects(building)
+  const benefits = effects
+    .filter(e => e.statId !== 'money' && e.isPositive)
+    .sort((a, b) => b.value - a.value)
+
+  if (benefits.length > 0) {
+    const best = benefits[0]
+    return {
+      label: Format.statLabel(best.statId),
+      value: `+${best.value}`,
+      type: 'positive',
+    }
+  }
+
+  return { label: '', value: '', type: 'positive' }
+}
+
+function BuildingCard({ building, canAfford, isOwned, onTap }: BuildingCardProps) {
   const cost = building.costs[0]?.amount ?? 0
-  // Get all display effects (stat effects + capacity for lodging), excluding money
-  const displayEffects = Building.getDisplayEffects(building).filter(e => e.statId !== 'money')
+  const upkeep = Building.getUpkeep(building)
+  const highlight = getPrimaryHighlight(building)
 
   return (
     <motion.button
       whileTap={{ scale: 0.97 }}
-      onClick={onBuild}
-      disabled={!canAfford}
+      onClick={onTap}
       className={`
         relative p-3 rounded-xl border text-left transition-all
         ${canAfford
@@ -152,8 +217,17 @@ function BuildingCard({ building, canAfford, onBuild }: BuildingCardProps) {
         }
       `}
     >
+      {/* Owned badge */}
+      {isOwned && (
+        <div className="absolute top-2 right-2">
+          <div className="w-5 h-5 rounded-full bg-[var(--color-positive)]/20 flex items-center justify-center">
+            <Check size={12} className="text-[var(--color-positive)]" />
+          </div>
+        </div>
+      )}
+
       {/* Icon + Name row */}
-      <div className="flex items-center gap-2 mb-1">
+      <div className="flex items-center gap-2 mb-2">
         <div className={!canAfford ? 'opacity-50' : ''}>
           <BuildingIcon buildingId={building.id} size={32} />
         </div>
@@ -164,39 +238,34 @@ function BuildingCard({ building, canAfford, onBuild }: BuildingCardProps) {
         </div>
       </div>
 
-      {/* Effects chips - with labels */}
-      <div className="flex flex-wrap gap-1 mb-2">
-        {displayEffects.slice(0, 2).map((effect, i) => (
-          <span
-            key={i}
-            className={`
-              text-[10px] px-1.5 py-0.5 rounded-full font-medium
-              ${effect.isPositive
-                ? 'bg-[var(--color-positive)]/15 text-[var(--color-positive)]'
-                : 'bg-[var(--color-negative)]/15 text-[var(--color-negative)]'
-              }
-              ${!canAfford ? 'opacity-60' : ''}
-            `}
-          >
-            {effect.perGuest != null
-              ? Format.shopIncome(effect.perGuest)
-              : Format.effect(effect.value, effect.statId)}
-          </span>
-        ))}
-        {displayEffects.length > 2 && (
-          <span className="text-[10px] px-1.5 py-0.5 text-[var(--color-text-muted)]">
-            +{displayEffects.length - 2}
-          </span>
-        )}
-      </div>
+      {/* Primary highlight badge */}
+      {highlight.value && (
+        <div className={`
+          inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold mb-2
+          ${highlight.type === 'positive'
+            ? 'bg-[var(--color-positive)]/15 text-[var(--color-positive)]'
+            : 'bg-[var(--color-warning)]/15 text-[var(--color-warning)]'
+          }
+          ${!canAfford ? 'opacity-60' : ''}
+        `}>
+          <span>{highlight.value}</span>
+          <span className="opacity-70">{highlight.label}</span>
+        </div>
+      )}
 
-      {/* Price tag */}
-      <div className={`
-        flex items-center justify-between text-xs
-        ${canAfford ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-muted)]'}
-      `}>
-        <span className="font-semibold">{Format.money(cost)}</span>
-        {canAfford && <Check size={14} />}
+      {/* Cost row */}
+      <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2">
+          <span className={`font-semibold ${canAfford ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-muted)]'}`}>
+            {Format.money(cost)}
+          </span>
+          {upkeep > 0 && (
+            <span className="text-[var(--color-text-muted)]">
+              −${upkeep}/d
+            </span>
+          )}
+        </div>
+        <ChevronRight size={14} className="text-[var(--color-text-muted)]" />
       </div>
     </motion.button>
   )
