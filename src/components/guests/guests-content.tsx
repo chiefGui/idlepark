@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Users, TrendingUp, TrendingDown, Smile, Meh, Frown, AlertCircle, Home, Sparkles } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { Guest } from '../../systems/guest'
-import { GuestTypesBar } from '../../systems/guest-types'
+import { analyzeGuestTypes, type GuestTypeAnalysis } from '../../systems/guest-types'
 import { Format } from '../../utils/format'
 import { GUEST_TYPE_META, GUEST_TYPES } from '../../engine/game-types'
 
@@ -20,6 +20,12 @@ export function GuestsContent() {
   const arrivalRate = Guest.calculateArrivalRate(state)
   const appealBreakdown = Guest.getAppealBreakdown(state)
 
+  // Analyze guest types with rich data
+  const guestTypeAnalysis = useMemo(() =>
+    analyzeGuestTypes(state, totalGuests),
+    [state, totalGuests]
+  )
+
   // Find dominant guest type
   const dominantType = useMemo(() => {
     if (!guestTypeMix) return null
@@ -27,8 +33,6 @@ export function GuestsContent() {
       guestTypeMix[type] > guestTypeMix[max] ? type : max
     )
   }, [guestTypeMix])
-
-  const dominantMeta = dominantType ? GUEST_TYPE_META[dominantType] : null
 
   return (
     <div className="space-y-4">
@@ -103,17 +107,16 @@ export function GuestsContent() {
 
       {/* Guest Types */}
       <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm text-[var(--color-text-muted)]">Guest Types</span>
-          {dominantMeta && (
-            <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: `${dominantMeta.color}20`, color: dominantMeta.color }}>
-              {dominantMeta.emoji} {dominantMeta.name}
-            </span>
-          )}
-        </div>
-        <GuestTypesBar mix={guestTypeMix} />
-        <div className="mt-3 pt-3 border-t border-[var(--color-border)] text-xs text-[var(--color-text-muted)]">
-          Guest mix depends on what you build. Thrill rides attract thrill seekers, gardens attract relaxers, etc.
+        <div className="text-sm text-[var(--color-text-muted)] mb-3">Guest Types</div>
+
+        {/* Visual distribution bar */}
+        <GuestTypeMixBar analysis={guestTypeAnalysis} />
+
+        {/* Detailed breakdown per type */}
+        <div className="mt-3 space-y-2">
+          {guestTypeAnalysis.map((analysis) => (
+            <GuestTypeRow key={analysis.type} analysis={analysis} isDominant={analysis.type === dominantType} />
+          ))}
         </div>
       </div>
 
@@ -257,6 +260,64 @@ function SupplyRow({ label, statId, state }: { label: string; statId: 'entertain
           transition={{ duration: 0.3 }}
         />
       </div>
+    </div>
+  )
+}
+
+function GuestTypeMixBar({ analysis }: { analysis: GuestTypeAnalysis[] }) {
+  return (
+    <div className="flex h-3 rounded-full overflow-hidden bg-[var(--color-bg)]">
+      {analysis.map((a, index) => (
+        <motion.div
+          key={a.type}
+          className="h-full"
+          style={{ backgroundColor: GUEST_TYPE_META[a.type].color }}
+          initial={{ width: 0 }}
+          animate={{ width: `${a.percentage}%` }}
+          transition={{ duration: 0.4, delay: index * 0.05, ease: 'easeOut' }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function GuestTypeRow({ analysis, isDominant }: { analysis: GuestTypeAnalysis; isDominant: boolean }) {
+  const meta = GUEST_TYPE_META[analysis.type]
+  const topAttractors = analysis.attractors.slice(0, 2)
+
+  return (
+    <div
+      className="p-2 rounded-lg"
+      style={{
+        backgroundColor: isDominant ? `${meta.color}10` : 'var(--color-bg)',
+        borderLeft: isDominant ? `3px solid ${meta.color}` : '3px solid transparent'
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-base">{meta.emoji}</span>
+          <span className="text-sm font-medium" style={{ color: isDominant ? meta.color : undefined }}>
+            {meta.name}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold">{analysis.guestCount}</span>
+          <span className="text-xs text-[var(--color-text-muted)]">{analysis.percentage}%</span>
+        </div>
+      </div>
+
+      {topAttractors.length > 0 && (
+        <div className="mt-1 text-xs text-[var(--color-text-muted)] pl-6">
+          {topAttractors.map((a) => a.building.emoji).join(' ')} {topAttractors.map((a) => a.building.name).join(', ')}
+          {analysis.attractors.length > 2 && ` +${analysis.attractors.length - 2}`}
+        </div>
+      )}
+
+      {topAttractors.length === 0 && (
+        <div className="mt-1 text-xs text-[var(--color-text-muted)] pl-6 italic">
+          No attractions yet
+        </div>
+      )}
     </div>
   )
 }
