@@ -9,12 +9,14 @@ import { STAT_CONFIG, SECONDARY_STATS } from '../../constants/stats'
 import { InfoModal } from '../ui/info-modal'
 import { StatDetail } from './stat-detail'
 import { MoneyPopup } from '../ui/money-popup'
+import { useDrawerNavigation } from '../ui/drawer-hooks'
 
 export function StatsBar() {
   const state = useGameStore()
   const stats = state.stats
   const rates = state.rates
   const [selectedStat, setSelectedStat] = useState<StatId | null>(null)
+  const navigateTo = useDrawerNavigation()
 
   const selectedConfig = selectedStat ? STAT_CONFIG[selectedStat] : null
 
@@ -153,7 +155,15 @@ export function StatsBar() {
         onClose={() => setSelectedStat(null)}
         title={selectedConfig?.label ?? ''}
       >
-        {selectedStat && <StatDetail statId={selectedStat} />}
+        {selectedStat && (
+          <StatDetail
+            statId={selectedStat}
+            onNavigateToFinances={() => {
+              setSelectedStat(null)
+              navigateTo('finances')
+            }}
+          />
+        )}
       </InfoModal>
     </>
   )
