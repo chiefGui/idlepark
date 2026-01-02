@@ -107,19 +107,6 @@ function OverviewContent() {
         </div>
       </div>
 
-      {/* Daily Profit */}
-      <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-sm text-[var(--color-text-muted)]">Daily Profit</span>
-          <TrendIndicator value={rates.money} />
-        </div>
-        <div className="text-2xl font-bold" style={{
-          color: rates.money > 0 ? 'var(--color-positive)' : rates.money < 0 ? 'var(--color-negative)' : 'inherit'
-        }}>
-          {rates.money >= 0 ? '+' : ''}{Format.money(rates.money)}/day
-        </div>
-      </div>
-
       {/* Profit History Chart */}
       {dailyRecords.length >= 2 && (
         <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
@@ -186,16 +173,6 @@ function OverviewContent() {
       />
     </div>
   )
-}
-
-function TrendIndicator({ value }: { value: number }) {
-  if (value > 0) {
-    return <TrendingUp size={16} className="text-[var(--color-positive)]" />
-  }
-  if (value < 0) {
-    return <TrendingDown size={16} className="text-[var(--color-negative)]" />
-  }
-  return <Minus size={16} className="text-[var(--color-text-muted)]" />
 }
 
 type StatCardProps = {
