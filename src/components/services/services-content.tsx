@@ -6,7 +6,7 @@ import { Marketing } from '../../systems/marketing'
 import { Bank } from '../../systems/bank'
 import { Perk } from '../../systems/perk'
 import { Format } from '../../utils/format'
-import type { DrawerScreen } from '../ui/drawer'
+import type { DrawerScreen } from '../ui/drawer-context'
 
 type ServicesContentProps = {
   onNavigate: (screen: DrawerScreen) => void

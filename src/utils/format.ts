@@ -101,7 +101,7 @@ export class Format {
   }
 
   // Legacy alias for backwards compatibility during migration
-  static millify(value: number, _decimals = 0): string {
+  static millify(value: number): string {
     return Format.number(value)
   }
 

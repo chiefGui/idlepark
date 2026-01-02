@@ -27,6 +27,8 @@ export function FeedToast() {
   }, [])
 
   useEffect(() => {
+    const timers = timersRef.current
+
     const unsubscribe = GameEvents.on('feed:new', ({ entry }) => {
       const id = entry.id
       const expiresAt = Date.now() + TOAST_DURATION
@@ -36,10 +38,10 @@ export function FeedToast() {
         if (newToasts.length > MAX_VISIBLE_TOASTS) {
           const removed = newToasts.slice(MAX_VISIBLE_TOASTS)
           removed.forEach((t) => {
-            const timer = timersRef.current.get(t.id)
+            const timer = timers.get(t.id)
             if (timer) {
               clearTimeout(timer)
-              timersRef.current.delete(t.id)
+              timers.delete(t.id)
             }
           })
           return newToasts.slice(0, MAX_VISIBLE_TOASTS)
@@ -50,13 +52,13 @@ export function FeedToast() {
       const timer = setTimeout(() => {
         dismiss(id)
       }, TOAST_DURATION)
-      timersRef.current.set(id, timer)
+      timers.set(id, timer)
     })
 
     return () => {
       unsubscribe()
-      timersRef.current.forEach((timer) => clearTimeout(timer))
-      timersRef.current.clear()
+      timers.forEach((timer) => clearTimeout(timer))
+      timers.clear()
     }
   }, [dismiss])
 

@@ -3,7 +3,7 @@ import { GameTypes } from '../engine/game-types'
 import { Perk } from './perk'
 
 export class Slot {
-  static getEmpty(state: GameState): SlotState[] {
+  static getEmpty(state: Pick<GameState, 'slots'>): SlotState[] {
     return state.slots.filter(s => !s.locked && s.buildingId === null)
   }
 
@@ -23,7 +23,7 @@ export class Slot {
     return this.getEmpty(state).length > 0
   }
 
-  static getFirstEmptyIndex(state: GameState): number | null {
+  static getFirstEmptyIndex(state: Pick<GameState, 'slots'>): number | null {
     const empty = this.getEmpty(state)
     return empty.length > 0 ? empty[0].index : null
   }

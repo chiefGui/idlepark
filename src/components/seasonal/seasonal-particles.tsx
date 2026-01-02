@@ -6,6 +6,13 @@ import { useGyroscope } from '../../hooks/use-gyroscope'
 
 const PARTICLE_COUNT = 8
 
+// Pre-computed stable pseudo-random values for particles (seeded by index)
+const PARTICLE_DATA = Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
+  left: 5 + (i * 90) / PARTICLE_COUNT + (((i * 7919) % 100) / 100) * 8,
+  delay: i * 1.5 + (((i * 104729) % 100) / 100) * 2,
+  duration: 12 + (((i * 15485863) % 100) / 100) * 8,
+}))
+
 const SEASON_CONFIG: Record<Season, { emoji: string; className: string } | null> = {
   winter: { emoji: '❄️', className: 'animate-snowfall' },
   spring: { emoji: '🌸', className: 'animate-petalfall' },
@@ -22,25 +29,19 @@ export function SeasonalParticles() {
   const particles = useMemo(() => {
     if (!config) return null
 
-    return Array.from({ length: PARTICLE_COUNT }, (_, i) => {
-      const left = 5 + (i * 90) / PARTICLE_COUNT + Math.random() * 8
-      const delay = i * 1.5 + Math.random() * 2
-      const duration = 12 + Math.random() * 8
-
-      return (
-        <span
-          key={i}
-          className={`seasonal-particle ${config.className}`}
-          style={{
-            left: `${left}%`,
-            animationDelay: `${delay}s`,
-            animationDuration: `${duration}s`,
-          }}
-        >
-          {config.emoji}
-        </span>
-      )
-    })
+    return PARTICLE_DATA.map((data, i) => (
+      <span
+        key={i}
+        className={`seasonal-particle ${config.className}`}
+        style={{
+          left: `${data.left}%`,
+          animationDelay: `${data.delay}s`,
+          animationDuration: `${data.duration}s`,
+        }}
+      >
+        {config.emoji}
+      </span>
+    ))
   }, [config])
 
   return (

@@ -18,6 +18,7 @@ import { Marketing } from '../systems/marketing'
 import { Bank } from '../systems/bank'
 import { Season } from '../systems/season'
 import { Wish } from '../systems/wish'
+import { calculateGuestTypeMix } from '../systems/guest-types'
 
 const MAX_DAILY_RECORDS = 30
 
@@ -212,8 +213,8 @@ export const useGameStore = create<GameStoreState>()(
 
           const finalStats = newStats
 
-          // Update financials
-          const financials: FinancialStats = {
+          // Update financials (mutable - loan repayment will update later)
+          let financials: FinancialStats = {
             ...state.financials,
             totalEarned: state.financials.totalEarned + guestIncome + serviceBoost,
             totalUpkeepPaid: state.financials.totalUpkeepPaid + buildingUpkeep,
@@ -223,6 +224,7 @@ export const useGameStore = create<GameStoreState>()(
 
           // Update daily records when crossing day boundaries
           let dailyRecords = state.dailyRecords
+          let guestTypeMix = state.guestTypeMix
 
           if (crossedDayBoundary) {
             const dayRecord: DailyRecord = {
@@ -232,6 +234,9 @@ export const useGameStore = create<GameStoreState>()(
               peakAppeal: Math.max(state.stats.appeal, finalStats.appeal),
             }
             dailyRecords = [...dailyRecords, dayRecord].slice(-MAX_DAILY_RECORDS)
+
+            // Recalculate guest type mix (once per day, not per tick)
+            guestTypeMix = calculateGuestTypeMix(state)
 
             // Emit event if guests departed
             if (departedGuests > 0) {
@@ -287,6 +292,11 @@ export const useGameStore = create<GameStoreState>()(
             const loanPackageId = bankLoan.packageId
             const repaymentResult = Bank.processDailyRepayment({ ...state, bankLoan })
             finalStats.money -= repaymentResult.amountPaid
+            // Track loan repayments in financials
+            financials = {
+              ...financials,
+              totalLoanRepaid: financials.totalLoanRepaid + repaymentResult.amountPaid,
+            }
             if (repaymentResult.newState.bankLoan !== undefined) {
               bankLoan = repaymentResult.newState.bankLoan
             }
@@ -321,10 +331,11 @@ export const useGameStore = create<GameStoreState>()(
             }
           }
 
-          const computed = computeRatesAndModifiers({ ...updatedState, timeline, stats: finalStats, dailyRecords, financials, guestBreakdown, currentHappening, nextHappeningDay, lastHappeningType, marketing, bankLoan, lastLoanRepaidDay, wishes, wishBoost, lastWishDay })
+          const computed = computeRatesAndModifiers({ ...updatedState, timeline, stats: finalStats, dailyRecords, financials, guestBreakdown, guestTypeMix, currentHappening, nextHappeningDay, lastHappeningType, marketing, bankLoan, lastLoanRepaidDay, wishes, wishBoost, lastWishDay })
           set({
             stats: finalStats,
             guestBreakdown,
+            guestTypeMix,
             currentDay: newDay,
             lastTickTime: Date.now(),
             consecutiveNegativeDays,
@@ -398,6 +409,9 @@ export const useGameStore = create<GameStoreState>()(
 
           const newState = { ...state, stats: newStats, slots: newSlots, financials, wishes, wishBoost, feedEntries, unreadFeedCount }
 
+          // Recalculate guest type mix when buildings change
+          const guestTypeMix = calculateGuestTypeMix(newState)
+
           const computed = computeRatesAndModifiers(newState)
           set({
             stats: newStats,
@@ -407,6 +421,7 @@ export const useGameStore = create<GameStoreState>()(
             wishBoost,
             feedEntries,
             unreadFeedCount,
+            guestTypeMix,
             rates: computed.rates,
             modifiers: computed.modifiers,
           })
@@ -436,10 +451,14 @@ export const useGameStore = create<GameStoreState>()(
           const newSlots = Slot.demolish(state.slots, slotIndex)
           const newState = { ...state, stats: newStats, slots: newSlots }
 
+          // Recalculate guest type mix when buildings change
+          const guestTypeMix = calculateGuestTypeMix(newState)
+
           const computed = computeRatesAndModifiers(newState)
           set({
             stats: newStats,
             slots: newSlots,
+            guestTypeMix,
             rates: computed.rates,
             modifiers: computed.modifiers,
           })
@@ -599,12 +618,19 @@ export const useGameStore = create<GameStoreState>()(
             startDay: state.currentDay,
           }
 
-          const newState = { ...state, stats: newStats, bankLoan }
+          const financials = {
+            ...state.financials,
+            totalBorrowed: state.financials.totalBorrowed + loanAmount,
+            peakMoney: Math.max(state.financials.peakMoney, newStats.money),
+          }
+
+          const newState = { ...state, stats: newStats, bankLoan, financials }
 
           const computed = computeRatesAndModifiers(newState)
           set({
             stats: newStats,
             bankLoan,
+            financials,
             rates: computed.rates,
             modifiers: computed.modifiers,
           })
@@ -690,6 +716,7 @@ export const useGameStore = create<GameStoreState>()(
         dailyRecords: state.dailyRecords,
         financials: state.financials,
         guestBreakdown: state.guestBreakdown,
+        guestTypeMix: state.guestTypeMix,
         feedEntries: state.feedEntries,
         unreadFeedCount: state.unreadFeedCount,
         currentDay: state.currentDay,
@@ -706,6 +733,10 @@ export const useGameStore = create<GameStoreState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
+          // Ensure guestTypeMix exists for older saves
+          if (!state.guestTypeMix) {
+            state.guestTypeMix = calculateGuestTypeMix(state)
+          }
           const computed = computeRatesAndModifiers(state)
           state.rates = computed.rates
           state.modifiers = computed.modifiers

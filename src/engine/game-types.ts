@@ -10,6 +10,22 @@ export type StatId =
 
 export type Season = 'spring' | 'summer' | 'fall' | 'winter'
 
+// === GUEST TYPES ===
+export type GuestType = 'thrills' | 'family' | 'relaxation' | 'social'
+
+export const GUEST_TYPES = ['thrills', 'family', 'relaxation', 'social'] as const
+
+export const GUEST_TYPE_META: Record<GuestType, { name: string; emoji: string; color: string }> = {
+  thrills: { name: 'Thrill Seekers', emoji: '🎢', color: '#ef4444' },
+  family: { name: 'Families', emoji: '👨‍👩‍👧', color: '#3b82f6' },
+  relaxation: { name: 'Relaxers', emoji: '🌿', color: '#22c55e' },
+  social: { name: 'Social', emoji: '📸', color: '#a855f7' },
+}
+
+export type GuestTypeMix = Record<GuestType, number>
+
+export type Audience = Partial<Record<GuestType, number>>
+
 export type BuildingCategory = 'rides' | 'food' | 'facilities' | 'decor' | 'lodging' | 'shops'
 
 export type Effect = {
@@ -39,6 +55,7 @@ export type BuildingDef = {
   costs: Cost[]
   effects: Effect[]
   requirements: Requirement[]
+  audience?: Audience
 }
 
 export type PerkDef = {
@@ -192,6 +209,8 @@ export type FinancialStats = {
   totalInvested: number      // Sum of all building/perk costs
   totalEarned: number        // Cumulative income from guests
   totalUpkeepPaid: number    // Cumulative upkeep costs
+  totalBorrowed: number      // Total loan amounts received
+  totalLoanRepaid: number    // Total loan payments made (principal + interest)
   peakMoney: number          // Highest money ever reached
   peakGuests: number         // Most guests ever
 }
@@ -248,6 +267,7 @@ export type GameState = {
   dailyRecords: DailyRecord[]
   financials: FinancialStats
   guestBreakdown: GuestBreakdown
+  guestTypeMix: GuestTypeMix
   feedEntries: FeedEntry[]
   unreadFeedCount: number
   currentDay: number
@@ -339,6 +359,8 @@ export class GameTypes {
       totalInvested: 0,
       totalEarned: 0,
       totalUpkeepPaid: 0,
+      totalBorrowed: 0,
+      totalLoanRepaid: 0,
       peakMoney: this.STARTING_MONEY,
       peakGuests: 0,
     }
@@ -346,6 +368,10 @@ export class GameTypes {
 
   static createInitialGuestBreakdown(): GuestBreakdown {
     return { happy: 0, neutral: 0, unhappy: 0 }
+  }
+
+  static createInitialGuestTypeMix(): GuestTypeMix {
+    return { thrills: 25, family: 25, relaxation: 25, social: 25 }
   }
 
   static getTotalGuests(breakdown: GuestBreakdown): number {
@@ -370,6 +396,7 @@ export class GameTypes {
       dailyRecords: [],
       financials: this.createInitialFinancials(),
       guestBreakdown: this.createInitialGuestBreakdown(),
+      guestTypeMix: this.createInitialGuestTypeMix(),
       feedEntries: [],
       unreadFeedCount: 0,
       currentDay: 1,
