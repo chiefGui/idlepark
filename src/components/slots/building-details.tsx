@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Trash2, DollarSign } from 'lucide-react'
 import type { BuildingDef } from '../../engine/game-types'
 import { Building } from '../../systems/building'
+import { BuildingIcon } from '../../buildings'
 import { Button } from '../ui/button'
 import { Format } from '../../utils/format'
 
@@ -43,7 +44,7 @@ export function BuildingDetails({ building, onClose, onDemolish }: BuildingDetai
           >
             <div className="bg-[var(--color-bg)] border-t border-[var(--color-border)] rounded-t-2xl overflow-hidden">
               <div className="flex items-center gap-3 p-4 border-b border-[var(--color-border)]">
-                <span className="text-3xl">{building.emoji}</span>
+                <BuildingIcon buildingId={building.id} size={48} />
                 <div className="flex-1">
                   <div className="font-semibold">{building.name}</div>
                   <div className="text-sm text-[var(--color-text-muted)]">{building.description}</div>

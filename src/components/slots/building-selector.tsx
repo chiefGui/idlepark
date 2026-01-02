@@ -5,6 +5,7 @@ import { Building } from '../../systems/building'
 import { useGameStore } from '../../store/game-store'
 import { Requirements } from '../../engine/requirements'
 import { Format } from '../../utils/format'
+import { BuildingIcon } from '../../buildings'
 import type { BuildingCategory, BuildingDef } from '../../engine/game-types'
 
 type BuildingSelectorProps = {
@@ -151,9 +152,11 @@ function BuildingCard({ building, canAfford, onBuild }: BuildingCardProps) {
         }
       `}
     >
-      {/* Emoji + Name row */}
+      {/* Icon + Name row */}
       <div className="flex items-center gap-2 mb-1">
-        <span className={`text-2xl ${!canAfford ? 'opacity-50' : ''}`}>{building.emoji}</span>
+        <div className={!canAfford ? 'opacity-50' : ''}>
+          <BuildingIcon buildingId={building.id} size={32} />
+        </div>
         <div className="flex-1 min-w-0">
           <div className={`font-medium text-sm truncate ${!canAfford ? 'text-[var(--color-text-muted)]' : ''}`}>
             {building.name}
@@ -214,9 +217,11 @@ function LockedBuildingCard({ building, unlockReason }: LockedBuildingCardProps)
         </div>
       </div>
 
-      {/* Emoji + Name */}
+      {/* Icon + Name */}
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-2xl grayscale opacity-40">{building.emoji}</span>
+        <div className="grayscale opacity-40">
+          <BuildingIcon buildingId={building.id} size={32} />
+        </div>
         <div className="flex-1 min-w-0">
           <div className="font-medium text-sm truncate text-[var(--color-text-muted)]/60">
             {building.name}
