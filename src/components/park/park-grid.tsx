@@ -55,11 +55,13 @@ function Tile({ slot, onClick }: TileProps) {
     <motion.button
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      className="aspect-square relative flex items-center justify-center rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] active:bg-[var(--color-surface-hover)]"
+      className="aspect-square relative flex items-center justify-center rounded-xl border border-[var(--color-border)] active:opacity-80 overflow-hidden"
+      style={{ backgroundColor: `${catColor}08` }}
     >
       <BuildingIcon buildingId={building!.id} size={32} />
+      {/* Bottom border accent */}
       <div
-        className="absolute bottom-1 right-1 w-1.5 h-1.5 rounded-full"
+        className="absolute bottom-0 left-0 right-0 h-0.5"
         style={{ backgroundColor: catColor }}
       />
     </motion.button>
