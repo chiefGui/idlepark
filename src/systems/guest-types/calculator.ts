@@ -29,11 +29,28 @@ export function calculateGuestTypeMix(state: GameState): GuestTypeMix {
     }
   }
 
-  // Normalize to percentages
+  // Normalize to percentages that sum to exactly 100
   const total = Object.values(weights).reduce((a, b) => a + b, 0)
+  const rawPercentages = GUEST_TYPES.map((type) => ({
+    type,
+    value: (weights[type] / total) * 100,
+  }))
 
-  return GUEST_TYPES.reduce((mix, type) => {
-    mix[type] = Math.round((weights[type] / total) * 100)
-    return mix
-  }, {} as GuestTypeMix)
+  // Round while ensuring sum is exactly 100
+  const floored = rawPercentages.map((p) => ({
+    type: p.type,
+    value: Math.floor(p.value),
+    remainder: p.value - Math.floor(p.value),
+  }))
+
+  let sum = floored.reduce((a, b) => a + b.value, 0)
+  const sorted = [...floored].sort((a, b) => b.remainder - a.remainder)
+
+  // Distribute remaining points to highest remainders
+  for (let i = 0; sum < 100 && i < sorted.length; i++) {
+    sorted[i].value++
+    sum++
+  }
+
+  return Object.fromEntries(floored.map((p) => [p.type, p.value])) as GuestTypeMix
 }
