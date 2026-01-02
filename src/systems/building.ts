@@ -26,6 +26,7 @@ export class Building {
       { statId: 'entertainment', perDay: 20 },
     ],
     requirements: [],
+    audience: { family: 3, relaxation: 1 },
   }
 
   static readonly FERRIS_WHEEL: BuildingDef = {
@@ -41,6 +42,7 @@ export class Building {
       { statId: 'appeal', perDay: 4 },
     ],
     requirements: [],
+    audience: { family: 2, relaxation: 2, social: 1 },
   }
 
   static readonly ROLLER_COASTER: BuildingDef = {
@@ -55,6 +57,7 @@ export class Building {
       { statId: 'entertainment', perDay: 80 },
     ],
     requirements: [],
+    audience: { thrills: 4, social: 1 },
   }
 
   static readonly BUMPER_CARS: BuildingDef = {
@@ -69,6 +72,7 @@ export class Building {
       { statId: 'entertainment', perDay: 30 },
     ],
     requirements: [],
+    audience: { thrills: 2, family: 2, social: 1 },
   }
 
   // === INTENSE RIDES ===
@@ -86,6 +90,7 @@ export class Building {
       { statId: 'appeal', perDay: 5 },
     ],
     requirements: [{ type: 'perk', id: 'thrill_seekers' }],
+    audience: { thrills: 5 },
   }
 
   static readonly PENDULUM_FURY: BuildingDef = {
@@ -101,6 +106,7 @@ export class Building {
       { statId: 'comfort', perDay: -8 },
     ],
     requirements: [{ type: 'perk', id: 'thrill_seekers' }],
+    audience: { thrills: 5 },
   }
 
   static readonly RAPIDS_RUN: BuildingDef = {
@@ -117,6 +123,7 @@ export class Building {
       { statId: 'comfort', perDay: 5 },
     ],
     requirements: [{ type: 'perk', id: 'thrill_seekers' }],
+    audience: { thrills: 3, family: 1, social: 1 },
   }
 
   // === FOOD ===
@@ -132,6 +139,7 @@ export class Building {
       { statId: 'food', perDay: 15 },
     ],
     requirements: [],
+    audience: { family: 2, social: 1 },
   }
 
   static readonly ICE_CREAM: BuildingDef = {
@@ -147,6 +155,7 @@ export class Building {
       { statId: 'appeal', perDay: 5 },
     ],
     requirements: [],
+    audience: { family: 3, social: 1 },
   }
 
   static readonly PIZZA_PARLOR: BuildingDef = {
@@ -161,6 +170,7 @@ export class Building {
       { statId: 'food', perDay: 25 },
     ],
     requirements: [],
+    audience: { family: 2, social: 2 },
   }
 
   static readonly DRINK_STAND: BuildingDef = {
@@ -176,6 +186,7 @@ export class Building {
       { statId: 'comfort', perDay: 3 },
     ],
     requirements: [],
+    audience: { social: 2, thrills: 1 },
   }
 
   // === FACILITIES ===
@@ -221,6 +232,7 @@ export class Building {
       { statId: 'appeal', perDay: 5 },
     ],
     requirements: [],
+    audience: { family: 1 },
   }
 
   static readonly TRASH_CAN: BuildingDef = {
@@ -279,6 +291,7 @@ export class Building {
       { statId: 'appeal', perDay: 8 },
     ],
     requirements: [{ type: 'perk', id: 'spotless_park' }],
+    audience: { relaxation: 1 },
   }
 
   // === DECOR ===
@@ -294,6 +307,7 @@ export class Building {
       { statId: 'beauty', perDay: 10 },
     ],
     requirements: [],
+    audience: { relaxation: 3, social: 2 },
   }
 
   static readonly GARDEN: BuildingDef = {
@@ -309,6 +323,7 @@ export class Building {
       { statId: 'cleanliness', perDay: 2 },
     ],
     requirements: [],
+    audience: { relaxation: 4 },
   }
 
   static readonly BENCH: BuildingDef = {
@@ -324,6 +339,7 @@ export class Building {
       { statId: 'comfort', perDay: 8 },
     ],
     requirements: [],
+    audience: { relaxation: 3, family: 1 },
   }
 
   // === LODGING ===
@@ -342,6 +358,7 @@ export class Building {
     requirements: [{ type: 'perk', id: 'lodging_1' }],
     capacityBonus: 50,
     lodgingTier: 1,
+    audience: { family: 2, relaxation: 2 },
   }
 
   static readonly STARLIGHT_MOTEL: LodgingBuildingDef = {
@@ -358,6 +375,7 @@ export class Building {
     requirements: [{ type: 'perk', id: 'lodging_1' }],
     capacityBonus: 75,
     lodgingTier: 1,
+    audience: { family: 2, social: 1 },
   }
 
   // Tier 2 - Comfortable (unlocked by Lodging II)
@@ -376,6 +394,7 @@ export class Building {
     requirements: [{ type: 'perk', id: 'lodging_2' }],
     capacityBonus: 100,
     lodgingTier: 2,
+    audience: { relaxation: 3, family: 1 },
   }
 
   static readonly PARKVIEW_INN: LodgingBuildingDef = {
@@ -393,6 +412,7 @@ export class Building {
     requirements: [{ type: 'perk', id: 'lodging_2' }],
     capacityBonus: 150,
     lodgingTier: 2,
+    audience: { family: 3, social: 1 },
   }
 
   // Tier 3 - Premium (unlocked by Lodging III)
@@ -411,6 +431,7 @@ export class Building {
     requirements: [{ type: 'perk', id: 'lodging_3' }],
     capacityBonus: 250,
     lodgingTier: 3,
+    audience: { relaxation: 3, social: 2 },
   }
 
   static readonly CLOUD_NINE_SUITES: LodgingBuildingDef = {
@@ -428,6 +449,7 @@ export class Building {
     requirements: [{ type: 'perk', id: 'lodging_3' }],
     capacityBonus: 200,
     lodgingTier: 3,
+    audience: { social: 3, relaxation: 2 },
   }
 
   static readonly LODGING_BUILDINGS: LodgingBuildingDef[] = [
@@ -451,6 +473,7 @@ export class Building {
     requirements: [{ type: 'perk', id: 'shops_1' }],
     incomePerGuest: 0.15,
     guestCap: 150,
+    audience: { social: 3, family: 1 },
   }
 
   static readonly CARNIVAL_GAMES: ShopBuildingDef = {
@@ -464,6 +487,7 @@ export class Building {
     requirements: [{ type: 'perk', id: 'shops_1' }],
     incomePerGuest: 0.20,
     guestCap: 100,
+    audience: { thrills: 2, social: 2, family: 1 },
   }
 
   static readonly PLUSH_STAND: ShopBuildingDef = {
@@ -477,6 +501,7 @@ export class Building {
     requirements: [{ type: 'perk', id: 'shops_1' }],
     incomePerGuest: 0.10,
     guestCap: 200,
+    audience: { family: 3, social: 1 },
   }
 
   static readonly ARCADE: ShopBuildingDef = {
@@ -490,6 +515,7 @@ export class Building {
     requirements: [{ type: 'perk', id: 'shops_1' }],
     incomePerGuest: 0.25,
     guestCap: 80,
+    audience: { thrills: 2, social: 3 },
   }
 
   static readonly SHOP_BUILDINGS: ShopBuildingDef[] = [

@@ -3,12 +3,14 @@ import { motion } from 'framer-motion'
 import { TrendingUp, TrendingDown, Minus, Smile, Meh, Frown } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { Guest } from '../../systems/guest'
+import { GuestTypesBar } from '../../systems/guest-types'
 import { Format } from '../../utils/format'
 
 export function AnalyticsContent() {
   const dailyRecords = useGameStore((s) => s.dailyRecords)
   const rates = useGameStore((s) => s.rates)
   const guestBreakdown = useGameStore((s) => s.guestBreakdown)
+  const guestTypeMix = useGameStore((s) => s.guestTypeMix)
   const stats = useGameStore((s) => s.stats)
   const state = useGameStore()
 
@@ -115,6 +117,12 @@ export function AnalyticsContent() {
           </div>
         </div>
       )}
+
+      {/* Guest Types */}
+      <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+        <div className="text-sm text-[var(--color-text-muted)] mb-3">Guest Types</div>
+        <GuestTypesBar mix={guestTypeMix} />
+      </div>
 
       {/* Key Stats */}
       <div className="grid grid-cols-2 gap-3">
