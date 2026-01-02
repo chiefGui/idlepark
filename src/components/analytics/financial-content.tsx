@@ -1,41 +1,68 @@
 import { useGameStore } from '../../store/game-store'
 import { Format } from '../../utils/format'
 import { Bank } from '../../systems/bank'
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, Receipt, Landmark, ArrowUpCircle, ArrowDownCircle } from 'lucide-react'
+import { Guest } from '../../systems/guest'
+import { Building } from '../../systems/building'
+import { Slot } from '../../systems/slot'
+import { Landmark, TrendingUp, TrendingDown, Clock } from 'lucide-react'
 
 export function FinancialContent() {
-  const stats = useGameStore((s) => s.stats)
-  const financials = useGameStore((s) => s.financials)
-  const bankLoan = useGameStore((s) => s.bankLoan)
-  const rates = useGameStore((s) => s.rates)
+  const state = useGameStore()
+  const stats = state.stats
+  const bankLoan = state.bankLoan
+  const rates = state.rates
 
-  // Calculate net worth (current money + value of investments - outstanding debt)
-  const outstandingDebt = bankLoan?.remainingAmount ?? 0
-  const netWorth = stats.money - outstandingDebt
+  // Calculate daily income breakdown
+  const totalGuests = state.guestBreakdown.happy + state.guestBreakdown.neutral + state.guestBreakdown.unhappy
+  const ticketIncome = Guest.calculateIncomeWithEntertainment(
+    totalGuests,
+    state.ticketPrice,
+    stats.entertainment
+  )
 
-  // Interest paid = total repaid - principal borrowed (capped at what's been repaid)
-  const interestPaid = Math.max(0, financials.totalLoanRepaid -
-    Math.min(financials.totalBorrowed, financials.totalLoanRepaid))
+  // Calculate upkeep
+  const occupiedSlots = Slot.getOccupied(state)
+  const dailyUpkeep = occupiedSlots.reduce((sum, slot) => {
+    const building = Building.getById(slot.buildingId!)
+    return sum + (building?.costs.find(c => c.statId === 'money')?.amount ?? 0) * 0.02
+  }, 0)
 
-  // Total costs = invested + upkeep + loan repayments
-  const totalCosts = financials.totalInvested + financials.totalUpkeepPaid + financials.totalLoanRepaid
+  // Loan repayment
+  const dailyLoanPayment = bankLoan?.dailyPayment ?? 0
 
-  // Net profit = earned + borrowed - costs
-  const netProfit = financials.totalEarned + financials.totalBorrowed - totalCosts
+  // Daily totals
+  const dailyIncome = ticketIncome
+  const dailyExpenses = dailyUpkeep + dailyLoanPayment
+  const dailyNet = dailyIncome - dailyExpenses
+
+  // Runway calculation (days until broke if losing money)
+  const runway = dailyNet < 0 ? Math.floor(stats.money / Math.abs(dailyNet)) : null
 
   return (
     <div className="space-y-4">
-      {/* Current Balance */}
+      {/* Balance Card */}
       <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-        <div className="flex items-center gap-2 mb-2">
-          <Wallet size={16} className="text-[var(--color-accent)]" />
-          <span className="text-sm text-[var(--color-text-muted)]">Current Balance</span>
-        </div>
+        <div className="text-sm text-[var(--color-text-muted)] mb-1">Balance</div>
         <div className="text-3xl font-bold">{Format.money(stats.money)}</div>
-        <div className="text-sm text-[var(--color-text-muted)] mt-1">
+        <div className={`text-sm mt-1 flex items-center gap-1 ${
+          rates.money >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+        }`}>
+          {rates.money >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
           {rates.money >= 0 ? '+' : ''}{Format.money(rates.money)}/day
         </div>
       </div>
+
+      {/* Runway Warning */}
+      {runway !== null && runway < 30 && (
+        <div className="p-3 rounded-xl bg-[var(--color-negative)]/10 border border-[var(--color-negative)]/30">
+          <div className="flex items-center gap-2 text-[var(--color-negative)]">
+            <Clock size={16} />
+            <span className="text-sm font-medium">
+              {runway <= 0 ? 'Out of money!' : `${runway} days until broke`}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Active Loan */}
       {bankLoan && (
@@ -47,141 +74,53 @@ export function FinancialContent() {
           <div className="flex justify-between items-end">
             <div>
               <div className="text-xl font-bold text-amber-100">
-                {Format.money(bankLoan.remainingAmount)} owed
+                {Format.money(bankLoan.remainingAmount)}
               </div>
               <div className="text-sm text-amber-200/70">
-                {Format.money(bankLoan.dailyPayment)}/day repayment
+                {Format.money(dailyLoanPayment)}/day
               </div>
             </div>
-            <div className="text-right text-sm text-amber-200/70">
-              {Bank.getLoanDaysRemaining({ bankLoan } as any)} days left
+            <div className="text-sm text-amber-200/70">
+              {Bank.getLoanDaysRemaining(state)} days left
             </div>
           </div>
         </div>
       )}
 
-      {/* Income Section */}
-      <div className="space-y-2">
-        <div className="text-sm font-medium text-[var(--color-text-muted)] px-1">Income</div>
-        <div className="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-          <FinancialRow
-            icon={<TrendingUp size={14} className="text-[var(--color-positive)]" />}
-            label="Guest Revenue"
-            value={Format.money(financials.totalEarned)}
-            positive
-          />
-          {financials.totalBorrowed > 0 && (
-            <FinancialRow
-              icon={<Landmark size={14} className="text-amber-400" />}
-              label="Loans Received"
-              value={Format.money(financials.totalBorrowed)}
-              positive
-            />
-          )}
-        </div>
-      </div>
+      {/* Daily Breakdown */}
+      <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] space-y-3">
+        <div className="text-sm text-[var(--color-text-muted)]">Daily Breakdown</div>
 
-      {/* Expenses Section */}
-      <div className="space-y-2">
-        <div className="text-sm font-medium text-[var(--color-text-muted)] px-1">Expenses</div>
-        <div className="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-          <FinancialRow
-            icon={<PiggyBank size={14} className="text-blue-400" />}
-            label="Buildings & Perks"
-            value={Format.money(financials.totalInvested)}
-          />
-          <FinancialRow
-            icon={<Receipt size={14} className="text-orange-400" />}
-            label="Upkeep Costs"
-            value={Format.money(financials.totalUpkeepPaid)}
-          />
-          {financials.totalLoanRepaid > 0 && (
-            <FinancialRow
-              icon={<TrendingDown size={14} className="text-amber-400" />}
-              label="Loan Repayments"
-              value={Format.money(financials.totalLoanRepaid)}
-              subtext={interestPaid > 0 ? `(${Format.money(interestPaid)} interest)` : undefined}
-            />
-          )}
+        {/* Income */}
+        <div className="flex justify-between items-center">
+          <span className="text-sm">Ticket Sales</span>
+          <span className="text-sm text-[var(--color-positive)]">+{Format.money(ticketIncome)}</span>
         </div>
-      </div>
 
-      {/* Summary */}
-      <div className="space-y-2">
-        <div className="text-sm font-medium text-[var(--color-text-muted)] px-1">Summary</div>
-        <div className="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-          <FinancialRow
-            icon={netProfit >= 0
-              ? <ArrowUpCircle size={14} className="text-[var(--color-positive)]" />
-              : <ArrowDownCircle size={14} className="text-[var(--color-negative)]" />
-            }
-            label="Net Profit"
-            value={(netProfit >= 0 ? '+' : '') + Format.money(netProfit)}
-            positive={netProfit >= 0}
-            negative={netProfit < 0}
-            bold
-          />
-          <FinancialRow
-            icon={<Wallet size={14} className="text-[var(--color-accent)]" />}
-            label="Net Worth"
-            value={Format.money(netWorth)}
-            subtext={outstandingDebt > 0 ? `(${Format.money(outstandingDebt)} debt)` : undefined}
-            positive={netWorth >= 0}
-            negative={netWorth < 0}
-            bold
-          />
-        </div>
-      </div>
-
-      {/* Records */}
-      <div className="space-y-2">
-        <div className="text-sm font-medium text-[var(--color-text-muted)] px-1">Records</div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-            <div className="text-xs text-[var(--color-text-muted)]">Peak Balance</div>
-            <div className="font-semibold text-[var(--color-positive)]">
-              {Format.money(financials.peakMoney)}
-            </div>
+        {/* Expenses */}
+        {dailyUpkeep > 0 && (
+          <div className="flex justify-between items-center">
+            <span className="text-sm">Upkeep</span>
+            <span className="text-sm text-[var(--color-negative)]">-{Format.money(dailyUpkeep)}</span>
           </div>
-          <div className="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-            <div className="text-xs text-[var(--color-text-muted)]">Peak Guests</div>
-            <div className="font-semibold">
-              {Math.round(financials.peakGuests)}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-type FinancialRowProps = {
-  icon: React.ReactNode
-  label: string
-  value: string
-  subtext?: string
-  positive?: boolean
-  negative?: boolean
-  bold?: boolean
-}
-
-function FinancialRow({ icon, label, value, subtext, positive, negative, bold }: FinancialRowProps) {
-  return (
-    <div className="flex items-center justify-between py-2 border-b border-[var(--color-border)] last:border-0">
-      <div className="flex items-center gap-2">
-        {icon}
-        <span className="text-sm">{label}</span>
-      </div>
-      <div className="text-right">
-        <span className={`text-sm ${bold ? 'font-semibold' : ''} ${
-          positive ? 'text-[var(--color-positive)]' :
-          negative ? 'text-[var(--color-negative)]' : ''
-        }`}>
-          {value}
-        </span>
-        {subtext && (
-          <div className="text-xs text-[var(--color-text-muted)]">{subtext}</div>
         )}
+
+        {dailyLoanPayment > 0 && (
+          <div className="flex justify-between items-center">
+            <span className="text-sm">Loan Payment</span>
+            <span className="text-sm text-[var(--color-negative)]">-{Format.money(dailyLoanPayment)}</span>
+          </div>
+        )}
+
+        {/* Net */}
+        <div className="pt-2 border-t border-[var(--color-border)] flex justify-between items-center">
+          <span className="text-sm font-medium">Net</span>
+          <span className={`text-sm font-bold ${
+            dailyNet >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+          }`}>
+            {dailyNet >= 0 ? '+' : ''}{Format.money(dailyNet)}/day
+          </span>
+        </div>
       </div>
     </div>
   )
