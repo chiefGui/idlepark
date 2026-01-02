@@ -16,6 +16,7 @@ const LOW_PRIORITY_EVENTS: FeedEventType[] = [
   'price_complaint',
   'price_praise',
   'capacity_warning',
+  'guest_departed_natural',  // Happy guests leaving is good news, not urgent
 ]
 
 // Events that bypass cooldown entirely (critical alerts)
@@ -39,6 +40,7 @@ const PRIORITY_EVENTS: PriorityEventConfig[] = [
   { event: 'milestone:achieved', type: 'milestone_achieved', contextKey: 'milestoneId' },
   { event: 'perk:purchased', type: 'perk_purchased', contextKey: 'perkId' },
   { event: 'guests:departed', type: 'guest_departed', contextKey: 'guestCount', condition: (p) => p.count > 0 },
+  { event: 'guests:departed_natural', type: 'guest_departed_natural', contextKey: 'guestCount', condition: (p) => p.count > 0 },
 ]
 
 export function useFeedEvents() {

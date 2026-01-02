@@ -90,7 +90,8 @@ export type FeedEventType =
   | 'milestone_achieved'
   | 'perk_purchased'
   | 'guest_threshold'
-  | 'guest_departed'
+  | 'guest_departed'          // Unhappy guests leaving due to dissatisfaction
+  | 'guest_departed_natural'  // Satisfied guests going home after their visit
   | 'appeal_high'
   | 'appeal_low'
   | 'price_complaint'

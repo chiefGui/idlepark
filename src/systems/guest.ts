@@ -150,6 +150,29 @@ export class Guest {
     })
   }
 
+  /**
+   * Calculate fame factor - bigger parks attract more visitors!
+   * Based on entertainment capacity and ride variety.
+   * Returns a multiplier (1.0 = baseline, scales up with park size).
+   */
+  static calculateFameFactor(state: GameState): number {
+    // Fame scales with total entertainment (more rides = more famous)
+    // Use logarithmic scaling so early rides matter most
+    const entertainment = state.stats.entertainment
+    const entertainmentFactor = entertainment > 0
+      ? 1 + Math.log10(1 + entertainment / 10) * 0.5  // +50% per order of magnitude
+      : 1
+
+    // Variety bonus - diverse parks get more word-of-mouth
+    const varietyMultiplier = Building.getVarietyMultiplier(state)
+    const varietyBonus = 1 + (varietyMultiplier - 1) * 0.5  // Half the variety bonus applies to fame
+
+    // Combine factors (multiplicative but capped to prevent runaway growth)
+    const rawFame = entertainmentFactor * varietyBonus
+    // Cap at 5x base to keep game balanced, minimum 1x
+    return Math.max(1, Math.min(5, rawFame))
+  }
+
   static calculateArrivalRate(state: GameState): number {
     // Hard cap: no arrivals when at capacity
     if (this.isAtCapacity(state)) {
@@ -160,8 +183,9 @@ export class Guest {
     const valueFactor = this.getArrivalPenalty(state)
     const marketingBonus = 1 + Marketing.getArrivalBonus(state)
     const happeningMultiplier = Happening.getArrivalMultiplier(state)
+    const fameFactor = this.calculateFameFactor(state)
 
-    return this.BASE_ARRIVAL_RATE * appealFactor * valueFactor * marketingBonus * happeningMultiplier
+    return this.BASE_ARRIVAL_RATE * appealFactor * valueFactor * marketingBonus * happeningMultiplier * fameFactor
   }
 
   static calculateIncomeWithEntertainment(
@@ -432,11 +456,13 @@ export class Guest {
   /**
    * Process guest departures at end of day.
    * Includes both natural turnover (all guests) and extra unhappy departures.
-   * Returns guests that left.
+   * Returns guests that left, split by type.
    */
   static processDepartures(breakdown: GuestBreakdown): {
     newBreakdown: GuestBreakdown
     departed: number
+    naturalDeparted: number  // Happy/neutral guests going home satisfied
+    unhappyDeparted: number  // Guests leaving due to unhappiness
   } {
     // Natural turnover - even happy guests eventually go home
     const happyDeparting = Math.floor(
@@ -455,6 +481,10 @@ export class Guest {
     const unhappyDeparting = unhappyNatural + unhappyExtra
 
     const departed = happyDeparting + neutralDeparting + unhappyDeparting
+    // Natural departures are happy/neutral guests going home after their visit
+    const naturalDeparted = happyDeparting + neutralDeparting
+    // Unhappy departures are guests leaving due to dissatisfaction
+    const unhappyDeparted = unhappyDeparting
 
     return {
       newBreakdown: {
@@ -463,6 +493,8 @@ export class Guest {
         unhappy: Math.max(0, breakdown.unhappy - unhappyDeparting),
       },
       departed,
+      naturalDeparted,
+      unhappyDeparted,
     }
   }
 

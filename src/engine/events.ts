@@ -11,7 +11,8 @@ export type GameEventMap = {
   'slot:unlocked': { slotIndex: number }
   'perk:purchased': { perkId: string }
   'milestone:achieved': { milestoneId: string }
-  'guests:departed': { count: number }
+  'guests:departed': { count: number }           // Unhappy guests leaving
+  'guests:departed_natural': { count: number }  // Satisfied guests going home
   'bankruptcy': { day: number }
   'feed:new': { entry: FeedEntry }
   'game:reset': undefined
