@@ -179,11 +179,12 @@ export class Modifiers {
     stat: StatId
   ): SourceContribution[] {
     const relevant = modifiers.filter((m) => m.stat === stat)
-    const grouped = new Map<string, { emoji: string; flat: number; increased: number; more: number; count: number }>()
+    const grouped = new Map<string, { emoji: string; flat: number; increased: number; more: number; count: number; buildingId?: string }>()
 
     for (const mod of relevant) {
       const key = mod.label ?? this.getDefaultLabel(mod.source)
       const emoji = mod.emoji ?? this.getDefaultEmoji(mod.source)
+      const buildingId = mod.source.type === 'building' ? mod.source.buildingId : undefined
 
       const existing = grouped.get(key)
       if (existing) {
@@ -198,6 +199,7 @@ export class Modifiers {
           increased: mod.increased ?? 0,
           more: mod.more ?? 1,
           count: 1,
+          buildingId,
         })
       }
     }
@@ -211,6 +213,7 @@ export class Modifiers {
         increased: data.increased,
         more: data.more,
         count: data.count > 1 ? data.count : undefined,
+        buildingId: data.buildingId,
       })
     }
 
@@ -254,4 +257,5 @@ export type SourceContribution = {
   increased: number
   more: number
   count?: number
+  buildingId?: string // For building sources, allows UI to render proper icon
 }

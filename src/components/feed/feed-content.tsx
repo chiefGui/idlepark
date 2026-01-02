@@ -6,6 +6,7 @@ import { Feed } from '../../systems/feed'
 import { Building } from '../../systems/building'
 import { Format } from '../../utils/format'
 import { GameTypes } from '../../engine/game-types'
+import { BuildingIcon } from '../../buildings'
 import type { FeedEntry, FeedEventType, WishState } from '../../engine/game-types'
 
 const EVENT_EMOJI: Record<FeedEventType, string> = {
@@ -145,8 +146,8 @@ function WishEntryCard({ wish, entry, index, currentDay }: { wish: WishState; en
 
       {/* Reward disclosure */}
       <div className="flex items-center gap-3 p-2.5 rounded-lg bg-[var(--color-bg)]">
-        <div className="w-10 h-10 rounded-lg bg-[var(--color-accent)]/20 flex items-center justify-center text-xl">
-          {building?.emoji ?? '🏗️'}
+        <div className="w-10 h-10 rounded-lg bg-[var(--color-accent)]/20 flex items-center justify-center">
+          <BuildingIcon buildingId={wish.buildingId} size={28} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium truncate">{building?.name ?? 'Unknown'}</div>
