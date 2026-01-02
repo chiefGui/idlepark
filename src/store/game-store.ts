@@ -18,6 +18,7 @@ import { Marketing } from '../systems/marketing'
 import { Bank } from '../systems/bank'
 import { Season } from '../systems/season'
 import { Wish } from '../systems/wish'
+import { ParkRating } from '../systems/park-rating'
 import { calculateGuestTypeMix } from '../systems/guest-types'
 
 const MAX_DAILY_RECORDS = 30
@@ -131,7 +132,9 @@ export const useGameStore = create<GameStoreState>()(
           let naturalDeparted = 0
           let unhappyDeparted = 0
           if (crossedDayBoundary) {
-            const result = Guest.processDepartures(guestBreakdown)
+            // Relaxer guest type bonus: reduces departure rate
+            const retentionModifier = ParkRating.getRetentionModifier(state)
+            const result = Guest.processDepartures(guestBreakdown, retentionModifier)
             guestBreakdown = result.newBreakdown
             naturalDeparted = result.naturalDeparted
             unhappyDeparted = result.unhappyDeparted
@@ -140,10 +143,12 @@ export const useGameStore = create<GameStoreState>()(
           const totalGuests = GameTypes.getTotalGuests(guestBreakdown)
 
           // Calculate income and upkeep separately for tracking
+          // Pass state for thrill seeker bonus calculation
           const guestIncome = Guest.calculateIncomeWithEntertainment(
             totalGuests,
             state.ticketPrice,
-            state.stats.entertainment
+            state.stats.entertainment,
+            state
           ) * deltaDay
 
           const buildingUpkeep = state.slots.reduce((total, slot) => {

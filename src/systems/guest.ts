@@ -6,6 +6,7 @@ import { Happening } from './happening'
 import { Marketing } from './marketing'
 import { Perk } from './perk'
 import { Service } from './service'
+import { ParkRating } from './park-rating'
 
 export type GuestDemand = {
   statId: StatId
@@ -107,13 +108,18 @@ export class Guest {
 
   /**
    * Get current guest capacity.
-   * Initial capacity + bonuses from lodging buildings + service bonuses.
+   * Initial capacity + bonuses from lodging buildings + service bonuses + family guest bonus.
    */
   static getCapacity(state: GameState): number {
     const baseCapacity = GameTypes.INITIAL_GUEST_CAPACITY
     const lodgingBonus = Building.getTotalCapacityBonus(state)
     const serviceBonus = Service.getTotalCapacityBonus(state)
-    return baseCapacity + lodgingBonus + serviceBonus
+
+    // Family guest type bonus: families bring kids, increasing effective capacity
+    const guestBonuses = ParkRating.getActiveGuestTypeBonuses(state.guestTypeMix)
+    const familyBonus = guestBonuses.family?.value ?? 0
+
+    return Math.floor((baseCapacity + lodgingBonus + serviceBonus) * (1 + familyBonus))
   }
 
   /**
@@ -152,7 +158,7 @@ export class Guest {
 
   /**
    * Calculate fame factor - bigger parks attract more visitors!
-   * Based on entertainment capacity and ride variety.
+   * Based on entertainment capacity, ride variety, and social guest bonus.
    * Returns a multiplier (1.0 = baseline, scales up with park size).
    */
   static calculateFameFactor(state: GameState): number {
@@ -167,8 +173,12 @@ export class Guest {
     const varietyMultiplier = Building.getVarietyMultiplier(state)
     const varietyBonus = 1 + (varietyMultiplier - 1) * 0.5  // Half the variety bonus applies to fame
 
+    // Social guest type bonus: social guests spread the word, increasing arrivals
+    const guestBonuses = ParkRating.getActiveGuestTypeBonuses(state.guestTypeMix)
+    const socialBonus = 1 + (guestBonuses.social?.value ?? 0)
+
     // Combine factors (multiplicative but capped to prevent runaway growth)
-    const rawFame = entertainmentFactor * varietyBonus
+    const rawFame = entertainmentFactor * varietyBonus * socialBonus
     // Cap at 5x base to keep game balanced, minimum 1x
     return Math.max(1, Math.min(5, rawFame))
   }
@@ -191,11 +201,20 @@ export class Guest {
   static calculateIncomeWithEntertainment(
     guestCount: number,
     ticketPrice: number,
-    entertainment: number
+    entertainment: number,
+    state?: GameState
   ): number {
     const priceMultiplier = this.getTicketPriceMultiplier(ticketPrice)
     const entertainmentFactor = Math.min(1, entertainment / 20)
-    return guestCount * this.BASE_MONEY_PER_GUEST * priceMultiplier * entertainmentFactor
+
+    // Thrill seeker guest type bonus: they spend more on rides
+    let thrillBonus = 1
+    if (state) {
+      const guestBonuses = ParkRating.getActiveGuestTypeBonuses(state.guestTypeMix)
+      thrillBonus = 1 + (guestBonuses.thrills?.value ?? 0)
+    }
+
+    return guestCount * this.BASE_MONEY_PER_GUEST * priceMultiplier * entertainmentFactor * thrillBonus
   }
 
   /**
@@ -457,23 +476,30 @@ export class Guest {
    * Process guest departures at end of day.
    * Includes both natural turnover (all guests) and extra unhappy departures.
    * Returns guests that left, split by type.
+   *
+   * @param breakdown Current guest breakdown
+   * @param retentionModifier Optional modifier from relaxer guests (< 1 = fewer departures)
    */
-  static processDepartures(breakdown: GuestBreakdown): {
+  static processDepartures(breakdown: GuestBreakdown, retentionModifier = 1): {
     newBreakdown: GuestBreakdown
     departed: number
     naturalDeparted: number  // Happy/neutral guests going home satisfied
     unhappyDeparted: number  // Guests leaving due to unhappiness
   } {
+    // Apply retention modifier to natural departure rates
+    // Relaxer guests make everyone want to stay longer!
+    const adjustedNaturalRate = this.NATURAL_DEPARTURE_RATE * retentionModifier
+
     // Natural turnover - even happy guests eventually go home
     const happyDeparting = Math.floor(
-      breakdown.happy * this.NATURAL_DEPARTURE_RATE * this.HAPPY_DEPARTURE_MODIFIER
+      breakdown.happy * adjustedNaturalRate * this.HAPPY_DEPARTURE_MODIFIER
     )
     const neutralDeparting = Math.floor(
-      breakdown.neutral * this.NATURAL_DEPARTURE_RATE
+      breakdown.neutral * adjustedNaturalRate
     )
     // Unhappy get both natural turnover AND the extra unhappy departure rate
     const unhappyNatural = Math.floor(
-      breakdown.unhappy * this.NATURAL_DEPARTURE_RATE * this.UNHAPPY_DEPARTURE_MODIFIER
+      breakdown.unhappy * adjustedNaturalRate * this.UNHAPPY_DEPARTURE_MODIFIER
     )
     const unhappyExtra = Math.floor(
       (breakdown.unhappy - unhappyNatural) * this.UNHAPPY_DEPARTURE_RATE
