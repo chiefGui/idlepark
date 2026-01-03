@@ -14,7 +14,6 @@ export function calculateGuestTypeMix(state: GameState): GuestTypeMix {
     thrills: 1,
     family: 1,
     relaxation: 1,
-    social: 1,
   }
 
   // Sum weights from all owned buildings

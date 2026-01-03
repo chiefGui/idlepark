@@ -11,16 +11,42 @@ export type StatId =
 export type Season = 'spring' | 'summer' | 'fall' | 'winter'
 
 // === GUEST TYPES ===
-export type GuestType = 'thrills' | 'family' | 'relaxation' | 'social'
+export type GuestType = 'thrills' | 'family' | 'relaxation'
 
-export const GUEST_TYPES = ['thrills', 'family', 'relaxation', 'social'] as const
+export const GUEST_TYPES = ['thrills', 'family', 'relaxation'] as const
 
-export const GUEST_TYPE_META: Record<GuestType, { name: string; emoji: string; color: string }> = {
-  thrills: { name: 'Thrill Seekers', emoji: '🎢', color: '#ef4444' },
-  family: { name: 'Families', emoji: '👨‍👩‍👧', color: '#3b82f6' },
-  relaxation: { name: 'Relaxers', emoji: '🌿', color: '#22c55e' },
-  social: { name: 'Social', emoji: '📸', color: '#a855f7' },
+export const GUEST_TYPE_META: Record<GuestType, {
+  name: string
+  emoji: string
+  color: string
+  trait: { description: string; shortLabel: string }
+}> = {
+  thrills: {
+    name: 'Thrill Seekers',
+    emoji: '🎢',
+    color: '#ef4444',
+    trait: { description: '+20% ticket income', shortLabel: '💰 +20% tickets' },
+  },
+  family: {
+    name: 'Families',
+    emoji: '👨‍👩‍👧',
+    color: '#3b82f6',
+    trait: { description: '+0.3 extra guests per arrival', shortLabel: '👥 +0.3 arrivals' },
+  },
+  relaxation: {
+    name: 'Relaxers',
+    emoji: '🌿',
+    color: '#22c55e',
+    trait: { description: '-15% departure rate', shortLabel: '🏠 -15% departures' },
+  },
 }
+
+// Guest type trait multipliers (applied proportionally based on guest mix)
+export const GUEST_TYPE_TRAITS = {
+  thrills: { ticketIncomeBonus: 0.20 },      // +20% ticket income
+  family: { arrivalBonus: 0.3 },              // +0.3 guests per arrival
+  relaxation: { departureReduction: 0.15 },   // -15% departure rate
+} as const
 
 export type GuestTypeMix = Record<GuestType, number>
 
@@ -372,7 +398,7 @@ export class GameTypes {
   }
 
   static createInitialGuestTypeMix(): GuestTypeMix {
-    return { thrills: 25, family: 25, relaxation: 25, social: 25 }
+    return { thrills: 34, family: 33, relaxation: 33 }
   }
 
   static getTotalGuests(breakdown: GuestBreakdown): number {

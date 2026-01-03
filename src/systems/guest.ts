@@ -1,5 +1,5 @@
 import type { StatId, GameState, GuestBreakdown, GuestMood } from '../engine/game-types'
-import { GameTypes } from '../engine/game-types'
+import { GameTypes, GUEST_TYPE_TRAITS } from '../engine/game-types'
 import type { Modifier } from '../engine/modifiers'
 import { Building } from './building'
 import { Happening } from './happening'
@@ -66,6 +66,52 @@ export class Guest {
   static getTicketPriceMultiplier(ticketPrice: number): number {
     const basePrice = GameTypes.DEFAULT_TICKET_PRICE
     return ticketPrice / basePrice
+  }
+
+  /**
+   * Calculate the ticket income bonus from Thrill Seekers.
+   * Returns a multiplier (e.g., 1.06 for 30% thrill seekers = 30% * 20% = 6% bonus)
+   */
+  static getThrillSeekerIncomeBonus(state: GameState): number {
+    const thrillPercent = state.guestTypeMix.thrills / 100
+    return 1 + (thrillPercent * GUEST_TYPE_TRAITS.thrills.ticketIncomeBonus)
+  }
+
+  /**
+   * Calculate extra arrivals from Families.
+   * Returns bonus guests per arrival (e.g., 0.09 for 30% families = 30% * 0.3 = 0.09)
+   */
+  static getFamilyArrivalBonus(state: GameState): number {
+    const familyPercent = state.guestTypeMix.family / 100
+    return familyPercent * GUEST_TYPE_TRAITS.family.arrivalBonus
+  }
+
+  /**
+   * Calculate departure rate reduction from Relaxers.
+   * Returns a multiplier (e.g., 0.955 for 30% relaxers = 30% * 15% = 4.5% reduction)
+   */
+  static getRelaxerDepartureReduction(state: GameState): number {
+    const relaxPercent = state.guestTypeMix.relaxation / 100
+    return 1 - (relaxPercent * GUEST_TYPE_TRAITS.relaxation.departureReduction)
+  }
+
+  /**
+   * Get all active trait bonuses for UI display.
+   */
+  static getTraitBonuses(state: GameState): {
+    ticketIncomeBonus: number    // Percentage bonus (e.g., 6 for +6%)
+    arrivalBonus: number         // Extra guests per arrival
+    departureReduction: number   // Percentage reduction (e.g., 4.5 for -4.5%)
+  } {
+    const thrillPercent = state.guestTypeMix.thrills / 100
+    const familyPercent = state.guestTypeMix.family / 100
+    const relaxPercent = state.guestTypeMix.relaxation / 100
+
+    return {
+      ticketIncomeBonus: thrillPercent * GUEST_TYPE_TRAITS.thrills.ticketIncomeBonus * 100,
+      arrivalBonus: familyPercent * GUEST_TYPE_TRAITS.family.arrivalBonus,
+      departureReduction: relaxPercent * GUEST_TYPE_TRAITS.relaxation.departureReduction * 100,
+    }
   }
 
   /**
@@ -435,16 +481,20 @@ export class Guest {
   /**
    * Process new arrivals - all new guests start as neutral.
    * Respects capacity limit.
+   * @param familyBonus Optional bonus guests per arrival from Families trait
    */
   static processArrivals(
     breakdown: GuestBreakdown,
     arrivalRate: number,
     deltaDay: number,
-    capacity: number
+    capacity: number,
+    familyBonus: number = 0
   ): GuestBreakdown {
     const currentGuests = GameTypes.getTotalGuests(breakdown)
     const availableSpace = Math.max(0, capacity - currentGuests)
-    const potentialArrivals = arrivalRate * deltaDay
+    // Apply family bonus: each arrival brings extra guests
+    const bonusArrivals = arrivalRate * deltaDay * familyBonus
+    const potentialArrivals = (arrivalRate * deltaDay) + bonusArrivals
     const actualArrivals = Math.min(potentialArrivals, availableSpace)
 
     return {
@@ -457,23 +507,27 @@ export class Guest {
    * Process guest departures at end of day.
    * Includes both natural turnover (all guests) and extra unhappy departures.
    * Returns guests that left, split by type.
+   * @param relaxerReduction Optional multiplier from Relaxers trait (0-1, where 0.95 = 5% fewer departures)
    */
-  static processDepartures(breakdown: GuestBreakdown): {
+  static processDepartures(breakdown: GuestBreakdown, relaxerReduction: number = 1): {
     newBreakdown: GuestBreakdown
     departed: number
     naturalDeparted: number  // Happy/neutral guests going home satisfied
     unhappyDeparted: number  // Guests leaving due to unhappiness
   } {
+    // Apply relaxer reduction to departure rate
+    const adjustedDepartureRate = this.NATURAL_DEPARTURE_RATE * relaxerReduction
+
     // Natural turnover - even happy guests eventually go home
     const happyDeparting = Math.floor(
-      breakdown.happy * this.NATURAL_DEPARTURE_RATE * this.HAPPY_DEPARTURE_MODIFIER
+      breakdown.happy * adjustedDepartureRate * this.HAPPY_DEPARTURE_MODIFIER
     )
     const neutralDeparting = Math.floor(
-      breakdown.neutral * this.NATURAL_DEPARTURE_RATE
+      breakdown.neutral * adjustedDepartureRate
     )
     // Unhappy get both natural turnover AND the extra unhappy departure rate
     const unhappyNatural = Math.floor(
-      breakdown.unhappy * this.NATURAL_DEPARTURE_RATE * this.UNHAPPY_DEPARTURE_MODIFIER
+      breakdown.unhappy * adjustedDepartureRate * this.UNHAPPY_DEPARTURE_MODIFIER
     )
     const unhappyExtra = Math.floor(
       (breakdown.unhappy - unhappyNatural) * this.UNHAPPY_DEPARTURE_RATE
@@ -515,8 +569,9 @@ export class Guest {
       state.ticketPrice,
       state.stats.entertainment
     )
-    // Apply happening ticket income multiplier
-    const income = baseIncome * Happening.getTicketIncomeMultiplier(state)
+    // Apply happening ticket income multiplier and thrill seeker bonus
+    const thrillBonus = this.getThrillSeekerIncomeBonus(state)
+    const income = baseIncome * Happening.getTicketIncomeMultiplier(state) * thrillBonus
 
     const source = { type: 'guest' as const }
 

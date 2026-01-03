@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Users, TrendingUp, TrendingDown, Smile, Meh, Frown, AlertCircle, Home, Sparkles } from 'lucide-react'
+import { Users, TrendingUp, TrendingDown, Smile, Meh, Frown, AlertCircle, Home, Sparkles, Zap } from 'lucide-react'
 import { useGameStore } from '../../store/game-store'
 import { Guest } from '../../systems/guest'
 import { analyzeGuestTypes, type GuestTypeAnalysis } from '../../systems/guest-types'
@@ -33,6 +33,9 @@ export function GuestsContent() {
       guestTypeMix[type] > guestTypeMix[max] ? type : max
     )
   }, [guestTypeMix])
+
+  // Calculate trait bonuses
+  const traitBonuses = useMemo(() => Guest.getTraitBonuses(state), [state])
 
   return (
     <div className="space-y-4">
@@ -117,6 +120,37 @@ export function GuestsContent() {
           {guestTypeAnalysis.map((analysis) => (
             <GuestTypeRow key={analysis.type} analysis={analysis} isDominant={analysis.type === dominantType} />
           ))}
+        </div>
+      </div>
+
+      {/* Type Bonuses */}
+      <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+        <div className="flex items-center gap-2 mb-3">
+          <Zap size={16} className="text-[var(--color-accent)]" />
+          <span className="text-sm text-[var(--color-text-muted)]">Type Bonuses</span>
+        </div>
+        <div className="space-y-2">
+          <TraitBonusRow
+            emoji="💰"
+            label="Ticket income"
+            value={`+${traitBonuses.ticketIncomeBonus.toFixed(1)}%`}
+            source={`${guestTypeMix.thrills}% Thrill Seekers`}
+            color={GUEST_TYPE_META.thrills.color}
+          />
+          <TraitBonusRow
+            emoji="👥"
+            label="Extra arrivals"
+            value={`+${traitBonuses.arrivalBonus.toFixed(2)}/arrival`}
+            source={`${guestTypeMix.family}% Families`}
+            color={GUEST_TYPE_META.family.color}
+          />
+          <TraitBonusRow
+            emoji="🏠"
+            label="Departure rate"
+            value={`-${traitBonuses.departureReduction.toFixed(1)}%`}
+            source={`${guestTypeMix.relaxation}% Relaxers`}
+            color={GUEST_TYPE_META.relaxation.color}
+          />
         </div>
       </div>
 
@@ -304,6 +338,12 @@ function GuestTypeRow({ analysis, isDominant }: { analysis: GuestTypeAnalysis; i
           <span className="text-sm font-medium" style={{ color: isDominant ? meta.color : undefined }}>
             {meta.name}
           </span>
+          <span
+            className="text-xs px-1.5 py-0.5 rounded"
+            style={{ backgroundColor: `${meta.color}20`, color: meta.color }}
+          >
+            {meta.trait.shortLabel}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold">{analysis.guestCount}</span>
@@ -323,6 +363,27 @@ function GuestTypeRow({ analysis, isDominant }: { analysis: GuestTypeAnalysis; i
           No attractions yet
         </div>
       )}
+    </div>
+  )
+}
+
+function TraitBonusRow({ emoji, label, value, source, color }: {
+  emoji: string
+  label: string
+  value: string
+  source: string
+  color: string
+}) {
+  return (
+    <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--color-bg)]">
+      <div className="flex items-center gap-2">
+        <span>{emoji}</span>
+        <span className="text-sm">{label}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold" style={{ color }}>{value}</span>
+        <span className="text-xs text-[var(--color-text-muted)]">({source})</span>
+      </div>
     </div>
   )
 }
