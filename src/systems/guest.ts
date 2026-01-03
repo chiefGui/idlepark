@@ -1,11 +1,16 @@
 import type { StatId, GameState, GuestBreakdown, GuestMood } from '../engine/game-types'
-import { GameTypes, GUEST_TYPE_TRAITS } from '../engine/game-types'
+import { GameTypes } from '../engine/game-types'
 import type { Modifier } from '../engine/modifiers'
 import { Building } from './building'
 import { Happening } from './happening'
 import { Marketing } from './marketing'
 import { Perk } from './perk'
 import { Service } from './service'
+import {
+  getGuestComponents,
+  runGuestSystems,
+  type GuestSystemsResult,
+} from '../ecs'
 
 export type GuestDemand = {
   statId: StatId
@@ -68,49 +73,101 @@ export class Guest {
     return ticketPrice / basePrice
   }
 
+  // ==========================================================================
+  // ECS INTEGRATION
+  // ==========================================================================
+
   /**
-   * Calculate the ticket income bonus from Thrill Seekers.
-   * Returns a multiplier (e.g., 1.06 for 30% thrill seekers = 30% * 20% = 6% bonus)
+   * Get guest components from game state for ECS processing.
+   */
+  static getComponents(state: GameState) {
+    return getGuestComponents(state)
+  }
+
+  /**
+   * Run all ECS guest systems and get combined result.
+   */
+  static getSystemsResult(state: GameState): GuestSystemsResult {
+    return runGuestSystems(getGuestComponents(state))
+  }
+
+  /**
+   * Get income modifiers from guest tags.
+   * Uses ECS income system.
+   */
+  static getIncomeModifiers(state: GameState) {
+    return runGuestSystems(getGuestComponents(state)).income
+  }
+
+  /**
+   * Get arrival modifiers from guest tags.
+   * Uses ECS arrival system.
+   */
+  static getArrivalModifiers(state: GameState) {
+    return runGuestSystems(getGuestComponents(state)).arrival
+  }
+
+  /**
+   * Get departure modifiers from guest tags.
+   * Uses ECS departure system.
+   */
+  static getDepartureModifiers(state: GameState) {
+    return runGuestSystems(getGuestComponents(state)).departure
+  }
+
+  /**
+   * Get appeal modifiers from guest tags.
+   * Uses ECS appeal system.
+   */
+  static getAppealModifiers(state: GameState) {
+    return runGuestSystems(getGuestComponents(state)).appeal
+  }
+
+  // ==========================================================================
+  // LEGACY COMPATIBILITY (deprecated - use ECS methods above)
+  // ==========================================================================
+
+  /**
+   * @deprecated Use getIncomeModifiers().ticket instead
    */
   static getThrillSeekerIncomeBonus(state: GameState): number {
-    const thrillPercent = state.guestTypeMix.thrills / 100
-    return 1 + (thrillPercent * GUEST_TYPE_TRAITS.thrills.ticketIncomeBonus)
+    return this.getIncomeModifiers(state).ticket
   }
 
   /**
-   * Calculate extra arrivals from Families.
-   * Returns bonus guests per arrival (e.g., 0.09 for 30% families = 30% * 0.3 = 0.09)
+   * @deprecated Use getArrivalModifiers().rate instead
    */
   static getFamilyArrivalBonus(state: GameState): number {
-    const familyPercent = state.guestTypeMix.family / 100
-    return familyPercent * GUEST_TYPE_TRAITS.family.arrivalBonus
+    // Convert multiplier to additive bonus for backwards compat
+    return this.getArrivalModifiers(state).rate - 1
   }
 
   /**
-   * Calculate departure rate reduction from Relaxers.
-   * Returns a multiplier (e.g., 0.955 for 30% relaxers = 30% * 15% = 4.5% reduction)
+   * @deprecated Use getDepartureModifiers().rate instead
    */
   static getRelaxerDepartureReduction(state: GameState): number {
-    const relaxPercent = state.guestTypeMix.relaxation / 100
-    return 1 - (relaxPercent * GUEST_TYPE_TRAITS.relaxation.departureReduction)
+    return this.getDepartureModifiers(state).rate
   }
 
   /**
    * Get all active trait bonuses for UI display.
+   * Returns modifiers from all ECS systems.
    */
   static getTraitBonuses(state: GameState): {
-    ticketIncomeBonus: number    // Percentage bonus (e.g., 6 for +6%)
-    arrivalBonus: number         // Extra guests per arrival
-    departureReduction: number   // Percentage reduction (e.g., 4.5 for -4.5%)
+    systems: GuestSystemsResult
+    // Legacy format for backwards compat
+    ticketIncomeBonus: number
+    arrivalBonus: number
+    departureReduction: number
   } {
-    const thrillPercent = state.guestTypeMix.thrills / 100
-    const familyPercent = state.guestTypeMix.family / 100
-    const relaxPercent = state.guestTypeMix.relaxation / 100
+    const systems = this.getSystemsResult(state)
 
     return {
-      ticketIncomeBonus: thrillPercent * GUEST_TYPE_TRAITS.thrills.ticketIncomeBonus * 100,
-      arrivalBonus: familyPercent * GUEST_TYPE_TRAITS.family.arrivalBonus,
-      departureReduction: relaxPercent * GUEST_TYPE_TRAITS.relaxation.departureReduction * 100,
+      systems,
+      // Convert to percentage display format
+      ticketIncomeBonus: (systems.income.ticket - 1) * 100,
+      arrivalBonus: (systems.arrival.rate - 1) * 100,
+      departureReduction: (1 - systems.departure.rate) * 100,
     }
   }
 

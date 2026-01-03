@@ -10,7 +10,27 @@ export type StatId =
 
 export type Season = 'spring' | 'summer' | 'fall' | 'winter'
 
-// === GUEST TYPES ===
+// === GUEST TAGS (ECS) ===
+// Re-export from ECS for backwards compatibility
+export type {
+  BehaviorTag,
+  BehaviorTagMix,
+  MoodTag,
+  MoodTagMix,
+  GuestComponents,
+} from '../ecs/components/guest-tags'
+
+export {
+  BEHAVIOR_TAGS,
+  BEHAVIOR_TAG_META,
+  MOOD_TAGS,
+  MOOD_TAG_META,
+  createDefaultBehaviorMix,
+  createDefaultMoodMix,
+} from '../ecs/components/guest-tags'
+
+// === LEGACY GUEST TYPES (for backwards compatibility) ===
+// TODO: Migrate buildings to use new tag system, then remove
 export type GuestType = 'thrills' | 'family' | 'relaxation'
 
 export const GUEST_TYPES = ['thrills', 'family', 'relaxation'] as const
@@ -25,27 +45,27 @@ export const GUEST_TYPE_META: Record<GuestType, {
     name: 'Thrill Seekers',
     emoji: '🎢',
     color: '#ef4444',
-    trait: { description: '+20% ticket income', shortLabel: '💰 +20% tickets' },
+    trait: { description: '+25% tickets, -20% shops', shortLabel: '🎢 Thrill Seekers' },
   },
   family: {
-    name: 'Families',
-    emoji: '👨‍👩‍👧',
+    name: 'Large Groups',
+    emoji: '👨‍👩‍👧‍👦',
     color: '#3b82f6',
-    trait: { description: '+0.3 extra guests per arrival', shortLabel: '👥 +0.3 arrivals' },
+    trait: { description: '+30% arrivals, -15% per-guest', shortLabel: '👨‍👩‍👧‍👦 Large Groups' },
   },
   relaxation: {
-    name: 'Relaxers',
-    emoji: '🌿',
-    color: '#22c55e',
-    trait: { description: '-15% departure rate', shortLabel: '🏠 -15% departures' },
+    name: 'Big Spenders',
+    emoji: '💎',
+    color: '#a855f7',
+    trait: { description: '+25% tickets, -10% arrivals', shortLabel: '💎 Big Spenders' },
   },
 }
 
-// Guest type trait multipliers (applied proportionally based on guest mix)
+// Legacy trait constants - now handled by ECS systems
 export const GUEST_TYPE_TRAITS = {
-  thrills: { ticketIncomeBonus: 0.20 },      // +20% ticket income
-  family: { arrivalBonus: 0.3 },              // +0.3 guests per arrival
-  relaxation: { departureReduction: 0.15 },   // -15% departure rate
+  thrills: { ticketIncomeBonus: 0.25, shopPenalty: 0.20 },
+  family: { arrivalBonus: 0.30, perGuestPenalty: 0.15 },
+  relaxation: { ticketBonus: 0.25, arrivalPenalty: 0.10 },
 } as const
 
 export type GuestTypeMix = Record<GuestType, number>

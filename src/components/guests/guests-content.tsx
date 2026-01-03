@@ -123,34 +123,66 @@ export function GuestsContent() {
         </div>
       </div>
 
-      {/* Type Bonuses */}
+      {/* Guest Tag Effects */}
       <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
         <div className="flex items-center gap-2 mb-3">
           <Zap size={16} className="text-[var(--color-accent)]" />
-          <span className="text-sm text-[var(--color-text-muted)]">Type Bonuses</span>
+          <span className="text-sm text-[var(--color-text-muted)]">Tag Effects</span>
         </div>
-        <div className="space-y-2">
-          <TraitBonusRow
-            emoji="💰"
-            label="Ticket income"
-            value={`+${traitBonuses.ticketIncomeBonus.toFixed(1)}%`}
-            source={`${guestTypeMix.thrills}% Thrill Seekers`}
-            color={GUEST_TYPE_META.thrills.color}
-          />
-          <TraitBonusRow
-            emoji="👥"
-            label="Extra arrivals"
-            value={`+${traitBonuses.arrivalBonus.toFixed(2)}/arrival`}
-            source={`${guestTypeMix.family}% Families`}
-            color={GUEST_TYPE_META.family.color}
-          />
-          <TraitBonusRow
-            emoji="🏠"
-            label="Departure rate"
-            value={`-${traitBonuses.departureReduction.toFixed(1)}%`}
-            source={`${guestTypeMix.relaxation}% Relaxers`}
-            color={GUEST_TYPE_META.relaxation.color}
-          />
+        <div className="space-y-3">
+          {/* Income Effects */}
+          <div className="space-y-1">
+            <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-wide">Income</div>
+            <TagEffectRow
+              label="Ticket income"
+              value={traitBonuses.systems.income.ticket}
+              isPositive={traitBonuses.systems.income.ticket >= 1}
+            />
+            <TagEffectRow
+              label="Per-guest income"
+              value={traitBonuses.systems.income.perGuest}
+              isPositive={traitBonuses.systems.income.perGuest >= 1}
+            />
+            <TagEffectRow
+              label="Shop income"
+              value={traitBonuses.systems.income.shop}
+              isPositive={traitBonuses.systems.income.shop >= 1}
+            />
+          </div>
+
+          {/* Arrival/Departure Effects */}
+          <div className="space-y-1 pt-2 border-t border-[var(--color-border)]">
+            <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-wide">Guest Flow</div>
+            <TagEffectRow
+              label="Arrival rate"
+              value={traitBonuses.systems.arrival.rate}
+              isPositive={traitBonuses.systems.arrival.rate >= 1}
+            />
+            <TagEffectRow
+              label="Departure rate"
+              value={traitBonuses.systems.departure.rate}
+              isPositive={traitBonuses.systems.departure.rate <= 1}
+              invertDisplay
+            />
+          </div>
+
+          {/* Appeal Effects */}
+          <div className="space-y-1 pt-2 border-t border-[var(--color-border)]">
+            <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-wide">Appeal</div>
+            <TagEffectRow
+              label="Ride appeal"
+              value={traitBonuses.systems.appeal.rideMultiplier}
+              isPositive={traitBonuses.systems.appeal.rideMultiplier >= 1}
+            />
+            {traitBonuses.systems.appeal.flatBonus !== 0 && (
+              <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--color-bg)]">
+                <span className="text-sm">Mood bonus</span>
+                <span className={`text-sm font-semibold ${traitBonuses.systems.appeal.flatBonus >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+                  {traitBonuses.systems.appeal.flatBonus >= 0 ? '+' : ''}{traitBonuses.systems.appeal.flatBonus.toFixed(1)}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -367,23 +399,31 @@ function GuestTypeRow({ analysis, isDominant }: { analysis: GuestTypeAnalysis; i
   )
 }
 
-function TraitBonusRow({ emoji, label, value, source, color }: {
-  emoji: string
+function TagEffectRow({ label, value, isPositive, invertDisplay = false }: {
   label: string
-  value: string
-  source: string
-  color: string
+  value: number
+  isPositive: boolean
+  invertDisplay?: boolean  // For departure rate, lower is better
 }) {
+  const percentChange = (value - 1) * 100
+  const displayValue = invertDisplay ? -percentChange : percentChange
+
+  // Don't show if no change
+  if (Math.abs(percentChange) < 0.1) {
+    return (
+      <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--color-bg)]">
+        <span className="text-sm">{label}</span>
+        <span className="text-sm text-[var(--color-text-muted)]">—</span>
+      </div>
+    )
+  }
+
   return (
     <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--color-bg)]">
-      <div className="flex items-center gap-2">
-        <span>{emoji}</span>
-        <span className="text-sm">{label}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-semibold" style={{ color }}>{value}</span>
-        <span className="text-xs text-[var(--color-text-muted)]">({source})</span>
-      </div>
+      <span className="text-sm">{label}</span>
+      <span className={`text-sm font-semibold ${isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+        {displayValue >= 0 ? '+' : ''}{displayValue.toFixed(1)}%
+      </span>
     </div>
   )
 }
