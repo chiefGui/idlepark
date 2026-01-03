@@ -21,12 +21,12 @@ import { Wish } from '../systems/wish'
 import { calculateGuestTypeMix } from '../systems/guest-types'
 import type { SimulationState } from '../systems/guest-simulation'
 import {
-  initializeFromGameState,
-  tickWithSimulation,
-  syncArrivals,
-  getGuestBreakdownFromSim,
+  createSimulation,
+  tickSimulation,
+  addGuests,
   getShopModifiersFromSimulation,
   notifyBuildingsChanged,
+  getGuestBreakdownFromSim,
   getTotalGuestsFromSim,
 } from '../systems/guest-simulation'
 
@@ -45,10 +45,6 @@ type GameActions = {
   markFeedRead: () => void
   reset: () => void
   calculateOfflineProgress: (lastTime: number) => void
-  // Guest simulation controls
-  enableSimulation: () => void
-  disableSimulation: () => void
-  isSimulationEnabled: () => boolean
 }
 
 type GameStoreState = GameState & {
@@ -67,13 +63,8 @@ const collectModifiers = (state: GameState): Modifier[] => {
     }
   }
 
-  // Collect from shops (guest-based income)
-  // Use simulation-based shop modifiers when simulation is enabled
-  if (state.guestSimulation) {
-    modifiers.push(...getShopModifiersFromSimulation(state.guestSimulation as SimulationState, state.slots))
-  } else {
-    modifiers.push(...Building.getShopModifiers(state))
-  }
+  // Collect shop income from simulation visitor counts
+  modifiers.push(...getShopModifiersFromSimulation(state.guestSimulation as SimulationState, state.slots))
 
   // Collect from perks
   for (const perkId of state.ownedPerks) {
@@ -117,10 +108,16 @@ const emptyRates = (): ComputedRates => ({
   appeal: 0,
 })
 
+// Create initial simulation state
+const createInitialSimulation = (): SimulationState => {
+  return createSimulation()
+}
+
 export const useGameStore = create<GameStoreState>()(
   persist(
     (set, get) => ({
       ...GameTypes.createInitialState(),
+      guestSimulation: createInitialSimulation(),
       rates: emptyRates(),
       modifiers: [],
 
@@ -134,53 +131,31 @@ export const useGameStore = create<GameStoreState>()(
           const newDayInt = Math.floor(newDay)
           const crossedDayBoundary = newDayInt > prevDayInt
 
-          // Process guest tier system
-          let guestBreakdown = state.guestBreakdown
-          let guestSimulation = state.guestSimulation as SimulationState | null
-          let naturalDeparted = 0
-          let unhappyDeparted = 0
-          let simShopRevenue = 0
+          const guestSimulation = state.guestSimulation as SimulationState
 
-          if (guestSimulation) {
-            // === SIMULATION PATH ===
-            // Process arrivals into simulation
-            const arrivalRate = Guest.calculateArrivalRate(state)
-            const capacity = Guest.getCapacity(state)
-            const currentTotal = getTotalGuestsFromSim(guestSimulation)
-            const availableSpace = Math.max(0, capacity - currentTotal)
-            const potentialArrivals = arrivalRate * deltaDay
-            const actualArrivals = Math.min(potentialArrivals, availableSpace)
+          // Process arrivals into simulation
+          const arrivalRate = Guest.calculateArrivalRate(state)
+          const capacity = Guest.getCapacity(state)
+          const currentTotal = getTotalGuestsFromSim(guestSimulation)
+          const availableSpace = Math.max(0, capacity - currentTotal)
+          const potentialArrivals = arrivalRate * deltaDay
+          const actualArrivals = Math.min(potentialArrivals, availableSpace)
 
-            if (actualArrivals > 0) {
-              syncArrivals(guestSimulation, actualArrivals, state.guestTypeMix)
-            }
-
-            // Run simulation tick
-            const simResult = tickWithSimulation(guestSimulation, deltaDay, state)
-            guestBreakdown = simResult.guestBreakdown
-            naturalDeparted = simResult.departures.natural
-            unhappyDeparted = simResult.departures.unhappy
-            simShopRevenue = simResult.shopRevenue
-          } else {
-            // === AGGREGATE PATH (original behavior) ===
-            // 1. Process arrivals (new guests start as neutral, respects capacity)
-            const arrivalRate = Guest.calculateArrivalRate(state)
-            const capacity = Guest.getCapacity(state)
-            guestBreakdown = Guest.processArrivals(guestBreakdown, arrivalRate, deltaDay, capacity)
-
-            // 2. Process tier transitions based on appeal
-            const currentAppeal = Guest.calculateAppeal(state)
-            guestBreakdown = Guest.processTransitions(guestBreakdown, currentAppeal, deltaDay)
-
-            // 3. Process departures at day boundary (natural turnover + unhappy extra)
-            if (crossedDayBoundary) {
-              const result = Guest.processDepartures(guestBreakdown)
-              guestBreakdown = result.newBreakdown
-              naturalDeparted = result.naturalDeparted
-              unhappyDeparted = result.unhappyDeparted
-            }
+          if (actualArrivals > 0) {
+            addGuests(guestSimulation, actualArrivals, state.guestTypeMix)
           }
 
+          // Run simulation tick
+          const simResult = tickSimulation(guestSimulation, deltaDay, {
+            slots: state.slots,
+            buildingDefs: new Map(),
+            guestTypeMix: state.guestTypeMix,
+            appeal: state.stats.appeal,
+          })
+
+          const guestBreakdown = simResult.guestBreakdown
+          const naturalDeparted = simResult.departures.natural
+          const unhappyDeparted = simResult.departures.unhappy
           const totalGuests = GameTypes.getTotalGuests(guestBreakdown)
 
           // Calculate income and upkeep separately for tracking
@@ -284,7 +259,7 @@ export const useGameStore = create<GameStoreState>()(
             // Recalculate guest type mix (once per day, not per tick)
             guestTypeMix = calculateGuestTypeMix(state)
 
-            // Emit events for guest departures (split by type for appropriate feed messages)
+            // Emit events for guest departures
             if (unhappyDeparted > 0) {
               GameEvents.emit('guests:departed', { count: unhappyDeparted })
             }
@@ -445,11 +420,8 @@ export const useGameStore = create<GameStoreState>()(
           let unreadFeedCount = state.unreadFeedCount
 
           if (fulfilledWish) {
-            // Remove the fulfilled wish
             wishes = Wish.removeFulfilled(wishes, buildingId)
-            // Create the boost
             wishBoost = Wish.createBoost(state)
-            // Create celebration feed entry
             const celebrationEntry = Wish.generateFulfillmentEntry(state, buildingId)
             feedEntries = Feed.addEntry(feedEntries, celebrationEntry)
             unreadFeedCount++
@@ -463,9 +435,7 @@ export const useGameStore = create<GameStoreState>()(
           const guestTypeMix = calculateGuestTypeMix(newState)
 
           // Notify simulation of building changes
-          if (state.guestSimulation) {
-            notifyBuildingsChanged(state.guestSimulation as SimulationState, newSlots)
-          }
+          notifyBuildingsChanged(state.guestSimulation as SimulationState, newSlots)
 
           const computed = computeRatesAndModifiers(newState)
           set({
@@ -510,9 +480,7 @@ export const useGameStore = create<GameStoreState>()(
           const guestTypeMix = calculateGuestTypeMix(newState)
 
           // Notify simulation of building changes
-          if (state.guestSimulation) {
-            notifyBuildingsChanged(state.guestSimulation as SimulationState, newSlots)
-          }
+          notifyBuildingsChanged(state.guestSimulation as SimulationState, newSlots)
 
           const computed = computeRatesAndModifiers(newState)
           set({
@@ -718,6 +686,7 @@ export const useGameStore = create<GameStoreState>()(
           const initial = GameTypes.createInitialState()
           set({
             ...initial,
+            guestSimulation: createInitialSimulation(),
             rates: emptyRates(),
             modifiers: [],
           })
@@ -738,7 +707,6 @@ export const useGameStore = create<GameStoreState>()(
           let daysToSimulate = daysElapsed
 
           // Cap offline progression to 60 days (~30 min real time)
-          // Keeps iteration count low for mobile performance
           const MAX_OFFLINE_DAYS = 60
           daysToSimulate = Math.min(daysToSimulate, MAX_OFFLINE_DAYS)
 
@@ -761,38 +729,6 @@ export const useGameStore = create<GameStoreState>()(
           if (remainder > 0) {
             get().actions.tick(remainder)
           }
-        },
-
-        // === Guest Simulation Controls ===
-        enableSimulation: () => {
-          const state = get()
-          if (state.guestSimulation) return // Already enabled
-
-          const sim = initializeFromGameState(state)
-          const computed = computeRatesAndModifiers({ ...state, guestSimulation: sim })
-          set({
-            guestSimulation: sim,
-            rates: computed.rates,
-            modifiers: computed.modifiers,
-          })
-          GameEvents.emit('simulation:enabled', undefined)
-        },
-
-        disableSimulation: () => {
-          const state = get()
-          if (!state.guestSimulation) return // Already disabled
-
-          const computed = computeRatesAndModifiers({ ...state, guestSimulation: null })
-          set({
-            guestSimulation: null,
-            rates: computed.rates,
-            modifiers: computed.modifiers,
-          })
-          GameEvents.emit('simulation:disabled', undefined)
-        },
-
-        isSimulationEnabled: () => {
-          return get().guestSimulation !== null
         },
       },
     }),
@@ -829,8 +765,13 @@ export const useGameStore = create<GameStoreState>()(
           if (!state.guestTypeMix) {
             state.guestTypeMix = calculateGuestTypeMix(state)
           }
-          // Ensure guestSimulation starts as null (not persisted)
-          state.guestSimulation = null
+          // Initialize fresh simulation from saved breakdown
+          state.guestSimulation = createInitialSimulation()
+          // Populate simulation with guests matching saved breakdown
+          const totalGuests = GameTypes.getTotalGuests(state.guestBreakdown)
+          if (totalGuests > 0) {
+            addGuests(state.guestSimulation as SimulationState, totalGuests, state.guestTypeMix)
+          }
           const computed = computeRatesAndModifiers(state)
           state.rates = computed.rates
           state.modifiers = computed.modifiers

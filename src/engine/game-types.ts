@@ -288,8 +288,8 @@ export type GameState = {
   wishes: WishState[]
   wishBoost: WishBoostState
   lastWishDay: number
-  // Guest Simulation (null = use aggregate model, non-null = use individual simulation)
-  guestSimulation: unknown | null
+  // Guest Simulation (typed as unknown to avoid circular dependency with systems)
+  guestSimulation: unknown
 }
 
 export class GameTypes {
@@ -419,8 +419,8 @@ export class GameTypes {
       wishes: [],
       wishBoost: null,
       lastWishDay: 0,
-      // Guest Simulation
-      guestSimulation: null,
+      // Guest Simulation (initialized by game-store)
+      guestSimulation: null as unknown,
     }
   }
 }
